@@ -358,3 +358,12 @@ describe("fast-check", () => {
     );
   });
 });
+
+describe("escapes user-supplied text", () => {
+  it("escapes name, notes, and inventory so no HTML can be injected", () => {
+    const xss = "<img src=x onerror=alert(1)>";
+    const html = sheetHtml(buildCharacter(tables, req({ name: `Hero${xss}`, notes: xss, inventory: [xss] })));
+    expect(html).not.toContain(xss);
+    expect(html).toContain("&lt;img src=x onerror=alert(1)&gt;");
+  });
+});
