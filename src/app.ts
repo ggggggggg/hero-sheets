@@ -105,9 +105,16 @@ interface CustomInfo {
   ids: Set<string>;
 }
 
+interface TipPick {
+  label: string;
+  on: boolean;
+  choose: () => void;
+}
+
 interface Tip {
   title: string;
   lines: [string | null, string][];
+  picks?: TipPick[];
 }
 
 type ListKind = "cantrips" | "spells" | "items" | "path_spells";
@@ -116,6 +123,7 @@ type SpellKind = "cantrips" | "spells";
 interface Picker {
   kind: ListKind;
   index: number;
+  all?: boolean;
 }
 
 interface Chip<T extends string | number> {
@@ -134,6 +142,8 @@ interface Attrs {
   role?: string;
   for?: string;
   href?: string;
+  target?: string;
+  rel?: string;
   download?: string;
   accept?: string;
   placeholder?: string;
@@ -275,9 +285,8 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
-export function startApp(input: { tables: Tables; guide: string; sitePacks: SitePack[] }): void {
+export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void {
   const baseTables = input.tables;
-  const guide = input.guide;
   const sitePacks = input.sitePacks;
 
   let prefs: Prefs = {};
@@ -308,7 +317,7 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
       text = await res.text();
     } catch (error) {
       if (!quiet) {
-        urlStatus = `⚠ Couldn't read that link (${messageOf(error)}). Many sites, including Google Drive, don't let other pages read their files. A GitHub Gist “Raw” link or a jsDelivr link works — see the AI instructions.`;
+        urlStatus = `⚠ Couldn't read that link (${messageOf(error)}). Many sites, including Google Drive, don't let other pages read their files. A GitHub Gist “Raw” link or a jsDelivr link works — see the instructions.`;
       }
       return false;
     }
@@ -776,8 +785,11 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
     }
     state.choices = choices;
     if (state.cantrips)
-      state.cantrips = state.cantrips.filter((name) => built.cantripPool.includes(name)).slice(0, built.nCan);
-    if (state.spells) state.spells = state.spells.filter((name) => built.spellPool.includes(name)).slice(0, built.nSp);
+      state.cantrips = state.cantrips
+        .filter((name) => learnable("cantrips", built, true).includes(name))
+        .slice(0, built.nCan);
+    if (state.spells)
+      state.spells = state.spells.filter((name) => learnable("spells", built, true).includes(name)).slice(0, built.nSp);
     if (state.path_spells) state.path_spells = state.path_spells.filter((name) => built.anyPool.includes(name));
     if (state.subrace && !built.subraces.some((row) => row.id === state.subrace)) state.subrace = null;
     if (state.armor && !built.armorOptions.some((armor) => armor.name === state.armor)) state.armor = null;
@@ -865,31 +877,57 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
     return ch ? ch.cards.filter(pred).map((card) => [card.name, card.desc]) : [];
   }
 
+  function armorPhrase(kinds: readonly string[]): string {
+    const order = ["light", "medium", "heavy"];
+    const have = order.filter((kind) => kinds.includes(kind));
+    for (const kind of kinds) if (!have.includes(kind)) have.push(kind);
+    if (have.length === 0) return "";
+    if (have.length === 1) return `${have[0]} armor`;
+    if (have.length === 2) return `${have[0]} and ${have[1]} armor`;
+    return `${have.slice(0, -1).join(", ")}, and ${have[have.length - 1]} armor`;
+  }
+
+  function trainingLine(kinds: readonly string[], shield: boolean): string {
+    const body = armorPhrase(kinds);
+    if (body && shield) return `${body}, plus a shield`;
+    if (body) return body;
+    if (shield) return "a shield";
+    return "no armor";
+  }
+
   const TIP = {
     race(id: string): Tip {
       const race = raceBy(id);
       const srs = tables.subraces.filter((row) => row.race_id === id);
-      const sr = srs[0];
+      const preview = (state.race === id ? srs.find((row) => row.id === state.subrace) : undefined) ?? srs[0] ?? null;
       const asi: AbilityScores = { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 };
-      for (const ability of ABILITIES) asi[ability] = (race.asi[ability] || 0) + (sr?.asi[ability] || 0);
-      const ch = tryBuild({ race: id, subrace: null });
-      const lines: [string | null, string][] = [
-        [null, [asiText(asi), `speed ${race.speed + (sr ? sr.speed : 0)} ft`].filter(Boolean).join(" • ")],
-      ];
-      if (sr) {
-        lines.push([
-          null,
-          `Usually a ${sr.name}${
-            srs.length > 1
-              ? ` (others: ${srs
-                  .slice(1)
-                  .map((row) => row.name)
-                  .join(", ")} — pick at the bottom)`
-              : ""
-          }`,
-        ]);
-      }
-      return { title: race.name, lines: lines.concat(cardLines(ch, (card) => card.section === `${race.name} Stuff`)) };
+      for (const ability of ABILITIES) asi[ability] = (race.asi[ability] || 0) + (preview?.asi[ability] || 0);
+      const ch = tryBuild({ race: id, subrace: preview ? preview.id : null });
+      const walk = race.speed + (preview ? preview.speed : 0);
+      const swim = race.swim ?? 0;
+      const move = swim > 0 ? `speed ${walk} ft, swim ${swim} ft` : `speed ${walk} ft`;
+      const lines: [string | null, string][] = [[null, [asiText(asi), move].filter(Boolean).join(" • ")]];
+      if (preview && srs.length < 2) lines.push([null, preview.name]);
+      const picks =
+        srs.length > 1
+          ? srs.map((row) => ({
+              label: row.name,
+              on: state.race === id && (state.subrace ? state.subrace === row.id : row.id === srs[0]?.id),
+              choose: () => {
+                state.race = id;
+                state.subrace = row.id;
+                state.armor = null;
+                state.race_asi = null;
+                update();
+                reopenRaceTip();
+              },
+            }))
+          : undefined;
+      return {
+        title: race.name,
+        lines: lines.concat(cardLines(ch, (card) => card.section === `${race.name} Stuff`)),
+        picks,
+      };
     },
     subrace(id: string): Tip {
       const sr = tables.subraces.find((row) => row.id === id);
@@ -921,20 +959,16 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
     cls(id: string): Tip {
       const cls = classBy(id);
       const ch = tryBuild({ cls: id, subclass: null });
-      const arm = cls.armor_prof.length
-        ? `${cls.armor_prof.join(", ")} armor${cls.shield_prof ? " + shields" : ""}`
-        : cls.shield_prof
-          ? "shields"
-          : "no armor";
       const lines: [string | null, string][] = [
         [null, cls.look.tagline],
         [
           null,
-          `d${cls.hit_die} hit die • ${arm} • good at ${cls.primary
+          `d${cls.hit_die} hit die • good at ${cls.primary
             .slice(0, 2)
             .map((ability) => ABN[ability])
             .join(" & ")}`,
         ],
+        ["Armor training", trainingLine(cls.armor_prof, cls.shield_prof)],
       ];
       if (cls.caster.ability && isAbility(cls.caster.ability))
         lines.push([null, `Casts spells with ${ABN[cls.caster.ability]}`]);
@@ -970,6 +1004,7 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
           : [];
       const spells = sub.auto_spells.filter((entry) => entry.lvl <= lvl).map((entry) => entry.spell);
       const pathLines = cardLines(ch, (card) => card.section === sub.name);
+      if (sub.armor_prof_add.length) pathLines.unshift(["Armor training", `also ${armorPhrase(sub.armor_prof_add)}`]);
       if (spells.length) pathLines.push(["Bonus spells", spells.join(", ")]);
       if (later.length)
         pathLines.push(["Later", later.map((feature) => `${feature.card.name} (level ${feature.lvl})`).join(", ")]);
@@ -1007,13 +1042,25 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
       const how = !row
         ? "your natural defense, no armor to carry"
         : `${row.base}${row.dex_cap === 0 ? ", Dexterity doesn't help" : row.dex_cap >= 10 ? " + Dexterity" : ` + Dexterity, max +${row.dex_cap}`}`;
+      const cls = classBy(state.cls);
+      const sub = tables.subclasses.find((item) => item.id === state.subclass);
+      const sr = tables.subraces.find((item) => item.id === state.subrace);
+      const from = [`${cls.name} gives ${trainingLine(cls.armor_prof, cls.shield_prof)}`];
+      if (sub && state.level >= cls.subclass_level && sub.armor_prof_add.length)
+        from.push(`${sub.name} gives ${armorPhrase(sub.armor_prof_add)}`);
+      if (sr) {
+        const added = armorPhrase(sr.armor_prof_add);
+        if (added) from.push(`${sr.name} gives ${added}`);
+      }
       const lines: [string | null, string][] = [
         [
           row ? `${row.kind[0]?.toUpperCase() ?? ""}${row.kind.slice(1)} armor` : "Nothing worn",
           `Armor ${armor.ac} for you (${how})`,
         ],
+        ["Armor training", from.join(". ")],
       ];
       if (armor.strReq) lines.push(["Strength", `Needs Strength ${armor.strReq}, or you move 10 ft slower`]);
+      if (!armor.trained) lines.push([null, "Off the list for this hero. Check with your DM."]);
       return { title: armor.name, lines };
     },
   };
@@ -1046,8 +1093,27 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
     }
     if (!tip) return;
     const box = tipBox();
+    const picks = tip.picks?.length
+      ? el(
+          "div",
+          { class: "tpicks" },
+          tip.picks.map((pick) =>
+            el(
+              "button",
+              {
+                type: "button",
+                class: `tpick${pick.on ? " on" : ""}`,
+                "aria-pressed": pick.on ? "true" : "false",
+                onclick: () => pick.choose(),
+              },
+              pick.label,
+            ),
+          ),
+        )
+      : null;
     box.replaceChildren(
       el("b", { class: "tt" }, tip.title),
+      ...(picks ? [picks] : []),
       ...tip.lines
         .filter((line) => line[1])
         .map(([label, text]) => el("p", {}, label ? el("b", {}, `${label}: `) : null, text)),
@@ -1062,7 +1128,16 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
     const height = box.offsetHeight;
     const below = rect.bottom + 8 + height < window.innerHeight || rect.top - 8 - height < 0;
     box.style.left = `${left}px`;
-    box.style.top = `${below ? rect.bottom + 8 : rect.top - 8 - height}px`;
+    box.style.top = `${below ? rect.bottom - 2 : rect.top + 2 - height}px`;
+  }
+
+  function reopenRaceTip(): void {
+    for (const node of document.querySelectorAll(".field")) {
+      if (!node.querySelector(".flabel")?.textContent?.startsWith("Race")) continue;
+      const btn = node.querySelector(".chip-btn.on");
+      if (btn) showTip(btn);
+      return;
+    }
   }
 
   function hideTip(): void {
@@ -1080,6 +1155,10 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
 
   document.addEventListener("pointerover", (ev) => {
     if (ev.pointerType === "touch") return;
+    if (ev.target instanceof Node && tipBox().contains(ev.target)) {
+      clearTimeout(tipTimer);
+      return;
+    }
     const node = tipTarget(ev);
     if (node === tipFor) return;
     clearTimeout(tipTimer);
@@ -1090,6 +1169,10 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
     tipTimer = window.setTimeout(() => showTip(node), tipFor ? 0 : 350);
   });
   document.addEventListener("pointerdown", (ev) => {
+    if (ev.target instanceof Node && tipBox().contains(ev.target)) {
+      holdFired = false;
+      return;
+    }
     holdFired = false;
     if (ev.pointerType !== "touch" && ev.pointerType !== "pen") {
       hideTip();
@@ -1129,6 +1212,7 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
     if (tipTarget(ev)) ev.preventDefault();
   });
   document.addEventListener("focusin", (ev) => {
+    if (ev.target instanceof Node && tipBox().contains(ev.target)) return;
     const node = tipTarget(ev);
     if (node?.matches(":focus-visible")) showTip(node);
     else if (!node) hideTip();
@@ -1136,7 +1220,16 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
   document.addEventListener("keydown", (ev) => {
     if (ev.key === "Escape") hideTip();
   });
-  window.addEventListener("scroll", hideTip, true);
+  window.addEventListener(
+    "scroll",
+    (ev) => {
+      const box = tipBox();
+      if (ev.target instanceof Node && box.contains(ev.target)) return;
+      if (document.activeElement && box.contains(document.activeElement)) return;
+      hideTip();
+    },
+    true,
+  );
 
   function field(label: string, control: Node, hint?: Kid | Kid[]): HTMLElement {
     return el(
@@ -1192,6 +1285,18 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
     state[kind] = arr;
   }
 
+  function learnable(kind: SpellKind, built: HeroOptions, every: boolean): string[] {
+    if (kind === "cantrips") {
+      if (!every) return built.cantripPool;
+      return tables.spells
+        .filter((row) => row.lvl === 0 && !built.bonusCantrips.includes(row.name))
+        .map((row) => row.name)
+        .sort();
+    }
+    if (!every) return built.spellPool;
+    return built.anyPool.filter((name) => !built.auto.includes(name));
+  }
+
   function pickerPanel(
     kind: ListKind,
     built: HeroOptions,
@@ -1202,7 +1307,11 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
   ): HTMLElement {
     const isCantrip = kind === "cantrips";
     const isItem = kind === "items";
-    const pool = poolOverride || (isItem ? built.itemPool : isCantrip ? built.cantripPool : built.spellPool);
+    const spellKind: SpellKind | null = kind === "cantrips" || kind === "spells" ? kind : null;
+    const widen =
+      spellKind !== null && !poolOverride && picker?.kind === kind && picker.index === index && picker.all === true;
+    const allowed = spellKind ? learnable(spellKind, built, false) : [];
+    const pool = poolOverride ?? (isItem ? built.itemPool : spellKind ? learnable(spellKind, built, widen) : []);
     const taken = new Set(current.filter((_, i) => i !== index).concat(exclude ?? []));
     const names = pool.filter((name) => !taken.has(name));
     const texts = optionTexts(kind, current, index, names);
@@ -1231,15 +1340,38 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
       update();
     };
     const what = isItem ? "potion or item" : isCantrip ? "cantrip" : "spell";
+    const scope =
+      spellKind && !poolOverride
+        ? el(
+            "label",
+            { class: "pall" },
+            el("input", {
+              type: "checkbox",
+              checked: !widen,
+              onchange: (ev) => {
+                picker = { kind, index, all: !inputOf(ev).checked };
+                update();
+              },
+            }),
+            !widen ? "Allowed for this hero" : isCantrip ? "All cantrips" : "All spells",
+          )
+        : null;
     return el(
       "div",
       { class: "picker", role: "dialog", "aria-label": `Choose a ${what}` },
       el(
         "div",
         { class: "phead" },
-        el("b", {}, index < 0 ? `Add a ${what}` : `Swap ${current[index]} for…`),
+        el("div", {}, el("b", {}, index < 0 ? `Add a ${what}` : `Swap ${current[index]} for…`), scope),
         el("button", { type: "button", class: "icon", "aria-label": "Close", onclick: close }, "✕"),
       ),
+      names.length
+        ? null
+        : el(
+            "p",
+            { class: "hint block" },
+            widen ? "Nothing left to pick." : "Nothing else this hero can learn. Uncheck the box to see the rest.",
+          ),
       [...groups]
         .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
         .map(([group, list]) =>
@@ -1254,11 +1386,12 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
                 const card = texts[name] ||
                   (isItem ? built.itemCard(name) : built.spellCard(name)) || { desc: "", tag: "", note: "" };
                 const currentName = index >= 0 && current[index] === name;
+                const offList = widen && !allowed.includes(name);
                 return el(
                   "button",
                   {
                     type: "button",
-                    class: `popt${currentName ? " on" : ""}`,
+                    class: `popt${currentName ? " on" : ""}${offList ? " offbook" : ""}`,
                     "aria-pressed": currentName ? "true" : "false",
                     onclick: () => choose(name),
                   },
@@ -1268,6 +1401,7 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
                     el("b", {}, name),
                     card.tag ? el("span", { class: `ptag t${card.tag}` }, TAGLBL[card.tag] || card.tag) : null,
                     card.note ? el("span", { class: "pnote" }, card.note) : null,
+                    offList ? el("span", { class: "swaphint" }, "off book") : null,
                   ),
                   el("span", { class: "pdesc" }, (card.desc || "").replace(/\{[A-Z0-9_]+\}/g, "…")),
                   isItem && built.itemWarn(name) ? el("span", { class: "pwarn" }, `⚠ ${built.itemWarn(name)}`) : null,
@@ -1370,10 +1504,11 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
     }
     current.forEach((name, i) => {
       const isOpen = picker?.kind === kind && picker.index === i;
+      const offList = !pool.includes(name);
       items.push(
         el(
           "li",
-          { class: `spell${isOpen ? " open" : ""}` },
+          { class: `spell${isOpen ? " open" : ""}${offList ? " offbook" : ""}` },
           el(
             "button",
             {
@@ -1386,7 +1521,7 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
             el("b", {}, name),
             isCantrip ? null : el("span", { class: "lvl" }, `L${built.spellLevel(name)}`),
             el("small", {}, liveDesc[name] || (built.spellCard(name)?.desc || "").replace(/\{[A-Z0-9_]+\}/g, "…")),
-            el("span", { class: "swaphint" }, isOpen ? "close" : "swap ▾"),
+            el("span", { class: "swaphint" }, isOpen ? "close" : offList ? "off book • swap ▾" : "swap ▾"),
           ),
           dice(name, () => {
             const free = pool.filter((item) => !current.includes(item) && !built.auto.includes(item));
@@ -1410,8 +1545,9 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
       );
       if (isOpen) items.push(el("li", { class: "pwrap" }, pickerPanel(kind, built, current, i)));
     });
-    const freeLeft = pool.filter((name) => !current.includes(name)).length;
-    if (current.length < max && freeLeft) {
+    const freeLeft = pool.some((name) => !current.includes(name));
+    const anyLeft = learnable(kind, built, true).some((name) => !current.includes(name));
+    if (current.length < max && (freeLeft || anyLeft)) {
       const isOpen = picker?.kind === kind && picker.index === -1;
       items.push(
         el(
@@ -1451,6 +1587,10 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
     ]
       .filter(Boolean)
       .join("; ");
+    const stray = current.filter((name) => !pool.includes(name));
+    if (stray.length) {
+      items.unshift(el("li", { class: "offnote" }, `⚠ Off the list: ${stray.join(", ")}. Check with your DM.`));
+    }
     if (offBook) {
       items.unshift(
         el(
@@ -1684,24 +1824,25 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
         el(
           "div",
           { class: "chips" },
-          opts.map((armor, i) =>
-            tipped(
+          opts.map((armor) => {
+            const off = !armor.trained;
+            return tipped(
               el(
                 "button",
                 {
                   type: "button",
-                  class: `chip-btn${armor.name === curName ? " on" : ""}`,
+                  class: `chip-btn${armor.name === curName ? " on" : ""}${off ? " offbook" : ""}`,
                   "aria-pressed": armor.name === curName ? "true" : "false",
                   onclick: () => {
                     state.armor = armor.name;
                     update();
                   },
                 },
-                `${armor.name} • ${armor.ac}${armor.strReq > str ? " ⚠" : ""}`,
+                `${armor.name} • ${armor.ac}${off ? " • off book" : ""}${armor.strReq > str ? " ⚠" : ""}`,
               ),
-              () => TIP.armor(opts[i] ?? armor),
-            ),
-          ),
+              () => TIP.armor(armor),
+            );
+          }),
         ),
       );
     });
@@ -1726,8 +1867,13 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
     if (shieldBtn)
       tipped(shieldBtn, () => ({
         title: "Shield",
-        lines: [[null, "+2 Armor. Takes up one hand while you carry it."]],
+        lines: [
+          [null, "+2 Armor. Takes up one hand while you carry it."],
+          ["Armor training", `${classBy(state.cls).name} can use a shield`],
+        ],
       }));
+    const wearing = built.armorOptions.find((armor) => armor.name === curName);
+    const offbook = wearing ? !wearing.trained : false;
     const reset = el(
       "button",
       {
@@ -1760,6 +1906,9 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
           { class: "hint block" },
           `Armor ${cur.ac} with ${cur.armor.toLowerCase()}. Numbers show the Armor each choice gives (shield not included).`,
         ),
+        offbook
+          ? el("p", { class: "hint block warn" }, `${curName} is off the list for this hero. Check with your DM.`)
+          : null,
       ),
       [state.armor || state.shield != null ? "" : "default • ", reset],
     );
@@ -2606,11 +2755,52 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
     return addPackText(JSON.stringify(pack.data), pack.file);
   }
 
+  function dropPack(title: string): void {
+    loadReport = [];
+    if (
+      customInfo.sources.some((source) => source.label === "link" && (source.title === title || source.label === title))
+    ) {
+      storage.remove(CUSTOM_URL_KEY);
+      storage.remove(`${CUSTOM_URL_KEY}-text`);
+      memUrlText = null;
+      urlStatus = "";
+    }
+    saveLib(loadLib().filter((pack) => pack.title !== title));
+    reloadTables();
+  }
+
+  function packRow(
+    title: string,
+    description: string,
+    on: boolean,
+    toggle: (on: boolean) => void,
+    id?: string,
+  ): HTMLElement {
+    return el(
+      "li",
+      {},
+      el(
+        "label",
+        {},
+        el("input", {
+          type: "checkbox",
+          id,
+          checked: on,
+          onchange: (ev) => toggle(inputOf(ev).checked),
+        }),
+        " ",
+        el("b", {}, title),
+        description ? el("span", { class: "hint" }, ` — ${description}`) : null,
+      ),
+    );
+  }
+
   function customSection(): HTMLElement {
     const details = el(
       "details",
       {
-        class: "adv custom",
+        id: "content-packs",
+        class: "adv custom packs",
         ontoggle: (ev) => {
           if (ev.target instanceof HTMLDetailsElement) prefs.custom = ev.target.open;
           savePrefs();
@@ -2619,8 +2809,8 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
       el(
         "summary",
         {},
-        "Add your own races, classes, spells & items",
-        el("span", { class: "hint" }, "Have an AI write a custom content file, then load it here."),
+        "Content packs",
+        el("span", { class: "hint" }, "Add a race, class, spell, or item. An AI can write the file."),
       ),
     );
     if (prefs.custom || customInfo.error || customInfo.problems.length || loadReport.length) details.open = true;
@@ -2640,53 +2830,39 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
       },
     });
     const lib = loadLib();
+    const siteTitles = new Set(sitePacks.map((pack) => pack.title));
     const lines: HTMLElement[] = [
-      el(
-        "li",
-        { class: "src builtin" },
-        el(
-          "label",
-          {},
-          el("input", {
-            type: "checkbox",
-            id: "use-builtin",
-            checked: !prefs.noBuiltin,
-            onchange: (ev) => {
-              prefs.noBuiltin = !inputOf(ev).checked;
-              savePrefs();
-              loadReport = [];
-              reloadTables();
-            },
-          }),
-          ` ${SRD_TITLE}`,
-        ),
-        el("span", { class: "hint" }, prefs.noBuiltin ? " — left out" : " — the built-in heroes"),
+      packRow(
+        SRD_TITLE,
+        "the built-in heroes",
+        !prefs.noBuiltin,
+        (on) => {
+          prefs.noBuiltin = !on;
+          savePrefs();
+          loadReport = [];
+          reloadTables();
+        },
+        "use-builtin",
       ),
     ];
-    for (const source of customInfo.sources) {
-      const inLib = lib.some((pack) => pack.title === source.label);
+    for (const pack of sitePacks) {
+      const on =
+        lib.some((item) => item.title === pack.title) ||
+        customInfo.sources.some((source) => source.title === pack.title);
       lines.push(
-        el(
-          "li",
-          {},
-          el("b", {}, `✓ ${source.title || source.label}`),
-          ` — ${source.counts.join(", ") || "nothing new"} `,
-          inLib
-            ? el(
-                "button",
-                {
-                  type: "button",
-                  class: "link",
-                  onclick: () => {
-                    loadReport = [];
-                    saveLib(loadLib().filter((pack) => pack.title !== source.label));
-                    reloadTables();
-                  },
-                },
-                "remove",
-              )
-            : null,
-        ),
+        packRow(pack.title || pack.file, pack.about, on, (checked) => {
+          if (checked) addSitePack(pack);
+          else dropPack(pack.title);
+        }),
+      );
+    }
+    for (const source of customInfo.sources) {
+      if (siteTitles.has(source.title)) continue;
+      const title = source.title || source.label;
+      lines.push(
+        packRow(title, source.counts.join(", ") || "nothing new", true, (on) => {
+          if (!on) dropPack(title);
+        }),
       );
     }
     if (customInfo.error) lines.push(el("li", { class: "bad" }, `⚠ ${customInfo.error}`));
@@ -2699,63 +2875,22 @@ export function startApp(input: { tables: Tables; guide: string; sitePacks: Site
         el(
           "p",
           { class: "hint block" },
-          "1. Download the instructions and give them to any AI chat (like Claude), with what you want: “a turtle-folk race”, “a pirate subclass for rogues”…",
-        ),
-        el(
-          "p",
-          { class: "hint block" },
-          "2. Save what it writes as hero-custom.json and load it here — or put it online and paste the link.",
-        ),
-        el(
-          "div",
-          { class: "row" },
           el(
-            "button",
+            "a",
             {
-              type: "button",
-              class: "ghost",
-              onclick: () => {
-                void saveFile(
-                  "Hero Sheet custom content - instructions for AI.md",
-                  new Blob([guide], { type: "text/markdown" }),
-                ).catch((error: unknown) => status(messageOf(error), true));
-              },
+              class: "link",
+              href: "https://github.com/ggggggggg/hero-sheets/blob/main/CUSTOM_CONTENT_GUIDE.md",
+              target: "_blank",
+              rel: "noopener",
             },
-            "Download AI instructions",
+            "Instructions",
           ),
-          el("label", { for: "custom-file", class: "ghost filebtn" }, "Load a file"),
-          file,
+          " for writing a pack.",
         ),
+        el("div", { class: "row" }, el("label", { for: "custom-file", class: "ghost filebtn" }, "Load a file"), file),
         linkRow(),
         pasteRow(),
-        sitePacks.length
-          ? el(
-              "div",
-              {},
-              el("div", { class: "flabel" }, "Packs on this site"),
-              el(
-                "ul",
-                { class: "customlist" },
-                sitePacks.map((pack) => {
-                  const have =
-                    lib.some((item) => item.title === pack.title) ||
-                    customInfo.sources.some((source) => source.title === pack.title);
-                  return el(
-                    "li",
-                    {},
-                    el("b", {}, pack.title || pack.file),
-                    pack.about ? ` — ${pack.about} ` : " ",
-                    have
-                      ? el("span", { class: "hint" }, "added")
-                      : el("button", { type: "button", class: "link", onclick: () => addSitePack(pack) }, "add"),
-                  );
-                }),
-              ),
-            )
-          : null,
-        lines.length
-          ? el("ul", { class: "customlist" }, lines)
-          : el("p", { class: "hint block" }, "No custom content loaded."),
+        el("ul", { class: "customlist" }, lines),
         customInfo.heroes.length
           ? el(
               "div",

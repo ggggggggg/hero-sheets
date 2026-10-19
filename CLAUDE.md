@@ -11,7 +11,7 @@ A kids' D&D-style character builder. It turns a few picks into a printable 2-pag
 - `src/styles/sheet.css`: the printed sheet. `src/styles/ui.css`: the builder. `src/styles/fonts.css` points at `src/assets/*.woff2`.
 - `index.html`: the page shell, including the SRD footer.
 - `examples/*.json`: content packs. The build inlines them, so the site does not fetch them.
-- `CUSTOM_CONTENT_GUIDE.md`: the pack format, written for an AI to follow. The builder embeds it behind its "Download AI instructions" button.
+- `CUSTOM_CONTENT_GUIDE.md`: the pack format, written for an AI to follow. The builder links to it.
 
 ## Commands
 ```bash
@@ -19,6 +19,7 @@ npm install
 npm run dev          # local builder
 npm test             # vitest: every combo, pack merge, fuzz
 npm run e2e          # playwright: the built site, including the 2-page fit check
+npm run demo         # record demo/builder.gif for the README
 npm run lint         # biome, including a ban on written `any`
 npm run typecheck
 npm run build        # one self-contained dist/index.html

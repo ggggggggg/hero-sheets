@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import * as fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { buildCharacter, CharError, sheetHtml } from "../src/core";
+import { buildCharacter, CharError, options, sheetHtml } from "../src/core";
 import { heroRequest, mergeCustom, parseCustomText } from "../src/custom";
 import type { Tables } from "../src/types";
 import { allText, cards, freshTables, picks, req } from "./helpers";
@@ -185,15 +185,17 @@ describe("ported rules that have to stay", () => {
     if (!Array.isArray(heroes) || !heroes[0] || typeof heroes[0] !== "object")
       throw new Error("tobin pack has no hero");
     const ch = buildCharacter(merged, heroRequest(heroes[0]));
+    expect(ch.identity.race).toBe("Mountain Dwarf");
     expect([ch.combat.max_hp, ch.combat.ac, ch.combat.speed, ch.combat.initiative, ch.combat.prof]).toEqual([
-      48, 16, 25, 5, 3,
+      43, 16, 25, 5, 3,
     ]);
+    expect(ch.combat.armor_offbook).toBe(false);
     expect(Object.fromEntries(ch.abilities.map((row) => [row.key, row.score]))).toEqual({
-      STR: 8,
+      STR: 10,
       DEX: 14,
       CON: 16,
       INT: 10,
-      WIS: 13,
+      WIS: 12,
       CHA: 19,
     });
     expect(ch.attacks.map((row) => [row.name, row.to_hit, row.damage])).toEqual([
@@ -206,6 +208,8 @@ describe("ported rules that have to stay", () => {
       [{ level: 3, count: 2 }],
     ]);
     const named = cards(ch);
+    expect(named.get("Dwarven Armor Training")?.desc).toContain("light and medium armor");
+    expect(named.has("Dwarven Toughness")).toBe(false);
     expect(named.get("Hellish Rebuke")?.desc).toContain("4d10");
     expect(named.get("Fireball")?.desc).toContain("8d6");
     expect(named.get("Dark One's Blessing")?.desc).toContain("9 shield HP");
@@ -216,6 +220,21 @@ describe("ported rules that have to stay", () => {
         .map((row) => row.name)
         .sort(),
     ).toEqual(["Arcana", "History", "Intimidation", "Perception"]);
+  });
+
+  it("lets the Flame Master wear heavy armor and marks it off book", () => {
+    const pack = parseCustomText(readFileSync(new URL("../examples/tobin-flame-master.json", import.meta.url), "utf8"));
+    const merged = mergeCustom(freshTables(), pack);
+    const hill = options(merged, req({ race: "dwarf", cls: "flame_warlock", subrace: "hill", level: 5 }));
+    const mountain = options(merged, req({ race: "dwarf", cls: "flame_warlock", subrace: "mountain", level: 5 }));
+    expect(hill.armorOptions.find((armor) => armor.name === "Half plate")?.trained).toBe(false);
+    expect(mountain.armorOptions.find((armor) => armor.name === "Half plate")?.trained).toBe(true);
+    expect(mountain.armorOptions.find((armor) => armor.name === "Plate armor")?.trained).toBe(false);
+    const plate = buildCharacter(merged, req({ race: "dwarf", cls: "flame_warlock", level: 5, armor: "Plate armor" }));
+    expect(plate.combat.armor).toBe("Plate armor");
+    expect(plate.combat.armor_offbook).toBe(true);
+    expect(plate.combat.speed).toBe(15);
+    expect(sheetHtml(plate)).toContain("Plate armor • off book");
   });
 });
 

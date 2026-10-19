@@ -67,13 +67,17 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .chip-btn { border: 1.5px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 999px; padding: 5px 11px; font-weight: 700; font-size: 13px }
 .chip-btn:hover { border-color: var(--c, var(--ac)) }
 .chip-btn.on { background: var(--c, var(--ac)); border-color: var(--c, var(--ac)); color: #fff }
+.chip-btn.offbook, .chip-btn.on.offbook { border-color: #d98a00 }
 .tagline { margin: -6px 0 0; color: var(--muted); font-style: italic }
 .has-tip { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none }
 #tip { position: fixed; z-index: 50; background: var(--panel); color: var(--fg); border: 1.5px solid var(--ac); border-radius: 12px;
-  padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.22); font-size: 13px; line-height: 1.4; pointer-events: none; max-height: 60vh; overflow: hidden }
+  padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.22); font-size: 13px; line-height: 1.4; max-height: 60vh; overflow: auto }
 #tip[hidden] { display: none }
 #tip .tt { display: block; font-size: 14px; margin-bottom: 4px; color: var(--ac) }
 #tip p { margin: 4px 0 0 }
+#tip .tpicks { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px }
+#tip .tpick { border: 1.5px solid var(--line); background: var(--bg); color: var(--fg); border-radius: 999px; padding: 3px 8px; font-weight: 800; font-size: 12px; cursor: pointer }
+#tip .tpick.on { background: var(--ac); border-color: var(--ac); color: #fff }
 .tiphint { margin: 0; color: var(--muted); font-size: 12px }
 .tiphint .touch { display: none }
 @media (hover: none) { .tiphint .mouse { display: none } .tiphint .touch { display: inline } }
@@ -82,6 +86,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 input[type=text], input[type=url], select, textarea { font: inherit; color: var(--fg); background: var(--bg); border: 1.5px solid var(--line); border-radius: 10px; padding: 7px 10px; min-width: 0 }
 input[type=text], input[type=url] { flex: 1 }
 .hint.bad { color: #b3261e }
+.hint.warn { color: #b36b00 }
 textarea { resize: vertical; width: 100%; box-sizing: border-box }
 select { width: 100% }
 .adv { border-top: 1.5px dashed var(--line); padding-top: 10px; display: flex; flex-direction: column; gap: 14px }
@@ -92,6 +97,10 @@ select { width: 100% }
 .adv[open] summary::before { transform: rotate(90deg) }
 .adv summary .hint { display: block; font-family: var(--body, inherit); font-size: 13px; font-weight: 600; margin: 4px 0 0 22px }
 .adv[open] summary { margin-bottom: 4px }
+.packs summary { background: var(--ac); color: #fff; border-color: var(--ac) }
+.packs summary::before { color: #fff }
+.packs summary .hint { color: #f6e9fb }
+@media (max-width: 979px) { #content-packs { scroll-margin-top: 140px } }
 .armgrid { display: flex; flex-direction: column; gap: 6px }
 .armrow { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 8px; align-items: start }
 .armkind { font-size: 12px; font-weight: 800; color: var(--muted); padding-top: 6px }
@@ -107,7 +116,8 @@ select { width: 100% }
 .step:disabled { opacity: .35 }
 .abbonus { color: var(--ac); font-weight: 800; text-align: center }
 .abfinal { font-weight: 800; white-space: nowrap }
-.customlist { margin: 6px 0; padding-left: 18px; font-size: 13px; display: flex; flex-direction: column; gap: 3px }
+.customlist { list-style: none; margin: 6px 0; padding-left: 0; font-size: 13px; display: flex; flex-direction: column; gap: 6px }
+.customlist label { cursor: pointer }
 .customlist .bad { color: #b3261e }
 .icon.warn { color: #b26a00; font-size: 16px }
 .pwarn { display: block; color: #b26a00; font-size: 12px; font-weight: 700; margin-top: 3px }
@@ -145,13 +155,15 @@ li.offnote .link { color: #6b4200 }
 .pwrap { list-style: none }
 .picker { border: 1.5px solid var(--ac); border-radius: 14px; background: var(--bg); padding: 8px; display: flex; flex-direction: column; gap: 8px;
   max-height: 420px; overflow: auto }
-.phead { display: flex; justify-content: space-between; align-items: center; position: sticky; top: -8px; background: var(--bg); padding: 2px 0 4px; z-index: 1 }
+.phead { display: flex; justify-content: space-between; align-items: flex-start; position: sticky; top: -8px; background: var(--bg); padding: 2px 0 4px; z-index: 1 }
+.pall { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 12.5px; font-weight: 700; cursor: pointer }
 .plvl { font-family: var(--display); font-weight: 600; font-size: 13px; color: var(--ac); margin: 2px 0 4px }
 .popts { display: grid; grid-template-columns: 1fr; gap: 5px }
 .popt { text-align: left; border: 1.5px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 10px; padding: 7px 9px;
   display: flex; flex-direction: column; gap: 2px }
 .popt:hover { border-color: var(--ac) }
 .popt.on { border-color: var(--ac); box-shadow: inset 0 0 0 1.5px var(--ac) }
+.popt.offbook { border-color: #d98a00 }
 .ptop { display: flex; gap: 6px; align-items: center; flex-wrap: wrap }
 .ptag { font-size: 10px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; color: #fff; border-radius: 20px; padding: 1px 7px; background: #555 }
 .ptag.tA { background: #222 } .ptag.tB { background: #b86f00 } .ptag.tR { background: #2878c8 } .ptag.tON { background: #6d6d6d } .ptag.tF { background: #23854e }

@@ -64,12 +64,13 @@ Below, the value after each field is its default. Fields marked **required** hav
 
 ### `races`
 ```json
-{"id": "turtlefolk", "name": "Turtle-folk", "speed": 25,
+{"id": "turtlefolk", "name": "Turtle-folk", "speed": 25, "swim": 30,
  "asi": {"STR": 2, "DEX": 0, "CON": 1, "INT": 0, "WIS": 0, "CHA": 0},
  "skills": ["Survival"], "hp_per_level": 0, "languages": "Common, Aquan"}
 ```
 - `id` and `name` are **required**. Ids are lowercase with no spaces.
-- `speed` (default 30) is in feet.
+- `speed` (default 30) is walking speed in feet.
+- `swim` (default 0) is swim speed in feet. Leave it out when the race does not swim. Heavy armor that the hero is not strong enough for slows swim speed by 10 ft too.
 - `asi` (default all 0) is the race's usual ability bonus. Players can move it around in the builder.
 - `skills` (default `[]`) are skills the race is trained in. Use the exact names from the skill list below.
 - `hp_per_level` (default 0) is extra HP for every level.
@@ -243,11 +244,11 @@ Acrobatics, Animal Handling, Arcana, Athletics, Deception, History, Insight, Int
 {
   "title": "Turtles & Pirates",
   "races": [
-    {"id": "turtlefolk", "name": "Turtle-folk", "speed": 25, "asi": {"STR": 2, "CON": 1}, "languages": "Common, Aquan"}
+    {"id": "turtlefolk", "name": "Turtle-folk", "speed": 25, "swim": 30, "asi": {"STR": 2, "CON": 1}, "languages": "Common, Aquan"}
   ],
   "features": [
-    {"owner_kind": "race", "owner_id": "turtlefolk", "card": {"name": "Shell Defense", "tag": "A",
-      "desc": "Pull into your shell: +4 Armor, but you can't move or attack until you pop out (bonus action)."}},
+    {"owner_kind": "race", "owner_id": "turtlefolk", "card": {"name": "Pop into Shell", "tag": "A",
+      "desc": "Pop into your shell: +10 Armor, +10 on every save, and everything only does half damage to you. You can't move or attack until you pop out (bonus action)."}},
     {"owner_kind": "race", "owner_id": "turtlefolk", "card": {"name": "Hold Breath", "desc": "Hold your breath for 1 hour."}},
     {"owner_kind": "subclass", "owner_id": "pirate", "lvl": 3, "card": {"name": "Swashbuckle", "tag": "B",
       "desc": "Swing on a rope up to 30 ft, then your next attack this turn gets {PROF} extra damage."},

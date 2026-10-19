@@ -1,4 +1,3 @@
-import guide from "../CUSTOM_CONTENT_GUIDE.md?raw";
 import { type SitePack, startApp } from "./app";
 import content from "./content.json";
 import type { PackRow } from "./custom";
@@ -34,4 +33,4 @@ function isTables(value: object): value is Tables {
 
 if (!isTables(content)) throw new Error("content.json is not a ruleset");
 
-startApp({ tables: content, guide, sitePacks });
+startApp({ tables: content, sitePacks });

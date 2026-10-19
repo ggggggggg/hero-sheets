@@ -24,7 +24,7 @@ const CARD = { name: null, tag: "ON", note: "", desc: "", conc: false };
 const seven = <T>(value: T): T[] => [value, value, value, value, value, value, value];
 
 export const TEMPLATES: Record<TableName, object> = {
-  races: { id: null, name: null, speed: 30, asi: ZERO, skills: [], hp_per_level: 0, languages: "Common" },
+  races: { id: null, name: null, speed: 30, swim: 0, asi: ZERO, skills: [], hp_per_level: 0, languages: "Common" },
   subraces: {
     id: null,
     race_id: null,

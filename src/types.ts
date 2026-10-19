@@ -36,6 +36,7 @@ export interface Race {
   id: string;
   name: string;
   speed: number;
+  swim?: number;
   asi: AbilityScores;
   skills: string[];
   hp_per_level: number;
@@ -331,6 +332,7 @@ export interface Character {
   combat: {
     ac: number;
     speed: number;
+    swim: number;
     initiative: number;
     prof: number;
     passive_perception: number;
@@ -338,6 +340,7 @@ export interface Character {
     hit_die: string;
     hit_dice: number;
     armor: string;
+    armor_offbook: boolean;
   };
   skills: SkillRow[];
   attacks: AttackRow[];
@@ -352,6 +355,7 @@ export interface ArmorOption {
   kind: string;
   ac: number;
   strReq: number;
+  trained: boolean;
 }
 
 export interface WeaponOption {
