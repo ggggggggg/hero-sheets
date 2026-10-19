@@ -7,3 +7,4 @@ out/
 
 # Internal publish instructions, not for the public repo
 PUBLISH.md
+.venv/

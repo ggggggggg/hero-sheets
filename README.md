@@ -1,9 +1,13 @@
 # Hero Sheet Builder
 
-Make printable 2-page hero sheets for kids' D&D-style games. Pick a race, class and level, roll some dice, and print.
+## ▶ Play now → https://tinyurl.com/24pj3dbx
 
-- **Use it:** open the site (GitHub Pages serves `docs/`).
-- **Share a content pack:** `https://<account>.github.io/hero-sheets/?pack=tobin-flame-master`
+Every fresh visit rolls a brand-new random hero. Make printable 2-page hero sheets for kids'
+D&D-style games: pick a race, class and level, roll some dice, and print.
+
+[![tests](https://github.com/ggggggggg/hero-sheets/actions/workflows/tests.yml/badge.svg)](https://github.com/ggggggggg/hero-sheets/actions/workflows/tests.yml)
+
+- **Share a content pack:** https://tinyurl.com/2yccbgrs (`?pack=tobin-flame-master`)
 - **Make a pack:** press "Download AI instructions" in the builder, give the file to an AI, then put the JSON it writes in `examples/` and rebuild.
 
 Developer notes are in `CLAUDE.md`.
@@ -63,8 +67,15 @@ loaded from jsDelivr only when you ask for one; the art credit prints in the por
 
 ## Tests
 
-    pytest                 # everything (~2 min)
-    pytest -m "not pdf"    # skip the browser
+The project uses [uv](https://docs.astral.sh/uv/). Node is needed for the JS parity tests.
+
+    uv sync                             # create the env from pyproject.toml / uv.lock
+    uv run playwright install chromium  # first time only
+    uv run pytest                       # everything (~2 min)
+    uv run pytest -m "not pdf"          # skip the browser
+
+Every push runs the same suite on GitHub Actions (`.github/workflows/tests.yml`), with node
+installed so the JavaScript parity tests actually run.
 
 * `tests/test_build.py` – every race × class × subclass × level; changing any input
   table changes the output; purity (no file access, inputs unchanged); fuzzing with
@@ -75,4 +86,4 @@ loaded from jsDelivr only when you ask for one; the art credit prints in the por
   and notes areas exist; fuzzing with random built characters and random hand-made
   character rows.
 
-Needs: polars, hypothesis, pytest, playwright (Chromium), pymupdf.
+Needs: polars, hypothesis, pytest, playwright (Chromium), pymupdf, and node (for the JS tests) — all pinned in `pyproject.toml` / `uv.lock`.
