@@ -239,7 +239,7 @@
       const n = /^-*\d+$/.test(t) ? parseInt(t.replace(/^-+/, "-"), 10) : null;
       if (n !== null && n <= 0) return;
       cards.push({ section, name: expand(c.name, v), tag: c.tag, note: expand(c.note, v), desc: expand(c.desc, v),
-        uses: n, rest: rest ? expand(rest, v) : null });
+        uses: n, rest: rest ? expand(rest, v) : null, conc: c.conc === true });
     }
     const feats = table(tables, "features");
     const sections = [["class", cls.id, cls.name + " Powers"]]
@@ -435,7 +435,8 @@
         const [lab, col] = TAGMAP[c.tag] || [c.tag, "#555"];
         const chip = c.tag ? '<span class="chip" style="background:' + col + '">' + (ICON[c.tag] || "") + e(lab) + "</span>" : "";
         const note = c.note ? '<span class="chip note">' + e(c.note) + "</span>" : "";
-        cards += '<div class="cd" data-card="' + e(c.name) + '"><span class="n">' + e(c.name) + "</span>" + chip + note +
+        const conc = c.conc ? '<span class="chip conc">Concentration</span>' : "";
+        cards += '<div class="cd" data-card="' + e(c.name) + '"><span class="n">' + e(c.name) + "</span>" + chip + note + conc +
           '<div class="d">' + e(c.desc) + "</div>" + uses(c.uses, c.rest) + "</div>";
       }
       body += '<div class="sec"><h3>' + e(name) + "</h3>" + cards + "</div>";

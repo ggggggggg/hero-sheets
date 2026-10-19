@@ -117,6 +117,7 @@ table.atk td.n { font-weight: 800 }
 .cd .n { font-family: Fredoka, sans-serif; font-weight: 600; font-size: 1.1em }
 .chip { display: inline-flex; align-items: center; gap: 3px; font-size: .64em; font-weight: 800; letter-spacing: .03em; border-radius: 20px; padding: 1px 7px 1px 5px; white-space: nowrap; color: #fff; vertical-align: 2px; margin-left: 4px }
 .chip svg { width: 1.15em; height: 1.15em }
+.chip.conc { background: #5b6bd6 }
 .note { color: #444; background: #fff; border: 1.5px solid #bbb; padding: 0 6px }
 .cd .d { line-height: 1.24; margin-top: 1px }
 .bx { display: flex; gap: 5px; align-items: center; margin-top: 4px; flex-wrap: wrap }
@@ -214,7 +215,8 @@ def back_html(ch: dict) -> str:
             lab, col = TAGS.get(c["tag"], (c["tag"], "#555"))
             chip = ('<span class="chip" style="background:' + col + '">' + ICON.get(c["tag"], "") + e(lab) + '</span>') if c["tag"] else ""
             note = ('<span class="chip note">' + e(c["note"]) + '</span>') if c["note"] else ""
-            cards += ('<div class="cd" data-card="' + e(c["name"]) + '"><span class="n">' + e(c["name"]) + '</span>' + chip + note +
+            conc = '<span class="chip conc">Concentration</span>' if c["conc"] else ""
+            cards += ('<div class="cd" data-card="' + e(c["name"]) + '"><span class="n">' + e(c["name"]) + '</span>' + chip + note + conc +
                       '<div class="d">' + e(c["desc"]) + '</div>' + _uses(c["uses"], c["rest"]) + '</div>')
         body += '<div class="sec"><h3>' + e(name) + '</h3>' + cards + '</div>'
     legend = "".join('<span class="chip" style="background:' + c + ';margin:0">' + ICON[k] + l + '</span>' for k, (l, c) in TAGS.items())

@@ -347,7 +347,7 @@ def scaling_table() -> pl.DataFrame:
 
 
 # --------------------------------------------------------------------------- features
-CARD = pl.Struct({"name": pl.Utf8, "tag": pl.Utf8, "note": pl.Utf8, "desc": pl.Utf8})
+CARD = pl.Struct({"name": pl.Utf8, "tag": pl.Utf8, "note": pl.Utf8, "desc": pl.Utf8, "conc": pl.Boolean})
 TRACK = pl.Struct({"uses": pl.Utf8, "rest": pl.Utf8})
 FEATURE_SCHEMA = {"owner_kind": pl.Utf8, "owner_id": pl.Utf8, "lvl": pl.Int64, "card": CARD, "tracker": TRACK}
 
@@ -357,7 +357,7 @@ def features_table() -> pl.DataFrame:
 
     def f(kind, owner, lvl, name, tag, desc, note="", uses="", rest=""):
         F.append({"owner_kind": kind, "owner_id": owner, "lvl": lvl,
-                  "card": {"name": name, "tag": tag, "note": note, "desc": desc},
+                  "card": {"name": name, "tag": tag, "note": note, "desc": desc, "conc": False},
                   "tracker": {"uses": uses, "rest": rest}})
 
     R = "race"
@@ -612,8 +612,8 @@ SPELL_SCHEMA = {"name": pl.Utf8, "lvl": pl.Int64, "classes": pl.List(pl.Utf8), "
 def spells_table() -> pl.DataFrame:
     rows = []
 
-    def sp(name, lvl, classes, tag, note, desc, scale=None):
-        rows.append({"name": name, "lvl": lvl, "classes": classes.split(), "card": {"name": name, "tag": tag, "note": note, "desc": desc},
+    def sp(name, lvl, classes, tag, note, desc, scale=None, conc=False):
+        rows.append({"name": name, "lvl": lvl, "classes": classes.split(), "card": {"name": name, "tag": tag, "note": note, "desc": desc, "conc": conc},
                      "scale": None if scale is None else {"base": scale[0], "per": scale[1], "unit": scale[2]}})
 
     # cantrips
@@ -719,6 +719,18 @@ def spells_table() -> pl.DataFrame:
     sp("Death Ward", 4, "cleric paladin", "A", "touch", "The next time a friend would drop to 0 HP, they stay at 1.")
     sp("Guardian of Faith", 4, "cleric", "A", "30 ft", "A giant glowing guardian: enemies who come close take 20 radiant.")
     sp("Freedom of Movement", 4, "bard cleric druid ranger", "A", "touch", "Nothing can slow or trap a friend for an hour.")
+    # Concentration spells: you can only keep up one at a time. The sheet shows a "Concentration" marker; no extra rules.
+    concentration = {
+        "Bane", "Bless", "Detect Magic", "Divine Favor", "Ensnaring Strike", "Entangle", "Faerie Fire", "Fog Cloud",
+        "Heroism", "Hex", "Hunter's Mark", "Protection from Evil and Good", "Searing Smite", "Shield of Faith",
+        "Tasha's Hideous Laughter", "Barkskin", "Darkness", "Flaming Sphere", "Heat Metal", "Hold Person", "Invisibility",
+        "Magic Weapon", "Moonbeam", "Pass without Trace", "Silence", "Spider Climb", "Spike Growth", "Suggestion",
+        "Beacon of Hope", "Call Lightning", "Conjure Animals", "Fly", "Haste", "Hunger of Hadar", "Hypnotic Pattern",
+        "Spirit Guardians", "Banishment", "Greater Invisibility", "Polymorph", "Wall of Fire",
+    }
+    for r in rows:
+        if r["name"] in concentration:
+            r["card"]["conc"] = True
     return pl.DataFrame(rows, schema=SPELL_SCHEMA)
 
 
@@ -770,7 +782,7 @@ def items_table() -> pl.DataFrame:
     def it(name, rarity, tag, desc, note="", uses=1, rest="used"):
         tier, lvl = {"common": (1, 1), "uncommon": (2, 3), "rare": (3, 5)}[rarity]
         rows.append({"name": name, "rarity": rarity, "tier": tier, "min_level": lvl, "use_by": [],
-                     "card": {"name": name, "tag": tag, "note": note or rarity, "desc": desc}, "uses": uses, "rest": rest})
+                     "card": {"name": name, "tag": tag, "note": note or rarity, "desc": desc, "conc": False}, "uses": uses, "rest": rest})
 
     it("Potion of Healing", "common", "A", "Glug glug! Heal 2d4+2. You can also pour it into a friend at 0 HP to wake them up.")
     it("Potion of Climbing", "common", "A", "For 1 hour you climb as fast as you walk, and climbing checks are easy (advantage).")

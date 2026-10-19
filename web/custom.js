@@ -3,7 +3,7 @@
   "use strict";
   const ABILS = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
   const Z6 = Object.fromEntries(ABILS.map((a) => [a, 0]));
-  const CARD = { name: null, tag: "ON", note: "", desc: "" };
+  const CARD = { name: null, tag: "ON", note: "", desc: "", conc: false };
   const SEVEN = (x) => [x, x, x, x, x, x, x];
   const TEMPLATES = {
     races: { id: null, name: null, speed: 30, asi: Z6, skills: [], hp_per_level: 0, languages: "Common" },

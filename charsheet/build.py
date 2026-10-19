@@ -30,7 +30,7 @@ REQUEST_SCHEMA = {
 }
 
 CARD_OUT = pl.Struct({"section": pl.Utf8, "name": pl.Utf8, "tag": pl.Utf8, "note": pl.Utf8, "desc": pl.Utf8,
-                      "uses": pl.Int64, "rest": pl.Utf8})
+                      "uses": pl.Int64, "rest": pl.Utf8, "conc": pl.Boolean})
 CHARACTER_SCHEMA = {
     "identity": pl.Struct({"name": pl.Utf8, "race": pl.Utf8, "cls": pl.Utf8, "subclass": pl.Utf8, "level": pl.Int64,
                            "accent": pl.Utf8, "tagline": pl.Utf8, "languages": pl.Utf8}),
@@ -320,7 +320,8 @@ def build_character(tables: dict[str, pl.DataFrame], request: pl.DataFrame) -> p
         if n is not None and n <= 0:
             return
         cards.append({"section": section, "name": expand(c["name"], v), "tag": c["tag"], "note": expand(c["note"], v),
-                      "desc": expand(c["desc"], v), "uses": n, "rest": expand(rest, v) if rest else None})
+                      "desc": expand(c["desc"], v), "uses": n, "rest": expand(rest, v) if rest else None,
+                      "conc": bool(c.get("conc", False))})
 
     feats = tables["features"]
     cls_sec, race_sec = f"{cls['name']} Powers", f"{base_race_name} Stuff"

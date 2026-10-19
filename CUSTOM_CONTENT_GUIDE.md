@@ -148,6 +148,7 @@ Below, the value after each field is its default. Fields marked **required** hav
   - `tag`: `"A"` (action), `"B"` (bonus action), `"R"` (reaction), `"ON"` (always on, the default) or `"F"` (free);
   - `note`: tiny text such as a range;
   - `desc`: the card text.
+  - `conc` (default `false`): set `true` for a spell that needs concentration. The card shows a "Concentration" marker; no other rules text is added. (Mostly used on `spells`.)
 - `tracker` adds tick boxes:
   - `uses`: how many, e.g. `"2"` or `"{PROF}"`. Leave it empty for none.
   - `rest`: when they come back. `"short"`, `"long"`, `"turn"` or `"used"` (gone once used).

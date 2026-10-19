@@ -13,7 +13,7 @@ import polars as pl
 
 ABILS = ["STR", "DEX", "CON", "INT", "WIS", "CHA"]
 Z6 = {a: 0 for a in ABILS}
-CARD = {"name": None, "tag": "ON", "note": "", "desc": ""}  # name None = copy the row's name
+CARD = {"name": None, "tag": "ON", "note": "", "desc": "", "conc": False}  # name None = copy the row's name
 SEVEN = lambda x: [x] * 7  # noqa: E731
 
 # Missing fields get these. A list holding one dict means "a list of these" (each entry is filled in too).
