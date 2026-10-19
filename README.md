@@ -103,3 +103,15 @@ installed so the JavaScript parity tests actually run.
   prints to exactly 2 pages with the back page fitting at ≥10px; portrait, inventory
   and notes areas exist; fuzzing with random built characters and random hand-made
   character rows.
+
+## Credits & license
+
+The code is open — do what you like with it. The built-in game content is derived from the D&D
+5.1 SRD:
+
+> This work includes material taken from the System Reference Document 5.1 ("SRD 5.1") by Wizards
+> of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document.
+> The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available
+> at https://creativecommons.org/licenses/by/4.0/legalcode.
+
+Content packs are their authors' own, and must be open-content only (see the top of this file).

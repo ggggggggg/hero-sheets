@@ -30,6 +30,13 @@ def _dicebear(route):
                   headers={"content-type": "application/javascript", "access-control-allow-origin": "*"})
 
 
+def test_site_shows_srd_attribution():
+    html = build_site(default_tables(), (WEB / "core.js").read_text(), (WEB / "app.js").read_text(),
+                      standalone=True, assets=load_assets())
+    assert "SRD 5.1" in html
+    assert "creativecommons.org/licenses/by/4.0/legalcode" in html
+
+
 def open_page(browser, url, width=1400):
     page = browser.new_context(accept_downloads=True, viewport={"width": width, "height": 900}).new_page()
     page.route("https://cdn.jsdelivr.net/npm/@dicebear/**", _dicebear)

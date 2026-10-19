@@ -41,6 +41,8 @@ button { font: inherit; cursor: pointer }
 .bootmsg.bad { background: #fde8e8; color: #8a1c1c; font-size: 13px }
 html[data-booted="1"] .bootmsg:not(.bad) { display: none }
 #status { font-size: 12.5px; font-weight: 700; color: var(--muted); flex-basis: 100%; text-align: right }
+.sitefoot { padding: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11.5px; line-height: 1.55 }
+.sitefoot p { margin: 4px 0 } .sitefoot a { color: var(--muted) }
 .sm { display: none }
 .tabs { display: none }
 @media (max-width: 979px) {
@@ -244,6 +246,10 @@ BODY = """
     <div id="preview"><div id="scaler"></div></div>
   </section>
 </main>
+<footer class="sitefoot">
+  <p>This work includes material taken from the System Reference Document 5.1 (&quot;SRD 5.1&quot;) by Wizards of the Coast LLC and available at <a href="https://dnd.wizards.com/resources/systems-reference-document">dnd.wizards.com</a>. The SRD 5.1 is licensed under the <a href="https://creativecommons.org/licenses/by/4.0/legalcode">Creative Commons Attribution 4.0 International License</a>.</p>
+  <p>Hero Sheet Builder is open source &mdash; <a href="https://github.com/ggggggggg/hero-sheets">github.com/ggggggggg/hero-sheets</a>. Content packs are their authors&#39; own.</p>
+</footer>
 """
 
 
