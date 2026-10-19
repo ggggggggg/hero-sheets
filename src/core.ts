@@ -152,7 +152,7 @@ export function buildCharacter(tables: Tables, req: HeroRequest): Character {
   const sr: Subrace | null = req.subrace
     ? one(subraces, "subrace", (row) => row.id === req.subrace)
     : (subraces[0] ?? null);
-  let race: RaceBuilt = { ...race0, armor_prof_add: [] };
+  let race: RaceBuilt = { ...race0, swim: race0.swim ?? 0, armor_prof_add: [] };
   if (sr) {
     const asi = scores(0);
     for (const ability of ABILITIES) asi[ability] = (race0.asi[ability] || 0) + (sr.asi[ability] || 0);
@@ -160,6 +160,7 @@ export function buildCharacter(tables: Tables, req: HeroRequest): Character {
       ...race0,
       name: sr.name,
       speed: race0.speed + sr.speed,
+      swim: race0.swim ?? 0,
       hp_per_level: race0.hp_per_level + sr.hp_per_level,
       asi,
       skills: [...new Set([...race0.skills, ...sr.skills])],
@@ -301,7 +302,7 @@ export function buildCharacter(tables: Tables, req: HeroRequest): Character {
     },
   ];
   for (const armor of table(tables, "armor")) {
-    if (profs.has(armor.kind)) {
+    if (profs.has(armor.kind) || armor.name === req.armor) {
       armorOptions.push({
         name: armor.name,
         kind: armor.kind,
@@ -368,12 +369,15 @@ export function buildCharacter(tables: Tables, req: HeroRequest): Character {
   v.AC1 = ac + 1;
   v.AC16 = Math.max(ac, 16);
   const armorLabel = (worn.kind !== "none" ? worn.name : "No armor") + (shield ? " + shield" : "");
+  const armorOffbook = worn.kind !== "none" && !profs.has(worn.kind);
   const hd = cls.hit_die;
   let hp = hd + mods.CON + (level - 1) * (Math.floor(hd / 2) + 1 + mods.CON);
   hp += race.hp_per_level * level + (path ? path.hp_per_level * level : 0);
   const speedBonus = cls.speed_bonus[li];
   if (speedBonus === undefined) throw valueError(`level must be 1..${rules.max_level}`);
-  const speed = race.speed + speedBonus - (abilityScores.STR < worn.str_req ? 10 : 0);
+  const slowed = abilityScores.STR < worn.str_req ? 10 : 0;
+  const speed = race.speed + speedBonus - slowed;
+  const swim = race.swim > 0 ? Math.max(0, race.swim - slowed) : 0;
 
   const profSk = new Set([...cls.skills, ...race.skills, ...(path ? path.extra_skills : [])]);
   const expert = new Set<string>();
@@ -585,6 +589,7 @@ export function buildCharacter(tables: Tables, req: HeroRequest): Character {
     combat: {
       ac,
       speed,
+      swim,
       initiative: mods.DEX + effInit,
       prof,
       passive_perception: 10 + notice,
@@ -592,6 +597,7 @@ export function buildCharacter(tables: Tables, req: HeroRequest): Character {
       hit_die: `d${hd}`,
       hit_dice: level,
       armor: armorLabel,
+      armor_offbook: armorOffbook,
     },
     skills: skillRows,
     attacks,
@@ -616,6 +622,7 @@ interface RaceBuilt {
   id: string;
   name: string;
   speed: number;
+  swim: number;
   asi: AbilityScores;
   skills: string[];
   hp_per_level: number;
@@ -725,10 +732,14 @@ function backHtml(ch: Character): string {
   const sc = ch.spellcasting;
   const sub = idn.subclass ? ` (${escapeHtml(idn.subclass)})` : "";
   const tiles =
-    `<div class="tile"><b>${combat.ac}</b><span class="lbl">Armor</span><span class="worn">${escapeHtml(combat.armor || "")}</span></div>` +
+    `<div class="tile"><b>${combat.ac}</b><span class="lbl">Armor</span><span class="worn">${escapeHtml(combat.armor || "")}${
+      combat.armor_offbook ? " • off book" : ""
+    }</span></div>` +
     `<div class="tile hp"><div class="mx"><b>${combat.max_hp}</b><span class="lbl">Max HP</span></div>` +
     '<div><div class="w"></div><span class="lbl">HP now</span></div><div><div class="w"></div><span class="lbl">Temp HP</span></div></div>' +
-    `<div class="tile"><b>${combat.speed}</b><span class="lbl">Speed (ft)</span></div>` +
+    `<div class="tile"><b>${combat.speed}</b><span class="lbl">Speed (ft)</span>${
+      combat.swim > 0 ? `<span class="worn">swim ${combat.swim}</span>` : ""
+    }</div>` +
     `<div class="tile"><b>${signed(combat.initiative)}</b><span class="lbl">Initiative</span></div>`;
   const mini = `<div class="mini"><span>Death saves &nbsp;OK ${repeat('<i class="dot"></i>', 3)} &nbsp;Uh-oh ${repeat('<i class="dot"></i>', 3)}</span></div>`;
   let atk = ch.attacks
@@ -880,21 +891,19 @@ export function options(tables: Tables, req: HeroRequest): HeroOptions {
     ...(subActive && sub ? sub.armor_prof_add : []),
     ...(sr ? sr.armor_prof_add : []),
   ]);
-  const names = ["No armor"].concat(
-    table(tables, "armor")
-      .filter((armor) => armorProfs.has(armor.kind))
-      .map((armor) => armor.name),
-  );
+  const names = ["No armor"].concat(table(tables, "armor").map((armor) => armor.name));
   const kinds = new Map(table(tables, "armor").map((armor) => [armor.name, armor.kind]));
   for (const name of names) {
     try {
       const built = buildCharacter(tables, cleared(req, { armor: name, shield: false }));
       const row = table(tables, "armor").find((armor) => armor.name === name);
+      const kind = kinds.get(name) ?? "none";
       const option: ArmorOption = {
         name,
-        kind: kinds.get(name) ?? "none",
+        kind,
         ac: built.combat.ac,
         strReq: row ? row.str_req : 0,
+        trained: kind === "none" || armorProfs.has(kind),
       };
       out.armorOptions.push(option);
     } catch (e) {

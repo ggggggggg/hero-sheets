@@ -72,9 +72,25 @@ describe("mergeCustom", () => {
     const ch = buildCharacter(merged, req({ race: "turtlefolk", cls: "rogue", subclass: "pirate", level: 5 }));
     expect(ch.identity.race).toBe("Turtle-folk");
     expect(ch.identity.subclass).toBe("Pirate");
+    expect(ch.combat.speed).toBe(25);
+    expect(ch.combat.swim).toBe(30);
     const names = cards(ch);
-    expect(names.has("Shell Defense")).toBe(true);
+    const shell = names.get("Pop into Shell");
+    expect(shell?.desc).toContain("+10 Armor");
+    expect(shell?.desc).toContain("+10 on every save");
+    expect(shell?.desc).toContain("half damage");
     expect(names.has("Swashbuckle")).toBe(true);
+    const heavy = buildCharacter(
+      merged,
+      req({
+        race: "turtlefolk",
+        cls: "fighter",
+        armor: "Plate armor",
+        base_scores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
+      }),
+    );
+    expect(heavy.combat.speed).toBe(15);
+    expect(heavy.combat.swim).toBe(20);
     const anchor = buildCharacter(merged, req({ cls: "fighter", weapon: "Anchor" }));
     expect(anchor.attacks[0]?.damage.startsWith("2d6")).toBe(true);
     expect(merged.races).toHaveLength(tables.races.length + 1);

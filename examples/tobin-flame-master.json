@@ -1,6 +1,6 @@
 {
  "title": "Tobin aka Flame Master",
- "about": "Tobin the dwarf warlock, his pet dragons Speak and Talk, and everything he needs. Load it, then press 'Start as Tobin aka Flame Master'.",
+ "about": "Tobin the Mountain Dwarf warlock, his pet dragons Speak and Talk, and everything he needs. Medium armor comes from Mountain Dwarf. Load it, then press 'Start as Tobin aka Flame Master'.",
  "classes": [
   {
    "id": "flame_warlock",
@@ -25,8 +25,7 @@
     "Perception"
    ],
    "armor_prof": [
-    "light",
-    "medium"
+    "light"
    ],
    "weapons": [
     {
@@ -442,7 +441,7 @@
   {
    "name": "Tobin aka Flame Master",
    "race": "dwarf",
-   "subrace": "hill",
+   "subrace": "mountain",
    "cls": "flame_warlock",
    "subclass": "flame_fiend",
    "level": 5,
