@@ -29,76 +29,23 @@ Developer notes are in `CLAUDE.md`.
 
 ---
 
-# charsheet
+# Developing
 
-Kid-friendly 5e character sheets (levels 1-7), built from polars tables.
+The builder is a TypeScript app. `npm run build` writes one self-contained `dist/index.html`.
 
-```
-tables (dict of DataFrames) + request (1-row DataFrame)
-        │  build.build_character      ← pure: no IO, no hidden defaults
-        ▼
-character (1-row DataFrame, struct columns)
-        │  render.render_html          ← pure: string in, string out
-        ▼
-HTML ── render.render_pdf ──▶ 2-page letter PDF (front: stats, portrait, inventory, notes; back: powers & spells)
+```bash
+npm install
+npm run dev
+npm test
+npm run e2e
+npm run build
 ```
 
-## Make a sheet
+`src/content.json` is the built-in rules (levels 1–7). `src/core.ts` turns a request into a hero and then into sheet HTML. Text uses `{PLACEHOLDERS}`; anything the tables don't fill raises an error. The PDF is drawn in the browser: each page becomes a JPEG and a small hand-written PDF wraps those images. Cartoon portraits come from DiceBear, loaded only when someone asks for one.
 
-    python -m charsheet --list
-    python -m charsheet --name Tobin --race dwarf --cls warlock --subclass fiend --level 5 \
-        --choice invocations="Agonizing Blast,Fiendish Vigor,Eldritch Spear" --out tobin.pdf
+Packs live in `examples/*.json`. The format is `CUSTOM_CONTENT_GUIDE.md`.
 
-Leave out `--choice`, `--spells` and `--cantrips` and sensible picks are made for you.
-
-## Tables (`charsheet/data.py`)
-
-| table | what's in it | struct columns |
-|---|---|---|
-| rules | standard array, proficiency by level, cantrip dice, level-up boost, DC base | `asi` |
-| skills | 18 skills and their ability | |
-| slots | spell slots per caster kind and level | |
-| races | speed, ability boosts, skills, languages | `asi` |
-| classes | hit die, saves, armor, weapons, casting, spell picks, look | `armor`, `weapons[]`, `caster`, `look`, `expertise[]` |
-| subclasses | extra HP/armor/skills/cantrips, bonus spells | `armor`, `auto_spells[]` |
-| scaling | per-level numbers used in text ({RAGES}, {SNEAK}, {KI}...) | |
-| features | powers by owner and level | `card`, `tracker` |
-| choices | pick-one-or-more groups (fighting style, invocations...) | `options[]{effect{vars[]}}` |
-| spells | the fun part of each spell | `card` |
-
-Text uses `{PLACEHOLDERS}`; anything not filled from the tables raises an error.
-
-## Website
-
-    python -m charsheet.site Hero_Sheet_Builder.html          # standalone file
-    python -m charsheet.site page.html --artifact              # body-only, for a hosted page
-
-`web/core.js` is a JavaScript copy of the builder and sheet renderer (tests keep it identical to the
-Python output). `web/export.js` makes the 2-page PDF in the browser with no libraries: each page is
-drawn by the browser (SVG foreignObject), turned into a 288-dpi JPEG and wrapped in a small
-hand-written PDF. It also saves a print-ready 2-page HTML. Cartoon portraits come from DiceBear,
-loaded from jsDelivr only when you ask for one; the art credit prints in the portrait corner.
-
-## Tests
-
-Everything is pinned in `pyproject.toml`; the project uses [uv](https://docs.astral.sh/uv/).
-
-    uv sync                             # create the env
-    uv run playwright install chromium  # first time only
-    uv run pytest                       # everything (~2 min)
-    uv run pytest -m "not pdf"          # skip the browser
-
-Every push runs the same suite on GitHub Actions (`.github/workflows/tests.yml`), with node
-installed so the JavaScript parity tests actually run.
-
-* `tests/test_build.py` – every race × class × subclass × level; changing any input
-  table changes the output; purity (no file access, inputs unchanged); fuzzing with
-  completely random tables whose words appear nowhere else, so any hidden default
-  would show up in the output.
-* `tests/test_render.py` – HTML is pure and complete; every subclass at level 7
-  prints to exactly 2 pages with the back page fitting at ≥10px; portrait, inventory
-  and notes areas exist; fuzzing with random built characters and random hand-made
-  character rows.
+Tests run on GitHub Actions (`.github/workflows/tests.yml`). `npm test` builds every race, class, subclass, and level, and checks that editing a row a hero uses changes the sheet. `npm run e2e` opens the built site and checks that every subclass at level 7 is still exactly two pages.
 
 ## License
 
