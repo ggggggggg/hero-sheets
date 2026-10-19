@@ -2,13 +2,27 @@
 
 ## ▶ Play now → https://tinyurl.com/24pj3dbx
 
-Every fresh visit rolls a brand-new random hero. Make printable 2-page hero sheets for kids'
-D&D-style games: pick a race, class and level, roll some dice, and print.
+Every fresh visit rolls a brand-new random hero.
 
 [![tests](https://github.com/ggggggggg/hero-sheets/actions/workflows/tests.yml/badge.svg)](https://github.com/ggggggggg/hero-sheets/actions/workflows/tests.yml)
 
+A quick, easy character builder that makes 2-page hero sheets kids actually want to use. It
+plays up the fun stuff and leaves out the boring details — no spell components, no fiddly rules
+footnotes, just a hero your kid can read and play. Pick a race, class and level, roll some dice,
+and print.
+
+It's totally open: copy it, change it, host your own — do whatever you like with it.
+
+**Content packs.** You can add your own races, classes, spells and more as plain JSON packs:
+press "Download AI instructions" in the builder, hand the file to an AI, and drop the JSON it
+writes into `examples/`. Want yours available to everyone on the site? Send a pull request and
+we'll publish it.
+
+> **Open content only.** Packs submitted here must contain only open-source / Creative Commons
+> licensed material (e.g. the D&D 5.1 SRD under CC-BY-4.0). No copyrighted or trademarked content.
+> Include the license and attribution for anything you adapt.
+
 - **Share a content pack:** https://tinyurl.com/2yccbgrs (`?pack=tobin-flame-master`)
-- **Make a pack:** press "Download AI instructions" in the builder, give the file to an AI, then put the JSON it writes in `examples/` and rebuild.
 
 Developer notes are in `CLAUDE.md`.
 
@@ -67,9 +81,9 @@ loaded from jsDelivr only when you ask for one; the art credit prints in the por
 
 ## Tests
 
-The project uses [uv](https://docs.astral.sh/uv/). Node is needed for the JS parity tests.
+Everything is pinned in `pyproject.toml`; the project uses [uv](https://docs.astral.sh/uv/).
 
-    uv sync                             # create the env from pyproject.toml / uv.lock
+    uv sync                             # create the env
     uv run playwright install chromium  # first time only
     uv run pytest                       # everything (~2 min)
     uv run pytest -m "not pdf"          # skip the browser
@@ -85,5 +99,3 @@ installed so the JavaScript parity tests actually run.
   prints to exactly 2 pages with the back page fitting at ≥10px; portrait, inventory
   and notes areas exist; fuzzing with random built characters and random hand-made
   character rows.
-
-Needs: polars, hypothesis, pytest, playwright (Chromium), pymupdf, and node (for the JS tests) — all pinned in `pyproject.toml` / `uv.lock`.
