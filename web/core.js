@@ -201,6 +201,8 @@
     const weapons = cls.weapons.slice();
     if (main) weapons[slot] = { name: main.name, die: main.die, ability: main.ability, kind: "melee", hands: main.hands, note: main.note };
     const ac = worn.ac + (shield ? 2 : 0) + (worn.kind !== "none" ? effAc : 0);
+    v.AC1 = ac + 1;              // Armor with a +1 buff (e.g. Barkskin)
+    v.AC16 = Math.max(ac, 16);  // Armor with a floor of 16 (e.g. Barkskin (OG))
     const armorLabel = (worn.kind !== "none" ? worn.name : "No armor") + (shield ? " + shield" : "");
     const hd = cls.hit_die;
     let hp = hd + mods.CON + (level - 1) * (Math.floor(hd / 2) + 1 + mods.CON);
@@ -264,6 +266,9 @@
       const cantrips = req.cantrips != null ? req.cantrips : cls.cantrip_order.filter(exists).slice(0, nCan);
       if (cantrips.length > nCan) throw valueError("too many cantrips");
       const bonusCan = (subActive ? sub.extra_cantrips : []).filter((c) => !cantrips.includes(c));
+      // Shillelagh is really an attack you'll make every turn, so it shows up in the Attacks list, not just as a card.
+      if (cantrips.concat(bonusCan).includes("Shillelagh"))
+        attacks.unshift({ name: "Club (Shillelagh)", to_hit: prof + cmod, damage: "1d8" + (cmod ? signed(cmod) : ""), note: "melee" });
       let auto;
       if (req.path_spells != null) {
         auto = [...new Set(req.path_spells)];
@@ -291,14 +296,14 @@
         return k;
       };
       for (const c of cantrips) { scaled(spell(c)); card("Free Magic", spell(c).card); }
-      for (const c of bonusCan) { scaled(spell(c)); card("Free Magic", Object.assign({}, spell(c).card, { note: "bonus" })); }
+      for (const c of bonusCan) { scaled(spell(c)); card("Free Magic", Object.assign({}, spell(c).card, { note: "extra" })); }
       for (let lv = 1; lv <= maxSpell; lv++) {
         for (const s of picks.concat(auto)) {
           const row = spell(s);
           if (row.lvl === lv) {
             const c = Object.assign({}, row.card);
             if (scaled(row) && row.scale != null) c.note = stripChars(c.note + " \u2022 cast at lvl " + maxSpell, " \u2022");
-            if (auto.includes(s)) c.note = stripChars((c.note + " • bonus"), " •");
+            if (auto.includes(s)) c.note = stripChars((c.note + " • extra"), " •");
             card("Level " + lv + " Spells", c);
           }
         }
@@ -569,7 +574,7 @@
     out.spellPool = ordered(cls.spell_order, (l) => l >= 1 && l <= maxSpell).filter((n) => !out.auto.includes(n));
     out.spellLevel = (n) => (byName[n] ? byName[n].lvl : 0);
     out.spellCard = (n) => (byName[n] ? byName[n].card : null);
-    out.defaults = { cantrips: ch.cards.filter((c) => c.section === "Free Magic" && c.note !== "bonus").map((c) => c.name),
+    out.defaults = { cantrips: ch.cards.filter((c) => c.section === "Free Magic" && c.note !== "extra").map((c) => c.name),
       spells: ch.cards.filter((c) => /^Level \d+ Spells$/.test(c.section) && !out.bookAuto.includes(c.name)).map((c) => c.name) };
     return out;
   }

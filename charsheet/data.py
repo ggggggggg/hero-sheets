@@ -674,7 +674,7 @@ def spells_table() -> pl.DataFrame:
     sp("Misty Step", 2, "sorcerer warlock wizard", "B", "30 ft", "Poof! Teleport to a spot you can see.")
     sp("Invisibility", 2, "bard sorcerer warlock wizard", "A", "touch", "Up to {S} of you and your friends turn invisible for an hour (ends if you attack).", (1, 1, ""))
     sp("Hold Person", 2, "bard cleric druid sorcerer warlock wizard", "A", "60 ft", "Up to {S} people: Wis save (DC {DC}) or frozen stiff. Hits up close are crits!", (1, 1, ""))
-    sp("Spiritual Weapon", 2, "cleric", "B", "60 ft", "Floating magic weapon: {SPATK} to hit, 1d8{MOD}. It attacks again every turn.")
+    sp("Spiritual Weapon", 2, "cleric", "B", "60 ft", "Conjure a floating weapon, then swing it every turn with your bonus action: {SPATK} to hit, 1d8{MOD} force.")
     sp("Lesser Restoration", 2, "bard cleric druid paladin ranger", "A", "touch", "Cure poison, sickness, blindness or deafness.")
     sp("Aid", 2, "cleric paladin", "A", "30 ft", "Up to 3 friends get +5 max HP for 8 hours.")
     sp("Moonbeam", 2, "druid", "A", "120 ft", "A beam of moonlight: Con save, 2d10 radiant. Move it each turn.")
@@ -685,7 +685,8 @@ def spells_table() -> pl.DataFrame:
     sp("Mirror Image", 2, "sorcerer warlock wizard", "A", "", "3 fake copies of you. Attacks might hit a copy instead.")
     sp("Darkness", 2, "sorcerer warlock wizard", "A", "60 ft", "A 15-ft ball of magical darkness.")
     sp("Spike Growth", 2, "druid ranger", "A", "150 ft", "The ground grows hidden spikes: 2d4 damage for every 5 ft walked.")
-    sp("Barkskin", 2, "druid ranger", "A", "touch", "Tough tree-bark skin: Armor can't be lower than 16.")
+    sp("Barkskin", 2, "druid ranger", "A", "touch", "Grow tough tree-bark skin for 1 hour: +1 Armor. That makes your Armor {AC1}.")
+    sp("Barkskin (OG)", 2, "druid ranger", "A", "touch", "The old, clunky version: your Armor can't drop below 16 — that's {AC16} for you.", conc=True)
     sp("Silence", 2, "bard cleric ranger", "A", "120 ft", "A 20-ft bubble of total silence. No spells with words inside.")
     sp("Suggestion", 2, "bard sorcerer warlock wizard", "A", "30 ft", "Wis save or it does what you suggest (if it sounds reasonable).")
     sp("Magic Weapon", 2, "paladin wizard", "B", "touch", "A weapon becomes +1 magic for an hour.")
@@ -723,7 +724,7 @@ def spells_table() -> pl.DataFrame:
     concentration = {
         "Bane", "Bless", "Detect Magic", "Divine Favor", "Ensnaring Strike", "Entangle", "Faerie Fire", "Fog Cloud",
         "Heroism", "Hex", "Hunter's Mark", "Protection from Evil and Good", "Searing Smite", "Shield of Faith",
-        "Tasha's Hideous Laughter", "Barkskin", "Darkness", "Flaming Sphere", "Heat Metal", "Hold Person", "Invisibility",
+        "Tasha's Hideous Laughter", "Barkskin (OG)", "Darkness", "Flaming Sphere", "Heat Metal", "Hold Person", "Invisibility",
         "Magic Weapon", "Moonbeam", "Pass without Trace", "Silence", "Spider Climb", "Spike Growth", "Suggestion",
         "Beacon of Hope", "Call Lightning", "Conjure Animals", "Fly", "Haste", "Hunger of Hadar", "Hypnotic Pattern",
         "Spirit Guardians", "Banishment", "Greater Invisibility", "Polymorph", "Wall of Fire",

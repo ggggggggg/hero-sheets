@@ -282,6 +282,8 @@ def build_character(tables: dict[str, pl.DataFrame], request: pl.DataFrame) -> p
         weapons[slot] = {"name": main["name"], "die": main["die"], "ability": main["ability"], "kind": "melee",
                          "hands": main["hands"], "note": main["note"]}
     ac = worn["ac"] + (2 if shield else 0) + (eff_ac if worn["kind"] != "none" else 0)
+    v["AC1"] = ac + 1        # Armor with a +1 buff (e.g. Barkskin)
+    v["AC16"] = max(ac, 16)  # Armor with a floor of 16 (e.g. Barkskin (OG))
     armor_label = (worn["name"] if worn["kind"] != "none" else "No armor") + (" + shield" if shield else "")
     hd = cls["hit_die"]
     hp = hd + mods["CON"] + (level - 1) * (hd // 2 + 1 + mods["CON"])
@@ -351,6 +353,10 @@ def build_character(tables: dict[str, pl.DataFrame], request: pl.DataFrame) -> p
         if len(cantrips) > n_can:
             raise ValueError(f"too many cantrips (max {n_can})")
         bonus_can = [c for c in (sub["extra_cantrips"] if sub_active else []) if c not in cantrips]
+        # Shillelagh is really an attack you'll make every turn, so it shows up in the Attacks list, not just as a card.
+        if "Shillelagh" in cantrips + bonus_can:
+            attacks.insert(0, {"name": "Club (Shillelagh)", "to_hit": prof + cmod,
+                               "damage": "1d8" + (signed(cmod) if cmod else ""), "note": "melee"})
         if req.get("path_spells") is not None:
             auto = list(dict.fromkeys(req["path_spells"]))
             for a in auto:
@@ -387,7 +393,7 @@ def build_character(tables: dict[str, pl.DataFrame], request: pl.DataFrame) -> p
             card("Free Magic", spell(c)["card"])
         for c in bonus_can:
             scaled(spell(c))
-            card("Free Magic", {**spell(c)["card"], "note": "bonus"})
+            card("Free Magic", {**spell(c)["card"], "note": "extra"})
         for lv in range(1, max_spell + 1):
             for s in picks + auto:
                 row = spell(s)
@@ -396,7 +402,7 @@ def build_character(tables: dict[str, pl.DataFrame], request: pl.DataFrame) -> p
                     if scaled(row) and row.get("scale") is not None:
                         c["note"] = (c["note"] + f" \u2022 cast at lvl {max_spell}").strip(" \u2022")
                     if s in auto:
-                        c["note"] = (c["note"] + " • bonus").strip(" •")
+                        c["note"] = (c["note"] + " • extra").strip(" •")
                     card(f"Level {lv} Spells", c)
         if cantrips or slots:
             spellcasting = {"ability": caster["ability"], "attack": prof + cmod, "dc": dcb + prof + cmod,
