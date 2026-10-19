@@ -27,10 +27,9 @@ function subset<T>(items: T[], stream: number[], n: number): T[] {
 }
 
 const score = fc.integer({ min: 3, max: 18 });
-const baseScores = fc.option(
-  fc.record({ STR: score, DEX: score, CON: score, INT: score, WIS: score, CHA: score }),
-  { nil: null },
-);
+const baseScores = fc.option(fc.record({ STR: score, DEX: score, CON: score, INT: score, WIS: score, CHA: score }), {
+  nil: null,
+});
 
 describe("fuzz: build is total over the legal option space", () => {
   it("builds valid race/class/subclass/level + picked choices, spells, gear", () => {
@@ -49,10 +48,18 @@ describe("fuzz: build is total over the legal option space", () => {
           // options() must see the same scores we build with: a prepared caster's spell count is WIS/level-based.
           const opt = options(tables, req({ race, cls, subclass, level, base_scores: base }));
           const cantrips = opt.caster
-            ? subset(opt.cantripPool.filter((c) => !opt.bonusCantrips.includes(c)), stream, opt.nCan)
+            ? subset(
+                opt.cantripPool.filter((c) => !opt.bonusCantrips.includes(c)),
+                stream,
+                opt.nCan,
+              )
             : null;
           const spells = opt.caster
-            ? subset(opt.spellPool.filter((s) => !opt.auto.includes(s)), stream.slice(1), opt.nSp)
+            ? subset(
+                opt.spellPool.filter((s) => !opt.auto.includes(s)),
+                stream.slice(1),
+                opt.nSp,
+              )
             : null;
           const choices = opt.groups.map((g) => ({
             group: g.group,
@@ -110,7 +117,14 @@ describe("fuzz: user text is escaped and never crashes the sheet", () => {
         (race, cls, level, name, notes, inventory) => {
           const ch = buildCharacter(
             tables,
-            req({ race, cls, level, name: `${name}${XSS}`, notes: `${XSS}${notes}`, inventory: inventory.map((l) => l + XSS) }),
+            req({
+              race,
+              cls,
+              level,
+              name: `${name}${XSS}`,
+              notes: `${XSS}${notes}`,
+              inventory: inventory.map((l) => l + XSS),
+            }),
           );
           // user text is inserted verbatim (never placeholder-expanded), so braces are fine here;
           // what matters is it's HTML-escaped, not injected.
