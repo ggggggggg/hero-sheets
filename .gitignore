@@ -1,0 +1,9 @@
+__pycache__/
+.pytest_cache/
+.hypothesis/
+out/
+*.pyc
+.DS_Store
+
+# Internal publish instructions, not for the public repo
+PUBLISH.md

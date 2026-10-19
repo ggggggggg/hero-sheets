@@ -1,0 +1,14 @@
+{
+ "packs": [
+  {
+   "file": "tobin-flame-master.json",
+   "title": "Tobin aka Flame Master",
+   "about": "Tobin the dwarf warlock, his pet dragons Speak and Talk, and everything he needs. Load it, then press 'Start as Tobin aka Flame Master'."
+  },
+  {
+   "file": "turtles-and-pirates.json",
+   "title": "Turtles & Pirates",
+   "about": ""
+  }
+ ]
+}
