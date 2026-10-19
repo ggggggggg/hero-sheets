@@ -191,7 +191,7 @@ li.offnote .link { color: #6b4200 }
 #scaler .page { box-shadow: 0 2px 14px rgba(0,0,0,.18); border-radius: 4px; flex: none }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important } }
 @media print {
-  .top, #controls, #error, .tabs { display: none !important }
+  .top, #controls, #error, .tabs, .sitefoot { display: none !important }
   .previewcol { display: block !important }
   body { background: #fff }
   .layout { display: block; padding: 0 }
@@ -248,7 +248,7 @@ BODY = """
 </main>
 <footer class="sitefoot">
   <p>This work includes material taken from the System Reference Document 5.1 (&quot;SRD 5.1&quot;) by Wizards of the Coast LLC and available at <a href="https://dnd.wizards.com/resources/systems-reference-document">dnd.wizards.com</a>. The SRD 5.1 is licensed under the <a href="https://creativecommons.org/licenses/by/4.0/legalcode">Creative Commons Attribution 4.0 International License</a>.</p>
-  <p>Hero Sheet Builder is open source &mdash; <a href="https://github.com/ggggggggg/hero-sheets">github.com/ggggggggg/hero-sheets</a>. Content packs are their authors&#39; own.</p>
+  <p>Hero Sheet Builder &mdash; code and content packs alike &mdash; is MIT-licensed. Source: <a href="https://github.com/ggggggggg/hero-sheets">github.com/ggggggggg/hero-sheets</a>.</p>
 </footer>
 """
 
