@@ -8,3 +8,7 @@ out/
 # Internal publish instructions, not for the public repo
 PUBLISH.md
 .venv/
+node_modules/
+dist/
+test-results/
+playwright-report/
