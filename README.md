@@ -13,6 +13,10 @@ and print.
 
 It's totally open: copy it, change it, host your own — do whatever you like with it.
 
+**Works fully offline.** The whole builder is one self-contained HTML file — save the page and it
+keeps working with no internet (only the optional cartoon portraits need to be online). A test
+keeps it that way.
+
 **Content packs.** You can add your own races, classes, spells and more as plain JSON packs:
 press "Download AI instructions" in the builder, hand the file to an AI, and drop the JSON it
 writes into `examples/`. Want yours available to everyone on the site? Send a pull request and

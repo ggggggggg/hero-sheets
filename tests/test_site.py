@@ -522,7 +522,7 @@ def test_custom_file_can_be_loaded_and_problems_are_shown(browser, site_file, tm
     assert "wasn't added" in page.locator("details.custom").inner_text()
     page.locator("details.custom .customlist .link:text('remove')").first.click()  # the good pack is still there; remove it
     page.wait_for_timeout(500)
-    assert "No custom content loaded" in page.locator("details.custom").inner_text()
+    assert page.locator(".field:has-text('Race') .chip-btn:has-text('Turtle-folk')").count() == 0  # its content is gone
     assert not errors
     page.close()
 
@@ -664,6 +664,76 @@ def test_a_hero_keeps_its_own_pack(browser, site_file, tmp_path):
     assert "Flame Blast" in back and "Dragon Strike" in back and "48" in back
     assert not errors
     page.close()
+
+
+# a self-contained pack: its own race and class, so it can stand in for the built-in content
+SOLO_PACK = ('{"title": "Solo World", "races": [{"id": "bot", "name": "Robot"}], '
+             '"classes": [{"id": "scav", "name": "Scavenger", '
+             '"weapons": [{"name": "Zap Stick", "die": "1d6", "ability": "STR", "kind": "melee", "hands": "one", "note": ""}]}]}')
+
+
+def test_builtin_content_is_a_source_you_can_leave_out(browser, site_file, tmp_path):
+    page, errors = open_page(browser, site_file)
+    page.click("details.custom summary")
+    f = tmp_path / "solo.json"
+    f.write_text(SOLO_PACK)
+    page.set_input_files("#custom-file", str(f))
+    page.wait_for_timeout(1500)
+    # the built-in content and the pack are both offered (Tiefling has no subrace, so it matches cleanly)
+    assert page.locator(".field:has-text('Race') .chip-btn:has-text('Tiefling')").count() == 1
+    assert page.locator(".field:has-text('Race') .chip-btn:has-text('Robot')").count() == 1
+    # leave the built-in content out: only the pack's content is left
+    page.uncheck("#use-builtin")
+    page.wait_for_timeout(800)
+    assert page.locator(".field:has-text('Race') .chip-btn:has-text('Tiefling')").count() == 0
+    assert page.locator(".field:has-text('Race') .chip-btn:has-text('Robot')").count() == 1
+    assert page.locator(".field:has-text('Class') .chip-btn:has-text('Scavenger')").count() == 1
+    assert page.locator("#scaler .page").count() == 2  # it still builds a 2-page sheet
+    # put it back
+    page.check("#use-builtin")
+    page.wait_for_timeout(800)
+    assert page.locator(".field:has-text('Race') .chip-btn:has-text('Tiefling')").count() == 1
+    assert not errors
+    page.close()
+
+
+def test_toggling_content_keeps_a_hand_edited_hero_safe(browser, site_file, tmp_path):
+    page, errors = open_page(browser, site_file)
+    page.click("details.custom summary")
+    f = tmp_path / "solo.json"
+    f.write_text(SOLO_PACK)
+    page.set_input_files("#custom-file", str(f))
+    page.wait_for_timeout(1500)
+    page.click(".field:has-text('Race') >> text=Tiefling")  # hand-pick a built-in race: now it's "yours"
+    page.wait_for_timeout(400)
+    page.uncheck("#use-builtin")  # the edited hero no longer fits the content
+    page.wait_for_timeout(1200)
+    assert "safe in Saved heroes" in page.locator("#status").inner_text()
+    assert "Scavenger" in page.locator(".field:has-text('Class') .chip-btn[aria-pressed='true']").first.inner_text()  # the fresh hero uses the pack
+    page.click("#heroes-btn")
+    page.wait_for_timeout(300)
+    assert page.locator(".heroname").count() >= 2  # the edited hero is kept alongside the new roll
+    assert not errors
+    page.close()
+
+
+def test_works_fully_offline_from_the_single_file(browser, site_file):
+    """The whole builder is in the one HTML file; with every network request blocked it still makes a sheet."""
+    ctx = browser.new_context(viewport={"width": 1400, "height": 900}, offline=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.route("**", lambda r: r.abort() if r.request.url.startswith(("http://", "https://")) else r.continue_())
+    page.add_init_script("try{localStorage.clear()}catch(e){}; window.CHARSHEET_FIXED_START = true")
+    page.goto(site_file)
+    page.wait_for_selector("#scaler .page.back", state="attached")
+    assert page.locator("#scaler .page").count() == 2
+    page.click(".field:has-text('Class') >> text=Wizard")
+    page.wait_for_timeout(200)
+    assert "Wizard" in page.locator("#scaler .back .bhead").inner_text()
+    assert not errors
+    page.close()
+    ctx.close()
 
 
 def test_hosted_site_lists_and_loads_packs_next_to_it(browser, tmp_path):

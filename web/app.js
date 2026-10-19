@@ -5,6 +5,9 @@
   const BASE_T = window.CHARSHEET_TABLES;
   const CC = window.CharsheetCustom;
   const CUSTOM_KEY = "charsheet-custom-v1", CUSTOM_URL_KEY = "charsheet-custom-url-v1";
+  const PREFS_KEY = "charsheet-ui-v1";
+  let prefs = {};
+  try { prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") || {}; } catch (e) { prefs = {}; }
   let memUrlText = null, urlStatus = "";
   // Google Drive "share" links point at a web page; this is the direct-download form of the same file
   function directUrl(u) {
@@ -44,8 +47,16 @@
   let memLib = [];
   function saveLib(lib) { memLib = lib; try { localStorage.setItem(CUSTOM_KEY, JSON.stringify({ packs: lib })); } catch (e) { /* this visit only */ } }
   let packOf = {}, loadReport = [];
+  // The built-in content (D&D 5.1 SRD) is just the first pack in the list — its data lives in the HTML.
+  // "Remove" it to start from the bare framework (dice, proficiency, spell slots) and let a pack supply everything.
+  const SRD_TITLE = "Built-in content (D&D 5.1 SRD)";
+  function frameworkOnly(t) {
+    const out = Object.assign({}, t);
+    for (const k of Object.keys(CC ? CC.TEMPLATES : {})) if (k in out) out[k] = [];  // drop race/class/spell/gear content, keep the rules framework
+    return out;
+  }
   function withCustom() {
-    let t = BASE_T;
+    let t = prefs.noBuiltin && CC ? frameworkOnly(BASE_T) : BASE_T;
     customInfo = { sources: [], problems: [], error: "", heroes: [], ids: new Set() };
     packOf = {};
     const add = (obj, label, text) => {
@@ -72,6 +83,7 @@
     return t;
   }
   let T = withCustom();
+  if (prefs.noBuiltin && (!T.races.length || !T.classes.length)) { prefs.noBuiltin = false; T = withCustom(); }  // can't stand alone yet: keep the built-ins
   const $ = (s, r) => (r || document).querySelector(s);
   const el = (tag, attrs, ...kids) => {
     const n = document.createElement(tag);
@@ -113,9 +125,7 @@
     spells: null, inventory: null, notes: "", portrait: null };
 
   // ---- saved heroes. Every hero lives in a list; ones changed by hand are "yours", untouched dice rolls go in a drawer.
-  const HEROES_KEY = "charsheet-heroes-v1", PREFS_KEY = "charsheet-ui-v1", MAX_ROLLS = 12;
-  let prefs = {};
-  try { prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") || {}; } catch (e) { prefs = {}; }
+  const HEROES_KEY = "charsheet-heroes-v1", MAX_ROLLS = 12;
   const savePrefs = () => { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) { /* ignore */ } };
   const newId = () => "h" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const keyFields = (s) => JSON.stringify(Object.fromEntries(Object.entries(s).filter(([k]) => !k.startsWith("ui_")).sort()));
@@ -180,7 +190,22 @@
 
   const byId = (rows) => Object.fromEntries(rows.map((r) => [r.id, r]));
   let RACES = byId(T.races), CLASSES = byId(T.classes);
-  function reloadTables() { T = withCustom(); RACES = byId(T.races); CLASSES = byId(T.classes); update(); }
+  function reloadTables() {
+    T = withCustom();
+    if (prefs.noBuiltin && (!T.races.length || !T.classes.length)) {  // removing the built-ins left nothing to build with: put them back
+      prefs.noBuiltin = false; savePrefs(); T = withCustom();
+      customInfo.error = "Keep the built-in content for now — load a pack with its own race and class before removing it.";
+    }
+    RACES = byId(T.races); CLASSES = byId(T.classes);
+    const h = currentHero();
+    if (h && h.edited && (!RACES[state.race] || !CLASSES[state.cls])) {
+      // don't silently rewrite a hero they've worked on: keep it in Saved heroes and roll a fresh one under the new settings
+      status("That hero doesn't fit the new content — it's safe in Saved heroes, so here's a fresh one.");
+      newRandomHero();
+      return;
+    }
+    update();
+  }
 
   function request() {
     return { name: state.name || "Hero", race: state.race, cls: state.cls, subclass: state.subclass, level: state.level,
@@ -801,7 +826,13 @@
         r.onload = () => addPackText(r.result, f.name);
         r.readAsText(f); } });
     const lib = loadLib();
-    const lines = [];
+    // The built-in content is the first source in the list, with an include/leave-out checkbox like any other source.
+    // Its data lives in this page (window.CHARSHEET_TABLES); unchecking it just leaves it out of the merge.
+    const lines = [el("li", { class: "src builtin" },
+      el("label", {}, el("input", { type: "checkbox", id: "use-builtin", checked: !prefs.noBuiltin,
+        onchange: (ev) => { prefs.noBuiltin = !ev.target.checked; savePrefs(); loadReport = []; reloadTables(); } }),
+        " " + SRD_TITLE),
+      el("span", { class: "hint" }, prefs.noBuiltin ? " — left out" : " — the built-in heroes"))];
     for (const src of customInfo.sources) {
       const inLib = lib.some((x) => x.title === src.label);
       lines.push(el("li", {}, el("b", {}, "\u2713 " + (src.title || src.label)), " \u2014 " + (src.counts.join(", ") || "nothing new") + " ",
