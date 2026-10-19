@@ -1,0 +1,76 @@
+
+@page { size: letter; margin: 0 }
+.sheet, .sheet * { box-sizing: border-box; margin: 0; padding: 0 }
+.sheet { font-family: Nunito, 'Trebuchet MS', sans-serif; color: #222; -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff }
+.page { width: 816px; height: 1056px; padding: 34px 38px 32px; display: flex; flex-direction: column; overflow: hidden; position: relative; background: #fff; page-break-after: always; break-after: page }
+.page:last-child { page-break-after: auto; break-after: auto }
+.disp { font-family: Fredoka, 'Trebuchet MS', sans-serif; font-weight: 600 }
+.lbl { font-size: 9.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: #555 }
+.head { background: var(--ac); color: #fff; border-radius: 16px; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px }
+.head .nm { font-size: 38px; line-height: 1 }
+.head .sub { font-family: Fredoka, sans-serif; font-size: 15px; margin-top: 3px }
+.head .tag { font-size: 12.5px; font-style: italic; font-weight: 700; margin-top: 2px }
+.head .lv { text-align: center; background: #fff; color: var(--ac); border-radius: 12px; padding: 4px 12px 5px; min-width: 70px }
+.head .lv b { display: block; font-family: Fredoka, sans-serif; font-size: 30px; line-height: 1 }
+.player { font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; border-bottom: 2px solid rgba(255,255,255,.8); padding-bottom: 12px; min-width: 150px }
+.fr1 { display: grid; grid-template-columns: 250px 1fr; gap: 12px; margin-top: 10px }
+.portrait { height: 300px; border: 3px dashed var(--ac); border-radius: 18px; display: flex; align-items: center; justify-content: center; text-align: center; color: #aaa; font-family: Fredoka, sans-serif; font-size: 17px; overflow: hidden; background: var(--tint) }
+.portrait { position: relative }
+.portrait img { width: 100%; height: 100%; object-fit: cover }
+.portrait .credit { position: absolute; left: 6px; right: 6px; bottom: 4px; font-family: Nunito, sans-serif; font-size: 7.5px; color: #666; background: rgba(255,255,255,.75); border-radius: 4px; padding: 1px 4px }
+.abil { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px }
+.ab { border-radius: 14px; background: var(--tint); text-align: center; padding: 8px 4px; border-top: 6px solid var(--ac); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px }
+.ab .m { font-family: Fredoka, sans-serif; font-weight: 600; font-size: 40px; line-height: 1; color: var(--ac) }
+.ab .sc { font-weight: 800; font-size: 12px; border: 1.5px solid #999; border-radius: 10px; padding: 0 8px; background: #fff }
+.ab .sv { font-size: 11.5px; font-weight: 700; color: #444 }
+.pd { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid #333; vertical-align: 0 }
+.pd.on { background: #333 }
+.pd.ex { background: var(--ac); border-color: var(--ac) }
+.box { border: 2px solid #ddd; border-radius: 12px; padding: 6px 10px }
+.box h4 { font-family: Fredoka, sans-serif; font-weight: 600; font-size: 15px; color: var(--ac); margin-bottom: 3px }
+.skills { margin-top: 10px }
+.skgrid { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 18px }
+.sk { display: flex; justify-content: space-between; font-size: 12px; line-height: 1.45; gap: 4px }
+.sk b { font-weight: 800 }
+.facts { display: flex; gap: 18px; margin-top: 5px; font-size: 11.5px; font-weight: 700; color: #444; flex-wrap: wrap }
+.facts b { color: var(--ac); font-family: Fredoka, sans-serif; font-size: 15px }
+.inv { flex: 1; display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px; margin-top: 10px; min-height: 0 }
+.col { display: flex; flex-direction: column; min-height: 0 }
+.lines { background-image: repeating-linear-gradient(transparent 0 23px, #cfcfcf 23px 24px); line-height: 24px; font-size: 13px; font-weight: 700; flex: 1; overflow: hidden }
+.coins { display: flex; gap: 6px; margin-top: 6px }
+.coins div { flex: 1; border: 2px solid #ddd; border-radius: 8px; text-align: center; font-size: 9.5px; font-weight: 800; color: #666; padding: 2px 0 18px }
+.bhead { display: flex; justify-content: space-between; align-items: center; background: var(--ac); color: #fff; border-radius: 16px; padding: 8px 16px }
+.bhead .nm { font-size: 28px }
+.combat { display: grid; grid-template-columns: 1fr 2.6fr 1fr 1fr; gap: 8px; margin-top: 8px }
+.tile { border: 2.5px solid var(--ac); border-radius: 12px; text-align: center; padding: 3px 4px 4px; display: flex; flex-direction: column; justify-content: center }
+.tile .worn { display: block; font-size: 8.5px; font-weight: 700; color: #666; line-height: 1.1; margin-top: 1px }
+.tile b { display: block; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 26px; line-height: 1.1; color: var(--ac) }
+.hp { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 6px; align-items: end }
+.hp .w { background: #fff; border: 2px dashed #bbb; border-radius: 9px; height: 38px }
+.hp .mx b { font-size: 30px }
+.mini { display: flex; gap: 18px; align-items: center; font-weight: 800; font-size: 11.5px; flex-wrap: wrap; margin-top: 6px }
+.dot { display: inline-block; width: 14px; height: 14px; border: 2px solid #333; border-radius: 50%; background: #fff; vertical-align: -3px; margin-right: 2px }
+.cmb2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; margin-top: 7px; align-items: start }
+table.atk { width: 100%; border-collapse: collapse; font-size: 12px }
+table.atk th { text-align: left; font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; color: #666; padding: 1px 4px; border-bottom: 2px solid #eee }
+table.atk td { padding: 2px 4px; border-bottom: 1px dotted #ccc; font-weight: 700 }
+table.atk td.n { font-weight: 800 }
+.magic { background: var(--tint); border-radius: 12px; padding: 6px 10px; font-weight: 800; font-size: 12px; display: flex; flex-wrap: wrap; gap: 3px 14px; align-items: center }
+.magic .big, .magic small { flex-basis: 100% }
+.magic .big { font-family: Fredoka, sans-serif; color: var(--ac); font-size: 15px }
+.magic i { display: inline-block; width: 18px; height: 18px; color: var(--ac); vertical-align: -4px }
+.magic small { font-weight: 400; color: #666; font-size: 10px }
+.cards { flex: 1 1 0; min-height: 0; margin-top: 8px; column-count: 2; column-gap: 12px; column-fill: balance; font-size: var(--fs) }
+.sec h3 { font-family: Fredoka, sans-serif; font-weight: 600; color: var(--ac); font-size: 1.22em; margin: 3px 0 4px; break-after: avoid }
+.cd { break-inside: avoid; background: var(--tint); border-left: 5px solid var(--ac); border-radius: 4px 12px 12px 4px; padding: 3px 7px 4px; margin-bottom: 4px }
+.cd .n { font-family: Fredoka, sans-serif; font-weight: 600; font-size: 1.1em }
+.chip { display: inline-flex; align-items: center; gap: 3px; font-size: .64em; font-weight: 800; letter-spacing: .03em; border-radius: 20px; padding: 1px 7px 1px 5px; white-space: nowrap; color: #fff; vertical-align: 2px; margin-left: 4px }
+.chip svg { width: 1.15em; height: 1.15em }
+.chip.conc { background: #5b6bd6 }
+.note { color: #444; background: #fff; border: 1.5px solid #bbb; padding: 0 6px }
+.cd .d { line-height: 1.24; margin-top: 1px }
+.bx { display: flex; gap: 5px; align-items: center; margin-top: 4px; flex-wrap: wrap }
+.bx i { width: 15px; height: 15px; border: 2.4px solid var(--ac); border-radius: 4px; background: #fff; display: inline-block }
+.bx .wr { width: 46px; height: 18px; border: 2px dashed var(--ac); border-radius: 5px; background: #fff; display: inline-block }
+.bx small { font-size: .72em; font-weight: 700; color: #555 }
+.foot { margin-top: 6px; border-top: 3px dotted var(--ac); padding-top: 5px; display: flex; gap: 5px; flex-wrap: wrap; align-items: center; font-size: 10.5px; color: #333 }

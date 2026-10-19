@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!dist", "!docs", "!node_modules"]
+    "includes": ["**", "!dist", "!node_modules", "!tools"]
   },
   "formatter": {
     "enabled": true,
@@ -18,7 +18,10 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended"
+      "preset": "recommended",
+      "suspicious": {
+        "noExplicitAny": "error"
+      }
     }
   },
   "javascript": {
@@ -26,6 +29,13 @@
       "quoteStyle": "double"
     }
   },
+  "overrides": [
+    {
+      "includes": ["src/content.json", "src/styles/**", "examples/**", "**/*.md", "**/*.py", "**/*.html"],
+      "formatter": { "enabled": false },
+      "linter": { "enabled": false }
+    }
+  ],
   "assist": {
     "enabled": true,
     "actions": {
