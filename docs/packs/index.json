@@ -1,6 +1,11 @@
 {
  "packs": [
   {
+   "file": "mutants-and-meltdowns.json",
+   "title": "Mutants & Meltdowns",
+   "about": "The world ended in the Big Oops. Now you're a mutant, a beastling, a walking plant, a rusty robot, or just a lucky normal \u2014 poking glowing Ancient relics with a stick. Load it, then try a 'Start as...'."
+  },
+  {
    "file": "tobin-flame-master.json",
    "title": "Tobin aka Flame Master",
    "about": "Tobin the dwarf warlock, his pet dragons Speak and Talk, and everything he needs. Load it, then press 'Start as Tobin aka Flame Master'."

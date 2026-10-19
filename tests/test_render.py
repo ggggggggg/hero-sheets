@@ -7,6 +7,7 @@
 """
 import base64
 import io
+import pathlib
 import re
 
 import fitz  # pymupdf
@@ -100,6 +101,21 @@ def test_every_subclass_level7_prints_two_pages_that_fit(tables, assets, browser
     back = squash(pages[1])
     for c in ch.row(0, named=True)["cards"]:
         assert squash(c["name"]) in back
+
+
+FPA_PACK = (pathlib.Path(__file__).resolve().parents[1] / "examples" / "mutants-and-meltdowns.json").read_text()
+
+
+@pytest.mark.pdf
+@pytest.mark.parametrize("cls,sub", [(s["class_id"], s["id"]) for s in __import__("json").loads(FPA_PACK)["subclasses"]])
+def test_fpa_subclass_level7_fits_two_pages(assets, browser, cls, sub):
+    from charsheet.custom import merge_custom, parse_custom_text
+    from charsheet.data import default_tables
+    T = merge_custom(default_tables(), parse_custom_text(FPA_PACK))
+    ch = build_character(T, make_request(name="Test", race="mutant", cls=cls, subclass=sub, level=7))
+    pdf, info = render_pdf(render_html(ch, assets), browser=browser)
+    assert len(pdf_text(pdf)) == 2
+    assert info["fit"] == "ok" and info["fs"] >= 9.5
 
 
 @pytest.mark.pdf

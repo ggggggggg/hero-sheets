@@ -14,7 +14,27 @@ from charsheet.site import tables_json
 
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLE = (Path(__file__).parent / "fixtures" / "custom" / "hero-custom.json").read_text()
+FPA = (ROOT / "examples" / "mutants-and-meltdowns.json").read_text()
 NODE = shutil.which("node")
+
+
+def test_fpa_pack_builds_every_combo(tables):
+    """The post-apocalyptic total-conversion pack stands on its own: every race x class x subclass x level builds."""
+    pack = parse_custom_text(FPA)
+    T = merge_custom(tables, pack)
+    subs = {c["id"]: [s["id"] for s in pack["subclasses"] if s["class_id"] == c["id"]] for c in pack["classes"]}
+    for rc in [r["id"] for r in pack["races"]]:
+        for cl in [c["id"] for c in pack["classes"]]:
+            for sub in [None] + subs[cl]:
+                for lvl in range(1, 8):
+                    build_character(T, make_request(race=rc, cls=cl, subclass=sub, level=lvl))
+
+
+def test_fpa_and_builtin_content_coexist(tables):
+    """Pack content uses the same engine as the built-ins, so a mixed character builds fine."""
+    T = merge_custom(tables, parse_custom_text(FPA))
+    for rc, cl, sub in [("dwarf", "brute", "berserker"), ("elf", "esper", "telepath"), ("mutant", "wizard", None)]:
+        build_character(T, make_request(race=rc, cls=cl, subclass=sub, level=7))
 
 
 def js_merge(tables, custom):

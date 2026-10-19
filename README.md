@@ -1,6 +1,6 @@
 # Hero Sheet Builder
 
-## ▶ Play now → https://tinyurl.com/24pj3dbx
+## ▶ Play now → https://ggggggggg.github.io/hero-sheets/
 
 Every fresh visit rolls a brand-new random hero.
 
@@ -26,7 +26,7 @@ we'll publish it.
 > licensed material (e.g. the D&D 5.1 SRD under CC-BY-4.0). No copyrighted or trademarked content.
 > Include the license and attribution for anything you adapt.
 
-- **Share a content pack:** https://tinyurl.com/2yccbgrs (`?pack=tobin-flame-master`)
+- **Share a content pack:** https://ggggggggg.github.io/hero-sheets/?pack=tobin-flame-master
 
 Developer notes are in `CLAUDE.md`.
 
