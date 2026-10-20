@@ -583,7 +583,6 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     "Trusts animals more than people",
   ];
   const NAMES = [
-    "Tobin",
     "Pip",
     "Rook",
     "Mira",
@@ -3266,13 +3265,20 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
   window.addEventListener("resize", scalePreview);
   if (document.fonts) void document.fonts.ready.then(() => renderSheet());
   ensurePacks(currentHero());
-  try {
-    update();
-  } catch (error) {
-    if (!(error instanceof CharError) && !(error instanceof CustomError)) throw error;
-    storage.remove(KEY);
-    state = { ...DEFAULT, choices: {} };
-    update();
+  const want = new URLSearchParams(location.search).get("pack");
+  const skipSavedTobin = !want && !buildParam && window.CHARSHEET_FIXED_START !== true && /^Tobin\b/.test(state.name);
+  if (skipSavedTobin) newRandomHero();
+  else {
+    try {
+      update();
+    } catch (error) {
+      if (!(error instanceof CharError) && !(error instanceof CustomError)) throw error;
+      storage.remove(KEY);
+      state = { ...DEFAULT, choices: {} };
+      update();
+    }
+    if (!haveSaved && !window.CHARSHEET_FIXED_START && !buildParam) surprise();
+    else if (!haveSaved) markRolled();
   }
   void (async () => {
     const fromQuery = new URLSearchParams(location.search).get("custom");
@@ -3283,9 +3289,6 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       if (memUrlText !== before) reloadTables();
     } else if (urlStatus) update();
   })();
-  if (!haveSaved && !window.CHARSHEET_FIXED_START && !buildParam) surprise();
-  else if (!haveSaved) markRolled();
-  const want = new URLSearchParams(location.search).get("pack");
   const auto = sitePacks.find((pack) => want !== null && (pack.file === want || pack.file === `${want}.json`));
   if (auto && !loadLib().some((pack) => pack.title === auto.title)) addSitePack(auto);
   else update();
