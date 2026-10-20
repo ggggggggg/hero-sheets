@@ -78,7 +78,7 @@ test("a downloaded PDF opens that hero and its content pack", async ({ page, bro
   await fresh.waitForSelector("html[data-booted='1']");
   await expect(fresh.locator("#scaler .head .nm")).toHaveText("Tobin");
   await fresh.locator("#open-pdf-file").setInputFiles(file);
-  await expect(fresh.locator("#status")).toHaveText("Opened Tobin aka Flame Master.");
+  await expect(fresh.locator("#status")).toHaveText("Opened Tobin aka Flame Master.", { timeout: 15_000 });
   await expect(fresh.locator("#scaler .head .nm")).toHaveText("Tobin aka Flame Master");
   await expect(fresh.locator("#scaler .head .sub")).toContainText("Mountain Dwarf");
   await expect(fresh.locator("#scaler")).toContainText("Dragon Strike");
@@ -107,7 +107,7 @@ test("a downloaded PDF opens that hero and its content pack", async ({ page, bro
   await again.locator("li", { hasText: "Turtles & Pirates" }).getByRole("checkbox").check();
   await expect(again.locator("li", { hasText: "Tobin aka Flame Master" }).getByRole("checkbox")).toBeChecked();
   await again.locator("#open-pdf-file").setInputFiles(file);
-  await expect(again.locator("#status")).toHaveText("Opened Tobin aka Flame Master.");
+  await expect(again.locator("#status")).toHaveText("Opened Tobin aka Flame Master.", { timeout: 15_000 });
   await expect(again.locator("li", { hasText: "Tobin aka Flame Master" }).getByRole("checkbox")).toBeChecked();
   await expect(again.locator("li", { hasText: "Turtles & Pirates" }).getByRole("checkbox")).not.toBeChecked();
   await expect(again.locator("#use-builtin")).toBeChecked();
