@@ -10,7 +10,10 @@ import {
   TABLE_NAMES,
 } from "./custom";
 import { ExportError, makePdf, readHeroSheet } from "./export";
+import { createFaceKit, type FacePick, type Look } from "./face";
 import { fitCardFont, previewLayout } from "./fit";
+import { contentPackPanel } from "./pack-ui";
+import { clearSavedKeys, DND_SAVE_KEYS, refreshBundledPacks } from "./packs";
 import { fileStem } from "./text";
 import {
   ABILITIES,
@@ -32,14 +35,6 @@ export interface SitePack {
   about: string;
   data: PackRow;
 }
-
-interface AvatarState {
-  style: string;
-  seed: string;
-  look: Look;
-}
-
-type Look = "boy" | "girl";
 
 interface HeroState {
   name: string;
@@ -63,7 +58,7 @@ interface HeroState {
   base_scores: AbilityScores | null;
   armor: string | null;
   shield: boolean | null;
-  avatar: AvatarState | null;
+  avatar: FacePick | null;
   look: Look | null;
   numbers: NumberOverrides | null;
 }
@@ -176,22 +171,6 @@ interface DownloadCap {
   save: (file: { filename: string; data: Blob }) => Promise<void>;
 }
 
-interface AvatarOptions {
-  seed: string;
-  size: number;
-  hair?: string[];
-  earringsProbability?: number;
-  features?: string[];
-  beardProbability?: number;
-  accessories?: string[];
-  top?: string[];
-  mustacheProbability?: number;
-}
-
-interface AvatarCore {
-  createAvatar: (style: object, options: AvatarOptions) => { toString(): string };
-}
-
 declare global {
   interface Window {
     CHARSHEET_FIXED_START?: boolean;
@@ -265,7 +244,7 @@ function scoresOf(value: unknown): AbilityScores | null | undefined {
   return scores as AbilityScores;
 }
 
-function avatarOf(value: unknown): AvatarState | null | undefined {
+function avatarOf(value: unknown): FacePick | null | undefined {
   if (value === null) return null;
   if (!value || typeof value !== "object") return undefined;
   const row = value as Record<string, unknown>;
@@ -382,11 +361,6 @@ function $(sel: string, root: ParentNode = document): HTMLElement {
   const node = root.querySelector(sel);
   if (!(node instanceof HTMLElement)) throw new Error(`missing ${sel}`);
   return node;
-}
-
-function maybe(sel: string): HTMLElement | null {
-  const node = document.querySelector(sel);
-  return node instanceof HTMLElement ? node : null;
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(
@@ -563,6 +537,14 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     return tables;
   }
 
+  {
+    const refreshed = refreshBundledPacks(
+      loadLib(),
+      sitePacks.map((pack) => ({ title: pack.title, text: JSON.stringify(pack.data) })),
+    );
+    if (refreshed.changed) saveLib(refreshed.packs);
+  }
+
   let tables = withCustom();
   if (prefs.noBuiltin && (!tables.races.length || !tables.classes.length)) {
     prefs.noBuiltin = false;
@@ -735,6 +717,14 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     book.heroes.push(hero);
     book.current = hero.id;
   }
+
+  const faces = createFaceKit({
+    read: () => state,
+    write: (patch) => {
+      Object.assign(state, patch);
+    },
+    refresh: () => update(),
+  });
 
   function save(): void {
     const hero = currentHero();
@@ -2450,6 +2440,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     const panel = $("#controls");
     panel.replaceChildren();
     if (prefs.heroesOpen) panel.append(heroesPanel());
+    panel.append(el("p", { class: "tagline lead" }, "Build a D&D 5e inspired hero:"));
     const nameIn = el("input", {
       id: "name",
       type: "text",
@@ -2459,7 +2450,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       oninput: (ev) => {
         state.name = textOf(ev).value;
         update(false);
-        relook();
+        faces.noteName();
       },
     });
     panel.append(
@@ -2472,7 +2463,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
           dice("name", () => {
             state.name = pick(NAMES.filter((name) => name !== state.name));
             update();
-            relook();
+            faces.noteName();
           }),
         ),
       ),
@@ -2716,139 +2707,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
         }),
       ),
     );
-    const file = el("input", {
-      id: "portrait",
-      type: "file",
-      accept: "image/*",
-      class: "visually-hidden",
-      onchange: (ev) => {
-        const chosen = inputOf(ev).files?.[0];
-        if (chosen) loadPortrait(chosen);
-      },
-    });
-    const avatar = state.avatar;
-    const avStyles = AVATAR_STYLES.map((style) =>
-      el(
-        "button",
-        {
-          type: "button",
-          class: `chip-btn${avatar?.style === style.id ? " on" : ""}`,
-          onclick: () => {
-            void makeAvatar(style.id, avatar?.style === style.id ? null : avatar?.seed || state.name || "Hero");
-          },
-        },
-        style.label,
-      ),
-    );
-    panel.append(
-      field(
-        "Picture",
-        el(
-          "div",
-          { class: "pic" },
-          el(
-            "div",
-            { class: "chips" },
-            avStyles,
-            avatar
-              ? dice("face", () => {
-                  void makeAvatar(avatar.style, randomSeed());
-                })
-              : null,
-          ),
-          avatar
-            ? el(
-                "div",
-                { class: "row" },
-                el("label", { for: "face-seed", class: "hint" }, "Face code"),
-                el("input", {
-                  id: "face-seed",
-                  type: "text",
-                  value: avatar.seed || "",
-                  maxlength: 60,
-                  autocomplete: "off",
-                  spellcheck: "false",
-                  oninput: (ev) => {
-                    const value = textOf(ev).value;
-                    clearTimeout(seedTimer);
-                    seedTimer = window.setTimeout(() => {
-                      if (state.avatar) void makeAvatar(state.avatar.style, value || " ");
-                    }, 250);
-                  },
-                }),
-              )
-            : null,
-          avatar
-            ? (() => {
-                const lf = lookFor(avatar.seed);
-                const pickLook = (value: Look | null) => {
-                  state.look = value;
-                  if (state.avatar) void makeAvatar(state.avatar.style, state.avatar.seed);
-                };
-                return el(
-                  "div",
-                  { class: "row" },
-                  el("span", { class: "hint" }, "Look"),
-                  el(
-                    "div",
-                    { class: "chips" },
-                    (
-                      [
-                        ["boy", "Boy"],
-                        ["girl", "Girl"],
-                      ] as const
-                    ).map(([value, label]) =>
-                      el(
-                        "button",
-                        {
-                          type: "button",
-                          class: `chip-btn${lf.look === value ? " on" : ""}`,
-                          "aria-pressed": lf.look === value ? "true" : "false",
-                          onclick: () => pickLook(value),
-                        },
-                        label,
-                      ),
-                    ),
-                  ),
-                  state.look
-                    ? el("button", { type: "button", class: "link", onclick: () => pickLook(null) }, "match name")
-                    : el("span", { class: "hint" }, lf.why),
-                );
-              })()
-            : null,
-          el(
-            "div",
-            { class: "row" },
-            el("label", { for: "portrait", class: "ghost filebtn" }, "Upload a picture"),
-            file,
-            state.portrait
-              ? el(
-                  "button",
-                  {
-                    type: "button",
-                    class: "ghost",
-                    onclick: () => {
-                      state.portrait = null;
-                      state.portrait_credit = null;
-                      state.avatar = null;
-                      update();
-                    },
-                  },
-                  "Remove",
-                )
-              : null,
-          ),
-          el(
-            "p",
-            { class: "hint block", id: "avatar-msg" },
-            avatar
-              ? "Same code + same style = same face. Share a code to share a face. Credit prints in the corner."
-              : "",
-          ),
-        ),
-        "or leave blank and draw one",
-      ),
-    );
+    panel.append(field("Picture", faces.controls(), "or leave blank and draw one"));
     panel.append(advanced(built));
     panel.append(customSection());
   }
@@ -2899,7 +2758,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
         "look" in avatarField && (avatarField.look === "boy" || avatarField.look === "girl") ? avatarField.look : null;
       const seed = "seed" in avatarField && typeof avatarField.seed === "string" ? avatarField.seed : req.name;
       state.look = look;
-      void makeAvatar(avatarField.style, seed);
+      void faces.draw(avatarField.style, seed);
     }
     window.scrollTo(0, 0);
   }
@@ -3043,146 +2902,101 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     reloadTables();
   }
 
-  function packRow(
-    title: string,
-    description: string,
-    on: boolean,
-    toggle: (on: boolean) => void,
-    id?: string,
-  ): HTMLElement {
-    return el(
-      "li",
-      {},
-      el(
-        "label",
-        {},
-        el("input", {
-          type: "checkbox",
-          id,
-          checked: on,
-          onchange: (ev) => toggle(inputOf(ev).checked),
-        }),
-        " ",
-        el("b", {}, title),
-        description ? el("span", { class: "hint" }, ` — ${description}`) : null,
-      ),
-    );
-  }
-
   function customSection(): HTMLElement {
-    const details = el(
-      "details",
-      {
-        id: "content-packs",
-        class: "adv custom packs",
-        ontoggle: (ev) => {
-          if (ev.target instanceof HTMLDetailsElement) prefs.custom = ev.target.open;
-          savePrefs();
-        },
-      },
-      el(
-        "summary",
-        {},
-        "Content packs",
-        el("span", { class: "hint" }, "Add a race, class, spell, or item. An AI can write the file."),
-      ),
-    );
-    if (prefs.custom || customInfo.error || customInfo.problems.length || loadReport.length) details.open = true;
-    const file = el("input", {
-      id: "custom-file",
-      type: "file",
-      accept: ".json,application/json,text/plain",
-      class: "visually-hidden",
-      onchange: (ev) => {
-        const chosen = inputOf(ev).files?.[0];
-        if (!chosen) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result === "string") addPackText(reader.result, chosen.name);
-        };
-        reader.readAsText(chosen);
-      },
-    });
     const lib = loadLib();
     const siteTitles = new Set(sitePacks.map((pack) => pack.title));
-    const lines: HTMLElement[] = [
-      packRow(
-        SRD_TITLE,
-        "the built-in heroes",
-        !prefs.noBuiltin,
-        (on) => {
+    const rows = sitePacks.map((pack) => ({
+      title: pack.title || pack.file,
+      about: pack.about,
+      on:
+        lib.some((item) => item.title === pack.title) ||
+        customInfo.sources.some((source) => source.title === pack.title),
+      toggle: (checked: boolean) => {
+        if (checked) addSitePack(pack);
+        else dropPack(pack.title);
+      },
+    }));
+    for (const source of customInfo.sources) {
+      if (siteTitles.has(source.title)) continue;
+      const title = source.title || source.label;
+      rows.push({
+        title,
+        about: source.counts.join(", ") || "nothing new",
+        on: true,
+        toggle: (on: boolean) => {
+          if (!on) dropPack(title);
+        },
+      });
+    }
+    const savedUrl = storage.get(CUSTOM_URL_KEY) || "";
+    return contentPackPanel({
+      open: !!(prefs.custom || customInfo.error || customInfo.problems.length || loadReport.length),
+      onToggle: (open) => {
+        prefs.custom = open;
+        savePrefs();
+      },
+      summaryHint: "Add a race, class, spell, or item. An AI can write the file.",
+      guideHref: "https://github.com/ggggggggg/hero-sheets/blob/main/CUSTOM_CONTENT_GUIDE.md",
+      builtin: {
+        id: "use-builtin",
+        title: SRD_TITLE,
+        about: "the built-in heroes",
+        on: !prefs.noBuiltin,
+        toggle: (on) => {
           prefs.noBuiltin = !on;
           savePrefs();
           loadReport = [];
           reloadTables();
         },
-        "use-builtin",
-      ),
-    ];
-    for (const pack of sitePacks) {
-      const on =
-        lib.some((item) => item.title === pack.title) ||
-        customInfo.sources.some((source) => source.title === pack.title);
-      lines.push(
-        packRow(pack.title || pack.file, pack.about, on, (checked) => {
-          if (checked) addSitePack(pack);
-          else dropPack(pack.title);
-        }),
-      );
-    }
-    for (const source of customInfo.sources) {
-      if (siteTitles.has(source.title)) continue;
-      const title = source.title || source.label;
-      lines.push(
-        packRow(title, source.counts.join(", ") || "nothing new", true, (on) => {
-          if (!on) dropPack(title);
-        }),
-      );
-    }
-    if (customInfo.error) lines.push(el("li", { class: "bad" }, `⚠ ${customInfo.error}`));
-    for (const problem of [...new Set(customInfo.problems.concat(loadReport))])
-      lines.push(el("li", { class: "bad" }, `⚠ ${problem}`));
-    details.appendChild(
-      el(
-        "div",
-        { class: "field" },
-        el(
-          "p",
-          { class: "hint block" },
-          el(
-            "a",
-            {
-              class: "link",
-              href: "https://github.com/ggggggggg/hero-sheets/blob/main/CUSTOM_CONTENT_GUIDE.md",
-              target: "_blank",
-              rel: "noopener",
-            },
-            "Instructions",
-          ),
-          " for writing a pack.",
-        ),
-        el("div", { class: "row" }, el("label", { for: "custom-file", class: "ghost filebtn" }, "Load a file"), file),
-        linkRow(),
-        pasteRow(),
-        el("ul", { class: "customlist" }, lines),
-        customInfo.heroes.length
-          ? el(
+      },
+      rows,
+      problems: [...(customInfo.error ? [customInfo.error] : []), ...new Set(customInfo.problems.concat(loadReport))],
+      onFileText: (text, name) => {
+        addPackText(text, name);
+      },
+      onPaste: (text) => {
+        addPackText(text, "pasted pack");
+      },
+      link: {
+        value: savedUrl,
+        status: urlStatus,
+        saved: !!savedUrl,
+        onLoad: (url) => {
+          urlStatus = "Loading…";
+          void fetchCustomUrl(url, false).then((ok) => {
+            prefs.custom = true;
+            savePrefs();
+            if (ok) reloadTables();
+            else update();
+          });
+        },
+        onForget: () => {
+          storage.remove(CUSTOM_URL_KEY);
+          storage.remove(`${CUSTOM_URL_KEY}-text`);
+          memUrlText = null;
+          urlStatus = "";
+          reloadTables();
+        },
+      },
+      afterList: customInfo.heroes.length
+        ? el(
+            "div",
+            {},
+            el("div", { class: "flabel" }, "Ready-made heroes"),
+            el(
               "div",
-              {},
-              el("div", { class: "flabel" }, "Ready-made heroes"),
-              el(
-                "div",
-                { class: "chips" },
-                customInfo.heroes.map((hero) =>
-                  el(
-                    "button",
-                    { type: "button", class: "chip-btn", onclick: () => loadHero(hero) },
-                    `Start as ${String(hero.name)}`,
-                  ),
+              { class: "chips" },
+              customInfo.heroes.map((hero) =>
+                el(
+                  "button",
+                  { type: "button", class: "chip-btn", onclick: () => loadHero(hero) },
+                  `Start as ${String(hero.name)}`,
                 ),
               ),
-            )
-          : null,
+            ),
+          )
+        : null,
+      foot: [
         customInfo.problems.length || loadReport.length
           ? el(
               "p",
@@ -3197,344 +3011,13 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
               "You can load several packs. Heroes made with a pack keep their own copy of it, so they keep working even if you remove it.",
             )
           : null,
-      ),
-    );
-    return details;
-  }
-
-  function linkRow(): HTMLElement {
-    const saved = storage.get(CUSTOM_URL_KEY) || "";
-    const inp = el("input", {
-      id: "custom-url",
-      type: "url",
-      placeholder: "or paste a link to a custom content file",
-      value: saved,
-      autocomplete: "off",
-      spellcheck: "false",
+      ],
+      onClear: () => {
+        if (!window.confirm("Forget the heroes and content packs saved in this browser?")) return;
+        clearSavedKeys(DND_SAVE_KEYS);
+        location.reload();
+      },
     });
-    const go = el(
-      "button",
-      {
-        type: "button",
-        class: "ghost",
-        onclick: () => {
-          go.disabled = true;
-          urlStatus = "Loading…";
-          void fetchCustomUrl(inp.value, false).then((ok) => {
-            prefs.custom = true;
-            savePrefs();
-            if (ok) reloadTables();
-            else update();
-          });
-        },
-      },
-      "Load link",
-    );
-    const forget = saved
-      ? el(
-          "button",
-          {
-            type: "button",
-            class: "link",
-            onclick: () => {
-              storage.remove(CUSTOM_URL_KEY);
-              storage.remove(`${CUSTOM_URL_KEY}-text`);
-              memUrlText = null;
-              urlStatus = "";
-              reloadTables();
-            },
-          },
-          "forget link",
-        )
-      : null;
-    return el(
-      "div",
-      {},
-      el("div", { class: "row" }, inp, go),
-      saved ? el("p", { class: "hint block" }, "Checked for updates every time the builder opens. ", forget) : null,
-      urlStatus ? el("p", { class: `hint block${urlStatus.startsWith("⚠") ? " bad" : ""}` }, urlStatus) : null,
-    );
-  }
-
-  function pasteRow(): HTMLElement {
-    const ta = el("textarea", {
-      id: "custom-paste",
-      rows: 3,
-      placeholder: "or paste a pack's JSON here",
-      spellcheck: "false",
-    });
-    return el(
-      "div",
-      {},
-      ta,
-      el(
-        "div",
-        { class: "row" },
-        el(
-          "button",
-          {
-            type: "button",
-            class: "ghost",
-            onclick: () => {
-              if (ta.value.trim()) addPackText(ta.value, "pasted pack");
-            },
-          },
-          "Add pasted pack",
-        ),
-      ),
-    );
-  }
-
-  let seedTimer = 0;
-  let lookTimer = 0;
-
-  function relook(): void {
-    clearTimeout(lookTimer);
-    lookTimer = window.setTimeout(() => {
-      if (!state.avatar || state.look) return;
-      const refocus = () => {
-        const name = maybe("#name");
-        if (name instanceof HTMLInputElement && document.activeElement !== name) {
-          name.focus();
-          name.setSelectionRange(name.value.length, name.value.length);
-        }
-      };
-      const had = document.activeElement instanceof HTMLElement && document.activeElement.id === "name";
-      if (lookFor(state.avatar.seed).look !== state.avatar.look) {
-        void makeAvatar(state.avatar.style, state.avatar.seed).then(() => {
-          if (had) refocus();
-        });
-      } else {
-        update();
-        if (had) refocus();
-      }
-    }, 400);
-  }
-
-  const AVATAR_STYLES = [
-    { id: "pixel", label: "Pixel", pkg: "pixel-art", credit: "Art: “Pixel Art” by DiceBear, CC0" },
-    {
-      id: "adventurer",
-      label: "Adventurer",
-      pkg: "adventurer",
-      credit: "Art: “Adventurer” by Lisa Wischofsky, CC BY 4.0, via DiceBear",
-    },
-    {
-      id: "smile",
-      label: "Big smile",
-      pkg: "big-smile",
-      credit: "Art: “Big Smile” by Ashley Seo, CC BY 4.0, via DiceBear",
-    },
-    {
-      id: "doodle",
-      label: "Doodle",
-      pkg: "croodles",
-      credit: "Art: “Croodles” by Vijay Verma, CC BY 4.0, via DiceBear",
-    },
-  ];
-  const DEFAULT_STYLE = "pixel";
-  const DICEBEAR = "https://cdn.jsdelivr.net/npm/@dicebear/";
-  const DICEBEAR_V = "9.2.2";
-  const avatarMods = new Map<string, Promise<unknown>>();
-
-  async function importModule(url: string): Promise<unknown> {
-    return await import(/* @vite-ignore */ url);
-  }
-
-  function asAvatarCore(mod: unknown): AvatarCore {
-    if (typeof mod !== "object" || mod === null || !("createAvatar" in mod) || typeof mod.createAvatar !== "function") {
-      throw new Error("cartoon face library didn't load");
-    }
-    const createAvatar = mod.createAvatar.bind(mod) as AvatarCore["createAvatar"];
-    return { createAvatar };
-  }
-
-  async function avatarLib(pkg: string): Promise<[AvatarCore, object]> {
-    const coreUrl = `${DICEBEAR}core@${DICEBEAR_V}/+esm`;
-    const styleUrl = `${DICEBEAR}${pkg}@${DICEBEAR_V}/+esm`;
-    let core = avatarMods.get("core");
-    if (!core) {
-      core = importModule(coreUrl);
-      avatarMods.set("core", core);
-    }
-    let style = avatarMods.get(pkg);
-    if (!style) {
-      style = importModule(styleUrl);
-      avatarMods.set(pkg, style);
-    }
-    const [coreMod, styleMod] = await Promise.all([core, style]);
-    if (typeof styleMod !== "object" || styleMod === null) throw new Error("cartoon face library didn't load");
-    return [asAvatarCore(coreMod), styleMod];
-  }
-
-  const SEED_A = [
-    "brave",
-    "sneaky",
-    "sleepy",
-    "fizzy",
-    "lucky",
-    "grumpy",
-    "jolly",
-    "tiny",
-    "mighty",
-    "silly",
-    "quiet",
-    "wild",
-  ];
-  const SEED_B = [
-    "otter",
-    "dragon",
-    "badger",
-    "pickle",
-    "comet",
-    "goblin",
-    "pebble",
-    "wizard",
-    "turnip",
-    "falcon",
-    "muffin",
-    "troll",
-  ];
-  const randomSeed = () => `${pick(SEED_A)}-${pick(SEED_B)}-${1 + Math.floor(Math.random() * 99)}`;
-  const pad2 = (n: number) => String(n).padStart(2, "0");
-  const range = (pre: string, a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => pre + pad2(a + i));
-  const LOOKS: Record<string, Partial<Record<Look, Omit<AvatarOptions, "seed" | "size">>>> = {
-    adventurer: {
-      boy: { hair: range("short", 1, 19), earringsProbability: 0 },
-      girl: { hair: range("long", 1, 26), earringsProbability: 30, features: ["blush", "birthmark", "freckles"] },
-    },
-    pixel: { boy: { hair: range("short", 1, 24) }, girl: { hair: range("long", 1, 21), beardProbability: 0 } },
-    smile: {
-      boy: { hair: ["shortHair", "mohawk", "bowlCutHair", "shavedHead", "halfShavedHead", "curlyShortHair"] },
-      girl: {
-        hair: ["wavyBob", "curlyBob", "straightHair", "braids", "bunHair", "froBun", "bangs"],
-        accessories: ["catEars", "glasses", "sailormoonCrown", "clownNose", "sleepMask", "sunglasses", "faceMask"],
-      },
-    },
-    doodle: {
-      boy: {
-        top: [
-          "variant01",
-          "variant02",
-          "variant03",
-          "variant04",
-          "variant06",
-          "variant07",
-          "variant08",
-          "variant09",
-          "variant19",
-          "variant21",
-          "variant22",
-          "variant24",
-          "variant25",
-          "variant26",
-          "variant27",
-          "variant29",
-        ],
-      },
-      girl: {
-        top: [...range("variant", 10, 18), "variant05", "variant21", "variant25"],
-        beardProbability: 0,
-        mustacheProbability: 0,
-      },
-    },
-  };
-  const BOY_NAMES = new Set(
-    "tobin rook fennick grimble brick dex bolt aaron adam aiden alex alexander andrew anthony arthur austin ben benjamin bob brandon brian bruce caleb carl carlos charles charlie chris christopher cole colin connor daniel david dean derek dominic dylan edward eli elijah eric ethan evan felix finn frank fred gabe gabriel galen gavin george graham greg harry henry hugo ian isaac jack jacob jake james jason jeff jeremy jesse joe joel john jonah jonathan jordan jose joseph josh joshua juan julian justin kevin kyle leo leon liam logan lucas luke marcus mark martin mason matt matthew max michael miles nate nathan nick nicholas noah oliver oscar owen patrick paul peter phil ralph ray ryan sam samuel scott sean seth simon steve steven theo thomas tim timothy tom tony travis trevor tyler victor vincent walter wesley will william wyatt zach zachary gandalf aragorn bilbo frodo thor conan merlin drizzt gimli legolas boromir sam".split(
-      " ",
-    ),
-  );
-  const GIRL_NAMES = new Set(
-    "mira juniper nova tulip moxie luna odette saffron wren abby abigail ada addison alice alicia allison amanda amber amelia amy anna annie aria ariana audrey ava bella brooke caroline charlotte chloe claire clara daisy ella ellie emily emma eva evelyn faith fiona freya grace hailey hannah harper hazel holly isabel isabella ivy jade jane jasmine jenna jennifer jessica josie julia kate katie kayla kim laura layla leah lily lila lucy lydia maddie madison maya megan mia molly naomi natalie nora olivia penny piper poppy quinn rachel rose ruby sadie sara sarah scarlett sofia sophia sophie stella susan tessa violet willow zoe zoey hermione arwen galadriel elsa anna leia rey".split(
-      " ",
-    ),
-  );
-
-  function nameLook(name: string): Look | null {
-    const word =
-      String(name || "")
-        .trim()
-        .split(/\s+/)[0]
-        ?.toLowerCase()
-        .replace(/[^a-z]/g, "") ?? "";
-    return BOY_NAMES.has(word) ? "boy" : GIRL_NAMES.has(word) ? "girl" : null;
-  }
-  const coin = (seed: string): Look => {
-    let hash = 7;
-    for (const ch of String(seed)) hash = (hash * 31 + ch.charCodeAt(0)) % 2147483647;
-    return hash % 2 ? "girl" : "boy";
-  };
-  function lookFor(seed: string): { look: Look; why: string } {
-    if (state.look) return { look: state.look, why: "" };
-    const named = nameLook(state.name);
-    return named
-      ? { look: named, why: "matches the name" }
-      : { look: coin(seed), why: "coin flip (name could be either)" };
-  }
-
-  async function makeAvatar(styleId: string, seed: string | null): Promise<void> {
-    if (seed === null) {
-      state.avatar = null;
-      state.portrait = null;
-      state.portrait_credit = null;
-      update();
-      return;
-    }
-    const style = AVATAR_STYLES.find((item) => item.id === styleId);
-    const msg = maybe("#avatar-msg");
-    if (!style) {
-      if (msg)
-        msg.textContent = "Couldn't load the cartoon faces (they come from the internet). Upload a picture instead.";
-      return;
-    }
-    if (msg) msg.textContent = "Drawing a face…";
-    try {
-      const [core, styleMod] = await avatarLib(style.pkg);
-      const look = lookFor(seed).look;
-      const svg = core.createAvatar(styleMod, { seed, size: 256, ...(LOOKS[styleId]?.[look] ?? {}) }).toString();
-      state.portrait = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
-      state.portrait_credit = style.credit;
-      state.avatar = { style: styleId, seed, look };
-      const y = $("#controls").scrollTop;
-      const focused = document.activeElement instanceof HTMLElement ? document.activeElement.id : "";
-      update();
-      $("#controls").scrollTop = y;
-      if (focused === "face-seed") {
-        const face = maybe("#face-seed");
-        if (face instanceof HTMLInputElement) {
-          face.focus();
-          face.setSelectionRange(face.value.length, face.value.length);
-        }
-      }
-    } catch {
-      avatarMods.delete("core");
-      avatarMods.delete(style.pkg);
-      if (msg)
-        msg.textContent = "Couldn't load the cartoon faces (they come from the internet). Upload a picture instead.";
-    }
-  }
-
-  function loadPortrait(file: File): void {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result !== "string") return;
-      const img = new Image();
-      img.onload = () => {
-        const scale = Math.min(1, 600 / Math.max(img.width, img.height));
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        state.portrait = canvas.toDataURL("image/jpeg", 0.85);
-        state.portrait_credit = null;
-        state.avatar = null;
-        update();
-      };
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
   }
 
   function fitBack(root: ParentNode): void {
@@ -3788,7 +3271,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     update();
     markRolled();
     const myId = book.current;
-    void makeAvatar(DEFAULT_STYLE, randomSeed()).finally(() => {
+    void faces.randomFace().finally(() => {
       rolling = false;
       const hero = currentHero();
       if (book.current === myId && hero && !hero.edited) markRolled();

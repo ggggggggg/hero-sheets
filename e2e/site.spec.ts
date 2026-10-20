@@ -31,6 +31,7 @@ test.describe("builder", () => {
     await page.goto("/");
     await page.waitForSelector("#scaler .page.back");
     await expect(page.locator("#scaler .page")).toHaveCount(2);
+    await expect(page.locator("#controls .lead")).toHaveText("Build a D&D 5e inspired hero:");
     await expect(page.locator(".sitefoot")).toContainText("SRD 5.1");
     await expect(page.locator(".sitefoot a[href*='creativecommons.org/licenses/by/4.0/legalcode']")).toHaveCount(1);
     await field(page, "Class").getByRole("button", { name: "Rogue", exact: true }).click();
@@ -176,6 +177,7 @@ test.describe("builder", () => {
     const file = path.resolve("dist/index.html");
     const html = readFileSync(file, "utf8");
     expect(html).toContain("woff2");
+    expect(html).toContain("Build a D&D 5e inspired hero:");
     expect(html).toContain("github.com/ggggggggg/hero-sheets/blob/main/CUSTOM_CONTENT_GUIDE.md");
     expect(html).not.toContain("how to write a custom content file");
     expect(html).not.toMatch(/<(?:script|link)[^>]+(?:src|href)="https?:/);

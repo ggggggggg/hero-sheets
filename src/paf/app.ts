@@ -1,5 +1,8 @@
 import { ExportError, makePdf, readHeroSheet } from "../export";
+import { createFaceKit, type FacePick, type Look } from "../face";
 import { fitCardFont, previewLayout } from "../fit";
+import { contentPackPanel } from "../pack-ui";
+import { clearSavedKeys, PAF_SAVE_KEYS, refreshBundledPacks } from "../packs";
 import { fileStem } from "../text";
 import { ABILITIES, type Ability, type AbilityScores } from "../types";
 import {
@@ -12,8 +15,12 @@ import {
   pairOrigins,
   sheetHtml,
 } from "./core";
+import { mergePaf, packTitle, parsePafPack } from "./custom";
 
 const HEROES_KEY = "paf-heroes-v1";
+const PACKS_KEY = "paf-packs-v1";
+const PREFS_KEY = "paf-ui-v1";
+const PACK_URL_KEY = "paf-pack-url-v1";
 const NAMES = [
   "Ada",
   "Bram",
@@ -43,6 +50,15 @@ const NAMES = [
 
 interface PafState extends PafRequest {
   kind: "paf";
+  avatar: FacePick | null;
+  look: Look | null;
+}
+
+export interface PafSitePack {
+  file: string;
+  title: string;
+  about: string;
+  text: string;
 }
 
 interface SavedHero {
@@ -75,6 +91,7 @@ type Attrs = {
   rows?: string;
   open?: boolean;
   accept?: string;
+  title?: string;
   "aria-label"?: string;
   "aria-pressed"?: string;
   "aria-current"?: string;
@@ -117,12 +134,20 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
-function field(label: string, control: Node, hint?: string): HTMLElement {
+function field(label: string, control: Node, hint?: Kid | Kid[]): HTMLElement {
   return el(
     "div",
     { class: "field" },
     el("div", { class: "flabel" }, label, hint ? el("span", { class: "hint" }, hint) : null),
     control,
+  );
+}
+
+function dice(label: string, fn: () => void): HTMLButtonElement {
+  return el(
+    "button",
+    { type: "button", class: "dice", title: `Random ${label}`, "aria-label": `Random ${label}`, onclick: fn },
+    "🎲",
   );
 }
 
@@ -144,6 +169,11 @@ function pick<T>(items: readonly T[]): T {
   const item = items[Math.floor(Math.random() * items.length)];
   if (item === undefined) throw new Error("nothing to pick");
   return item;
+}
+
+function rollOther<T>(items: readonly T[], current: T): T {
+  const rest = items.filter((item) => item !== current);
+  return pick(rest.length ? rest : items);
 }
 
 function rollScores(): AbilityScores {
@@ -203,7 +233,18 @@ function stateFrom(value: unknown): PafState | null {
     inventory: linesOf(row.inventory),
     notes: typeof row.notes === "string" ? row.notes : "",
     portrait: optString(row.portrait),
+    portrait_credit: optString(row.portrait_credit),
+    avatar: faceOf(row.avatar),
+    look: row.look === "boy" || row.look === "girl" ? row.look : null,
   };
+}
+
+function faceOf(value: unknown): FacePick | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const look = row.look === "boy" || row.look === "girl" ? row.look : null;
+  if (typeof row.style !== "string" || typeof row.seed !== "string" || !look) return null;
+  return { style: row.style, seed: row.seed, look };
 }
 
 function loadBook(): Book | null {
@@ -229,9 +270,11 @@ function loadBook(): Book | null {
   }
 }
 
-export function startPaf(tables: PafTables): void {
-  const first = tables.origins[0];
-  const second = tables.origins[1] ?? first;
+export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] }): void {
+  const baseTables = input.tables;
+  const sitePacks = input.sitePacks;
+  const first = baseTables.origins[0];
+  const second = baseTables.origins[1] ?? first;
   if (!first || !second) throw new Error("PAF content needs two origins");
 
   function freshState(): PafState {
@@ -252,6 +295,9 @@ export function startPaf(tables: PafTables): void {
       inventory: null,
       notes: "",
       portrait: null,
+      portrait_credit: null,
+      avatar: null,
+      look: null,
     };
   }
 
@@ -266,6 +312,107 @@ export function startPaf(tables: PafTables): void {
   if (!current) throw new Error("no hero");
   book.current = current.id;
   let state = structuredClone(current.state);
+
+  interface PafPrefs {
+    packsOpen?: boolean;
+    noBuiltin?: boolean;
+  }
+  function loadPrefs(): PafPrefs {
+    try {
+      const text = localStorage.getItem(PREFS_KEY);
+      if (!text) return {};
+      const parsed: unknown = JSON.parse(text);
+      if (!parsed || typeof parsed !== "object") return {};
+      const row = parsed as Record<string, unknown>;
+      return { packsOpen: row.packsOpen === true, noBuiltin: row.noBuiltin === true };
+    } catch {
+      return {};
+    }
+  }
+  const prefs = loadPrefs();
+  function savePrefs(): void {
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+    } catch {
+      // private mode
+    }
+  }
+  function loadPacks(): { title: string; text: string }[] {
+    try {
+      const text = localStorage.getItem(PACKS_KEY);
+      if (!text) return [];
+      const parsed: unknown = JSON.parse(text);
+      if (!parsed || typeof parsed !== "object" || !("packs" in parsed)) return [];
+      const row = parsed as { packs: unknown };
+      if (!Array.isArray(row.packs)) return [];
+      const packs: { title: string; text: string }[] = [];
+      for (const item of row.packs) {
+        if (!item || typeof item !== "object") continue;
+        const pack = item as Record<string, unknown>;
+        if (typeof pack.title === "string" && typeof pack.text === "string") {
+          packs.push({ title: pack.title, text: pack.text });
+        }
+      }
+      return packs;
+    } catch {
+      return [];
+    }
+  }
+  function savePacks(packs: { title: string; text: string }[]): void {
+    try {
+      localStorage.setItem(PACKS_KEY, JSON.stringify({ packs }));
+    } catch {
+      // private mode
+    }
+  }
+  {
+    const refreshed = refreshBundledPacks(
+      loadPacks(),
+      sitePacks.map((pack) => ({ title: pack.title, text: pack.text })),
+    );
+    if (refreshed.changed) savePacks(refreshed.packs);
+  }
+  let packProblems: string[] = [];
+  let urlStatus = "";
+  function withPacks(): PafTables {
+    const empty: PafTables = {
+      max_level: baseTables.max_level,
+      origins: [],
+      skills: [],
+      armor: [],
+      weapons: [],
+      flux: [],
+      relics: [],
+      capstones: [],
+      heroes: [],
+    };
+    let current = prefs.noBuiltin ? empty : baseTables;
+    const problems: string[] = [];
+    for (const pack of loadPacks()) {
+      try {
+        current = mergePaf(current, parsePafPack(pack.text));
+      } catch (error) {
+        problems.push(`${pack.title}: ${messageOf(error)}`);
+      }
+    }
+    if (current.origins.length < 2 || !current.origins.some((origin) => origin.id === "baseline")) {
+      if (prefs.noBuiltin) {
+        prefs.noBuiltin = false;
+        savePrefs();
+        return withPacks();
+      }
+    }
+    packProblems = problems;
+    return current;
+  }
+  let tables = withPacks();
+  const faces = createFaceKit({
+    read: () => state,
+    write: (patch) => {
+      Object.assign(state, patch);
+    },
+    refresh: () => update(true),
+  });
   let built: PafCharacter | null = null;
   let heroesOpen = false;
   let timer = 0;
@@ -466,6 +613,159 @@ export function startPaf(tables: PafTables): void {
     );
   }
 
+  function savedLink(): { url: string; title: string } | null {
+    const raw = localStorage.getItem(PACK_URL_KEY);
+    if (!raw) return null;
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (parsed && typeof parsed === "object" && "url" in parsed && "title" in parsed) {
+        const row = parsed as { url: unknown; title: unknown };
+        if (typeof row.url === "string" && typeof row.title === "string") return { url: row.url, title: row.title };
+      }
+    } catch {
+      // a plain url from an older save
+    }
+    return { url: raw, title: "link" };
+  }
+
+  function addPackText(text: string, fallback: string): void {
+    let title = fallback;
+    try {
+      const obj = parsePafPack(text);
+      title = packTitle(obj, fallback);
+      const before = loadPacks();
+      savePacks(before.filter((pack) => pack.title !== title).concat([{ title, text }]));
+      tables = withPacks();
+      const bad = packProblems.filter((problem) => problem.startsWith(`${title}:`));
+      if (bad.length) {
+        savePacks(before);
+        tables = withPacks();
+        packProblems = bad;
+      }
+    } catch (error) {
+      packProblems = [`${title}: ${messageOf(error)}`];
+    }
+    prefs.packsOpen = true;
+    savePrefs();
+    update(true);
+  }
+
+  function dropPack(title: string): void {
+    savePacks(loadPacks().filter((pack) => pack.title !== title));
+    const link = savedLink();
+    if (link && link.title === title) {
+      localStorage.removeItem(PACK_URL_KEY);
+      urlStatus = "";
+    }
+    tables = withPacks();
+    update(true);
+  }
+
+  async function fetchPackUrl(raw: string): Promise<void> {
+    const url = raw.trim();
+    if (!/^https:\/\//i.test(url)) {
+      urlStatus = "⚠ The link should start with https://";
+      update(true);
+      return;
+    }
+    urlStatus = "Loading…";
+    update(true);
+    try {
+      const res = await fetch(url, { cache: "no-cache" });
+      if (!res.ok) throw new Error(`the server said ${res.status}`);
+      const text = await res.text();
+      const title = packTitle(parsePafPack(text), "link");
+      localStorage.setItem(PACK_URL_KEY, JSON.stringify({ url, title }));
+      urlStatus = "";
+      addPackText(text, "link");
+    } catch (error) {
+      urlStatus = `⚠ Couldn't use that link (${messageOf(error)}). A GitHub Gist “Raw” link works.`;
+      update(true);
+    }
+  }
+
+  function packSection(): HTMLElement {
+    const lib = loadPacks();
+    const siteTitles = new Set(sitePacks.map((pack) => pack.title));
+    const rows = sitePacks.map((pack) => ({
+      title: pack.title || pack.file,
+      about: pack.about,
+      on: lib.some((item) => item.title === pack.title),
+      toggle: (checked: boolean) => {
+        if (checked) addPackText(pack.text, pack.title);
+        else dropPack(pack.title);
+      },
+    }));
+    for (const pack of lib) {
+      if (siteTitles.has(pack.title)) continue;
+      rows.push({
+        title: pack.title,
+        about: "loaded pack",
+        on: true,
+        toggle: (on: boolean) => {
+          if (!on) dropPack(pack.title);
+        },
+      });
+    }
+    const savedUrl = savedLink()?.url ?? "";
+    return contentPackPanel({
+      open: !!(prefs.packsOpen || packProblems.length),
+      onToggle: (open) => {
+        prefs.packsOpen = open;
+        savePrefs();
+      },
+      summaryHint: "Add an origin, a weapon, or a relic. An AI can write the file.",
+      guideHref: "https://github.com/ggggggggg/hero-sheets/blob/main/CUSTOM_CONTENT_GUIDE.md#paf-packs",
+      builtin: {
+        id: "use-builtin",
+        title: "Built-in origins",
+        about: "the origins that come with PAF",
+        on: !prefs.noBuiltin,
+        toggle: (on) => {
+          prefs.noBuiltin = !on;
+          savePrefs();
+          tables = withPacks();
+          update(true);
+        },
+      },
+      rows,
+      problems: packProblems,
+      onFileText: (text, name) => {
+        addPackText(text, name.replace(/\.json$/i, ""));
+      },
+      onPaste: (text) => {
+        addPackText(text, "pasted pack");
+      },
+      link: {
+        value: savedUrl,
+        status: urlStatus,
+        saved: !!savedUrl,
+        onLoad: (url) => {
+          void fetchPackUrl(url);
+        },
+        onForget: () => {
+          const link = savedLink();
+          localStorage.removeItem(PACK_URL_KEY);
+          urlStatus = "";
+          if (link) dropPack(link.title);
+          else update(true);
+        },
+      },
+      foot: lib.length
+        ? el(
+            "p",
+            { class: "hint block" },
+            "You can load several packs. A row with the same id replaces the one you already have.",
+          )
+        : null,
+      onClear: () => {
+        if (!window.confirm("Forget the heroes and content packs saved in this browser?")) return;
+        clearSavedKeys(PAF_SAVE_KEYS);
+        location.reload();
+      },
+    });
+  }
+
   function whichField(label: string, current: string | null, set: (id: string) => void): HTMLElement {
     const chosen = current === state.origin2 ? state.origin2 : state.origin1;
     return field(
@@ -481,6 +781,10 @@ export function startPaf(tables: PafTables): void {
           update(true);
         },
       ),
+      dice(label, () => {
+        set(chosen === state.origin1 ? state.origin2 : state.origin1);
+        update(true);
+      }),
     );
   }
 
@@ -523,17 +827,28 @@ export function startPaf(tables: PafTables): void {
     const nodes: Node[] = [];
     if (heroesOpen) nodes.push(heroesPanel());
     nodes.push(
-      el("p", { class: "tagline" }, "Two origins. Your level adds to attacks, skills, and defenses."),
+      el(
+        "p",
+        { class: "tagline lead" },
+        "Build an even simpler hero for post-apocalyptic fantasy, with Gamma World inspired origins and simplified choices:",
+      ),
       field(
         "Name",
         el("input", {
+          id: "name",
           type: "text",
           value: state.name,
           "aria-label": "Name",
           oninput: (ev) => {
             state.name = textOf(ev);
             update(false);
+            faces.noteName();
           },
+        }),
+        dice("name", () => {
+          state.name = rollOther(NAMES, state.name);
+          update(true);
+          faces.noteName();
         }),
       ),
       field(
@@ -546,6 +861,13 @@ export function startPaf(tables: PafTables): void {
             update(true);
           },
         ),
+        dice("first origin", () => {
+          state.origin1 = rollOther(
+            tables.origins.map((origin) => origin.id),
+            state.origin1,
+          );
+          update(true);
+        }),
       ),
       field(
         "Second origin",
@@ -557,7 +879,16 @@ export function startPaf(tables: PafTables): void {
             update(true);
           },
         ),
-        "Choosing one origin twice fills the second spot with Baseline.",
+        [
+          "Choosing one origin twice fills the second spot with Baseline. ",
+          dice("second origin", () => {
+            state.origin2 = rollOther(
+              tables.origins.map((origin) => origin.id),
+              state.origin2,
+            );
+            update(true);
+          }),
+        ],
       ),
       field(
         "Level",
@@ -572,7 +903,14 @@ export function startPaf(tables: PafTables): void {
             update(true);
           },
         ),
-        "Adds to attacks, skills, and defenses.",
+        [
+          "Adds to attacks, skills, and defenses. ",
+          dice("level", () => {
+            const levels = Array.from({ length: tables.max_level }, (_, i) => i + 1);
+            state.level = rollOther(levels, state.level);
+            update(true);
+          }),
+        ],
       ),
       field(
         "Bonus skill",
@@ -584,7 +922,16 @@ export function startPaf(tables: PafTables): void {
             update(true);
           },
         ),
-        "+4, and it stacks with an origin.",
+        [
+          "+4, and it stacks with an origin. ",
+          dice("bonus skill", () => {
+            state.bonus_skill = rollOther(
+              tables.skills.map((skill) => skill.name),
+              opt.bonus_skill,
+            );
+            update(true);
+          }),
+        ],
       ),
     );
     if (opt.show_crit && state.origin1 !== state.origin2) {
@@ -621,56 +968,61 @@ export function startPaf(tables: PafTables): void {
               update(true);
             },
           ),
+          dice("capstone", () => {
+            state.uber = rollOther(
+              tables.capstones.map((item) => item.id),
+              state.uber ?? tables.capstones[0]?.id ?? "",
+            );
+            update(true);
+          }),
         ),
       );
     }
+    const armorNames = ["No armor", ...tables.armor.map((armor) => armor.name)];
+    const weaponNames = tables.weapons.map((weapon) => weapon.name);
     nodes.push(
       field(
         "Armor",
         chips(
-          [
-            { id: "No armor", label: "No armor" },
-            ...tables.armor.map((armor) => ({ id: armor.name, label: armor.name })),
-          ],
+          armorNames.map((name) => ({ id: name, label: name })),
           built.combat.armor,
           (id) => {
             state.armor = id;
             update(true);
           },
         ),
-        "The highest Armor is used until you pick one.",
+        [
+          "The highest Armor is used until you pick one. ",
+          dice("armor", () => {
+            state.armor = rollOther(armorNames, built?.combat.armor ?? "No armor");
+            update(true);
+          }),
+        ],
       ),
       field(
         "Weapon",
         chips(
-          tables.weapons.map((weapon) => ({ id: weapon.name, label: weapon.name })),
+          weaponNames.map((name) => ({ id: name, label: name })),
           built.attacks[0]?.name ?? "",
           (id) => {
             state.weapon = id;
             update(true);
           },
         ),
+        dice("weapon", () => {
+          state.weapon = rollOther(weaponNames, built?.attacks[0]?.name ?? "");
+          update(true);
+        }),
       ),
-      field("Scores", el("div", { class: "numgrid" }, scoreRows), undefined),
+      field(
+        "Scores",
+        el("div", { class: "numgrid" }, scoreRows),
+        dice("scores", () => {
+          state.scores = rollScores();
+          update(true);
+        }),
+      ),
     );
-    const scoreField = nodes[nodes.length - 1];
-    if (scoreField instanceof HTMLElement) {
-      const label = scoreField.querySelector(".flabel");
-      label?.append(
-        el(
-          "button",
-          {
-            type: "button",
-            class: "link",
-            onclick: () => {
-              state.scores = rollScores();
-              update(true);
-            },
-          },
-          "Re-roll scores",
-        ),
-      );
-    }
     nodes.push(
       field(
         "Ready heroes",
@@ -695,6 +1047,9 @@ export function startPaf(tables: PafTables): void {
             state.inventory = null;
             state.notes = "";
             state.portrait = null;
+            state.portrait_credit = null;
+            state.avatar = null;
+            state.look = null;
             update(true);
           },
         ),
@@ -724,49 +1079,7 @@ export function startPaf(tables: PafTables): void {
           },
         }),
       ),
-      field(
-        "Picture",
-        el(
-          "div",
-          { class: "row" },
-          el("input", {
-            id: "portrait",
-            type: "file",
-            accept: "image/*",
-            class: "visually-hidden",
-            onchange: (ev) => {
-              const input = ev.target;
-              if (!(input instanceof HTMLInputElement)) return;
-              const file = input.files?.[0];
-              input.value = "";
-              if (!file) return;
-              const reader = new FileReader();
-              reader.onload = () => {
-                if (typeof reader.result === "string") {
-                  state.portrait = reader.result;
-                  update(true);
-                }
-              };
-              reader.readAsDataURL(file);
-            },
-          }),
-          el("label", { class: "filebtn", for: "portrait" }, state.portrait ? "Replace picture" : "Add a picture"),
-          state.portrait
-            ? el(
-                "button",
-                {
-                  type: "button",
-                  class: "link",
-                  onclick: () => {
-                    state.portrait = null;
-                    update(true);
-                  },
-                },
-                "Clear picture",
-              )
-            : null,
-        ),
-      ),
+      field("Picture", faces.controls(), "or leave blank and draw one"),
       el(
         "details",
         { id: "flux-relics", class: "adv" },
@@ -782,6 +1095,7 @@ export function startPaf(tables: PafTables): void {
         el("h4", { class: "plvl" }, "Relics"),
         ...tables.relics.map((item) => el("p", { class: "pdesc" }, el("b", {}, item.name), ` — ${item.desc}`)),
       ),
+      packSection(),
     );
     const controls = $("#controls");
     const y = controls.scrollTop;
@@ -858,7 +1172,7 @@ export function startPaf(tables: PafTables): void {
       if (!built) throw new Error("no hero yet");
       const blob = await makePdf(sheetHtml(built), state.name || "Hero", {
         state: structuredClone(state),
-        packs: [],
+        packs: loadPacks(),
       });
       await saveFile(`${fileBase()}.pdf`, blob);
       status("PDF ready — print it double-sided, flip on the long edge.");
@@ -898,6 +1212,12 @@ export function startPaf(tables: PafTables): void {
       status("This PDF's hero is missing its origins.", true);
       return;
     }
+    if (sheet.packs.length) {
+      const lib = loadPacks();
+      const titles = new Set(sheet.packs.map((pack) => pack.title));
+      savePacks(lib.filter((pack) => !titles.has(pack.title)).concat(sheet.packs));
+      tables = withPacks();
+    }
     state = next;
     update(true);
     status(`Opened ${state.name || "Hero"}.`);
@@ -924,6 +1244,9 @@ export function startPaf(tables: PafTables): void {
     state.inventory = null;
     state.notes = "";
     state.portrait = null;
+    state.portrait_credit = null;
+    state.avatar = null;
+    state.look = null;
     state.uber = pick(tables.capstones).id;
     resolve();
     const ids = [state.origin1, state.origin2];

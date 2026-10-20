@@ -1,7 +1,7 @@
 // Records demo/builder.gif from the booted page.
 // Frames are taken only after styles and the sheet are on screen.
 import { execFile, spawn } from "node:child_process";
-import { copyFile, mkdir, rm, stat } from "node:fs/promises";
+import { copyFile, mkdir, rename, rm, stat } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,14 +10,18 @@ import { chromium } from "@playwright/test";
 
 const execFileAsync = promisify(execFile);
 const require = createRequire(import.meta.url);
-const ffmpeg = require("ffmpeg-static");
+const ffmpegMod = require("ffmpeg-static");
+const gifsicleMod = require("gifsicle");
+const ffmpeg = typeof ffmpegMod === "string" ? ffmpegMod : ffmpegMod.default;
+const gifsicle = typeof gifsicleMod === "string" ? gifsicleMod : gifsicleMod.default;
 if (typeof ffmpeg !== "string") throw new Error("ffmpeg-static did not provide a binary");
+if (typeof gifsicle !== "string") throw new Error("gifsicle did not provide a binary");
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const port = 4174;
 const base = `http://localhost:${port}`;
 const demoDir = path.join(root, "demo");
 const tmp = path.join(demoDir, ".tmp");
-const fps = 10;
+const fps = 8;
 
 function field(page, label) {
   return page.locator(".field").filter({
@@ -348,9 +352,9 @@ try {
 
   await scrollToEl(turtle, 80);
   await press(turtle);
-  await page.locator(".page.back .cd .n", { hasText: "Pop into Shell" }).waitFor();
+  await page.locator(".page.back .cd .n", { hasText: "Shell Defense" }).waitFor();
   await seeActions();
-  await assertActions("Pop into Shell");
+  await assertActions("Shell Defense");
   marks.turtle = shots.length;
   await hold(2.2);
 
@@ -384,11 +388,14 @@ try {
     "-i",
     path.join(tmp, "%04d.png"),
     "-vf",
-    "fps=10,scale=1280:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=256:stats_mode=diff[p];[s1][p]paletteuse=dither=none",
+    "fps=8,scale=760:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=64:stats_mode=diff[p];[s1][p]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle",
     "-loop",
     "0",
     gif,
   ]);
+  const packed = `${gif}.pack`;
+  await execFileAsync(gifsicle, ["-O3", "--lossy=120", "-o", packed, gif]);
+  await rename(packed, gif);
   const review = "/tmp/hero-demo-frames";
   await mkdir(review, { recursive: true });
   for (const [name, index] of Object.entries(marks)) {

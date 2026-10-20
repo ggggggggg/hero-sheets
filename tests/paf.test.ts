@@ -35,6 +35,7 @@ function req(over: Partial<PafRequest> = {}): PafRequest {
     inventory: null,
     notes: "",
     portrait: null,
+    portrait_credit: null,
     ...over,
   };
 }

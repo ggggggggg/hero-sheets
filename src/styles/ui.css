@@ -72,6 +72,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .chip-btn.offbook, .chip-btn.on.offbook, li.spell.offbook, .popt.offbook { border-color: var(--off-line) }
 li.spell.offbook { border-style: solid }
 .tagline { margin: -6px 0 0; color: var(--muted); font-style: italic }
+.lead { margin: 0 0 12px; font-style: normal; line-height: 1.45 }
 .has-tip { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none }
 #tip { position: fixed; z-index: 50; background: var(--panel); color: var(--fg); border: 1.5px solid var(--ac); border-radius: 12px;
   padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.22); font-size: 13px; line-height: 1.4; max-height: 60vh; overflow: auto }
