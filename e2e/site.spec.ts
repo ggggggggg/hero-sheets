@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
-import { field } from "./helpers";
+import { field, hoverTip } from "./helpers";
 
 const SOLO_PACK = JSON.stringify({
   title: "Solo World",
@@ -34,6 +34,12 @@ test.describe("builder", () => {
     await expect(page.locator("#controls .lead")).toHaveText("Build a D&D 5e inspired hero:");
     await page.locator("#open-pdf").hover();
     await expect(page.locator("#tip")).toContainText("That hero comes back");
+    await page.locator("#pdf").hover();
+    await expect(page.locator("#tip")).toContainText("Saves this hero as a PDF");
+    await hoverTip(page, page.locator("#name"));
+    await expect(page.locator("#tip")).toContainText("name printed on the sheet");
+    await hoverTip(page, page.getByRole("button", { name: "Random name" }));
+    await expect(page.locator("#tip")).toContainText("Picks a different one at random");
     await expect(page.locator(".sitefoot")).toContainText("SRD 5.1");
     await expect(page.locator(".sitefoot a[href*='creativecommons.org/licenses/by/4.0/legalcode']")).toHaveCount(1);
     await field(page, "Class").getByRole("button", { name: "Rogue", exact: true }).click();

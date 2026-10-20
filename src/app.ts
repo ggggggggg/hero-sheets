@@ -15,7 +15,7 @@ import { fitCardFont, previewLayout } from "./fit";
 import { contentPackPanel } from "./pack-ui";
 import { clearSavedKeys, DND_SAVE_KEYS, refreshBundledPacks } from "./packs";
 import { fileStem } from "./text";
-import { createTips, type Tip } from "./tips";
+import { createTips, HELP, help, type Tip, tipChrome, tipNode } from "./tips";
 import {
   ABILITIES,
   type Ability,
@@ -1204,10 +1204,13 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
   }
 
   const dice = (label: string, fn: () => void) =>
-    el(
-      "button",
-      { type: "button", class: "dice", title: `Random ${label}`, "aria-label": `Random ${label}`, onclick: fn },
-      "🎲",
+    tipNode(
+      el(
+        "button",
+        { type: "button", class: "dice", title: `Random ${label}`, "aria-label": `Random ${label}`, onclick: fn },
+        "🎲",
+      ),
+      HELP.dice(label),
     );
 
   function dmText(reason: string): string {
@@ -1226,10 +1229,13 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     onclick: () => void,
     mini = false,
   ): HTMLButtonElement {
-    return el(
-      "button",
-      { type: "button", class: `step${mini ? " mini" : ""}`, "aria-label": label, disabled, onclick },
-      down ? "−" : "+",
+    return tipNode(
+      el(
+        "button",
+        { type: "button", class: `step${mini ? " mini" : ""}`, "aria-label": label, disabled, onclick },
+        down ? "−" : "+",
+      ),
+      HELP.step(label),
     );
   }
 
@@ -1269,10 +1275,19 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
         el("span", { class: "swaphint" }, opts.hint),
       ),
       opts.roll,
-      el(
-        "button",
-        { type: "button", class: "icon", title: "Remove", "aria-label": `Remove ${opts.name}`, onclick: opts.onRemove },
-        "✕",
+      tipNode(
+        el(
+          "button",
+          {
+            type: "button",
+            class: "icon",
+            title: "Remove",
+            "aria-label": `Remove ${opts.name}`,
+            onclick: opts.onRemove,
+          },
+          "✕",
+        ),
+        help("Remove", "Takes this off the list."),
       ),
     );
   }
@@ -1359,18 +1374,21 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     const what = isItem ? "potion or item" : isCantrip ? "cantrip" : "spell";
     const scope =
       spellKind && !poolOverride
-        ? el(
-            "label",
-            { class: "pall" },
-            el("input", {
-              type: "checkbox",
-              checked: !widen,
-              onchange: (ev) => {
-                picker = { kind, index, all: !inputOf(ev).checked };
-                update();
-              },
-            }),
-            !widen ? "Allowed for this hero" : isCantrip ? "All cantrips" : "All spells",
+        ? tipNode(
+            el(
+              "label",
+              { class: "pall" },
+              el("input", {
+                type: "checkbox",
+                checked: !widen,
+                onchange: (ev) => {
+                  picker = { kind, index, all: !inputOf(ev).checked };
+                  update();
+                },
+              }),
+              !widen ? "Allowed for this hero" : isCantrip ? "All cantrips" : "All spells",
+            ),
+            help("This class only", "Checked keeps the list to what this class can learn. Uncheck it to see the rest."),
           )
         : null;
     return el(
@@ -1380,7 +1398,10 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
         "div",
         { class: "phead" },
         el("div", {}, el("b", {}, index < 0 ? `Add a ${what}` : `Swap ${current[index]} for…`), scope),
-        el("button", { type: "button", class: "icon", "aria-label": "Close", onclick: close }, "✕"),
+        tipNode(
+          el("button", { type: "button", class: "icon", "aria-label": "Close", onclick: close }, "✕"),
+          help("Close", "Closes this list."),
+        ),
       ),
       names.length
         ? null
@@ -1536,26 +1557,32 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
         el(
           "li",
           {},
-          el(
-            "button",
-            { type: "button", class: "addbtn", "aria-expanded": isOpen ? "true" : "false", onclick: () => open(-1) },
-            `+ add ${isCantrip ? "a cantrip" : "a spell"} (${max - current.length} left)`,
+          tipNode(
+            el(
+              "button",
+              { type: "button", class: "addbtn", "aria-expanded": isOpen ? "true" : "false", onclick: () => open(-1) },
+              `+ add ${isCantrip ? "a cantrip" : "a spell"} (${max - current.length} left)`,
+            ),
+            HELP.addSpell(isCantrip ? "cantrip" : "spell"),
           ),
         ),
       );
       if (isOpen) items.push(el("li", { class: "pwrap" }, pickerPanel(kind, built, current, -1)));
     }
-    const reset = el(
-      "button",
-      {
-        type: "button",
-        class: "link",
-        onclick: () => {
-          if (!isCantrip) state.path_spells = null;
-          set(null);
+    const reset = tipNode(
+      el(
+        "button",
+        {
+          type: "button",
+          class: "link",
+          onclick: () => {
+            if (!isCantrip) state.path_spells = null;
+            set(null);
+          },
         },
-      },
-      "reset",
+        "reset",
+      ),
+      help("Reset", "Puts the usual spells back."),
     );
     const pathCur = state.path_spells || built.bookAuto;
     const offBook =
@@ -1581,18 +1608,21 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
         dmWarn(
           what,
           " ",
-          el(
-            "button",
-            {
-              type: "button",
-              class: "link",
-              onclick: () => {
-                state.path_spells = null;
-                picker = null;
-                update();
+          tipNode(
+            el(
+              "button",
+              {
+                type: "button",
+                class: "link",
+                onclick: () => {
+                  state.path_spells = null;
+                  picker = null;
+                  update();
+                },
               },
-            },
-            "back to the book",
+              "back to the book",
+            ),
+            help("Back to the book", "Puts the path spells back."),
           ),
         ),
       );
@@ -1673,18 +1703,21 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
               { class: "pbline" },
               `Point buy: ${total} of ${pb.budget} points${total < pb.budget ? ` (${pb.budget - total} to spend)` : " ✓"}`,
             );
-    const reset = el(
-      "button",
-      {
-        type: "button",
-        class: "link",
-        onclick: () => {
-          state.base_scores = null;
-          state.race_asi = null;
-          update();
+    const reset = tipNode(
+      el(
+        "button",
+        {
+          type: "button",
+          class: "link",
+          onclick: () => {
+            state.base_scores = null;
+            state.race_asi = null;
+            update();
+          },
         },
-      },
-      "reset",
+        "reset",
+      ),
+      HELP.resetNumbers,
     );
     const roll = dice("stats", () => {
       const vals = ABILITIES.map((ability) => built.defaultBase[ability]).sort((a, b) => b - a);
@@ -1726,17 +1759,20 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
           "Race bonus: put it wherever you like (newer rules let you pick). ",
           state.race_asi ? `Adds up to +${rTotal}. ` : "",
           state.race_asi
-            ? el(
-                "button",
-                {
-                  type: "button",
-                  class: "link",
-                  onclick: () => {
-                    state.race_asi = null;
-                    update();
+            ? tipNode(
+                el(
+                  "button",
+                  {
+                    type: "button",
+                    class: "link",
+                    onclick: () => {
+                      state.race_asi = null;
+                      update();
+                    },
                   },
-                },
-                "usual race bonus",
+                  "usual race bonus",
+                ),
+                help("Usual race bonus", "Puts the race bonus back where the book puts it."),
               )
             : null,
         ),
@@ -1820,18 +1856,21 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       }));
     const wearing = built.armorOptions.find((armor) => armor.name === curName);
     const offbook = wearing ? !wearing.trained : false;
-    const reset = el(
-      "button",
-      {
-        type: "button",
-        class: "link",
-        onclick: () => {
-          state.armor = null;
-          state.shield = null;
-          update();
+    const reset = tipNode(
+      el(
+        "button",
+        {
+          type: "button",
+          class: "link",
+          onclick: () => {
+            state.armor = null;
+            state.shield = null;
+            update();
+          },
         },
-      },
-      "reset",
+        "reset",
+      ),
+      help("Reset", "Puts the usual armor back."),
     );
     return field(
       "Armor",
@@ -1912,17 +1951,20 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
         ),
       );
     });
-    const reset = el(
-      "button",
-      {
-        type: "button",
-        class: "link",
-        onclick: () => {
-          state.weapon = null;
-          update();
+    const reset = tipNode(
+      el(
+        "button",
+        {
+          type: "button",
+          class: "link",
+          onclick: () => {
+            state.weapon = null;
+            update();
+          },
         },
-      },
-      "reset",
+        "reset",
+      ),
+      help("Reset", "Puts the usual weapon back."),
     );
     return field(
       "Main weapon",
@@ -2014,14 +2056,17 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
   }
 
   function resetNumbers(clear: (draft: NumberOverrides) => void, changed: boolean): HTMLElement {
-    return el(
-      "button",
-      {
-        type: "button",
-        class: "link",
-        onclick: () => editNumbers(clear),
-      },
-      changed ? "reset" : "default • reset",
+    return tipNode(
+      el(
+        "button",
+        {
+          type: "button",
+          class: "link",
+          onclick: () => editNumbers(clear),
+        },
+        changed ? "reset" : "default • reset",
+      ),
+      HELP.resetNumbers,
     );
   }
 
@@ -2149,11 +2194,14 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
           savePrefs();
         },
       },
-      el(
-        "summary",
-        {},
-        "Fine-tune: armor, scores, saves, skills & other numbers",
-        el("span", { class: "hint" }, "The defaults are usually fine, but you can change all of these."),
+      tipNode(
+        el(
+          "summary",
+          {},
+          "Fine-tune: armor, scores, saves, skills & other numbers",
+          el("span", { class: "hint" }, "The defaults are usually fine, but you can change all of these."),
+        ),
+        help("Fine-tune", "Armor, scores, saves, skills, and the other numbers. The defaults are usually fine."),
       ),
       armorField(built),
       weaponField(built),
@@ -2210,34 +2258,40 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
         el(
           "li",
           {},
-          el(
-            "button",
-            {
-              type: "button",
-              class: "addbtn",
-              "aria-expanded": isOpen ? "true" : "false",
-              onclick: () => {
-                picker = isOpen ? null : { kind: "items", index: -1 };
-                update();
+          tipNode(
+            el(
+              "button",
+              {
+                type: "button",
+                class: "addbtn",
+                "aria-expanded": isOpen ? "true" : "false",
+                onclick: () => {
+                  picker = isOpen ? null : { kind: "items", index: -1 };
+                  update();
+                },
               },
-            },
-            `+ add a potion or item (${max - current.length} left)`,
+              `+ add a potion or item (${max - current.length} left)`,
+            ),
+            help("Add a potion or item", "Opens the list."),
           ),
         ),
       );
       if (isOpen) items.push(el("li", { class: "pwrap" }, pickerPanel("items", built, current, -1)));
     }
-    const reset = el(
-      "button",
-      {
-        type: "button",
-        class: "link",
-        onclick: () => {
-          state.item_seed = null;
-          set(null);
+    const reset = tipNode(
+      el(
+        "button",
+        {
+          type: "button",
+          class: "link",
+          onclick: () => {
+            state.item_seed = null;
+            set(null);
+          },
         },
-      },
-      "reset",
+        "reset",
+      ),
+      help("Reset", "Puts the usual potions and items back."),
     );
     const roll = dice("potions", () => {
       picker = null;
@@ -2273,18 +2327,21 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     panel.replaceChildren();
     if (prefs.heroesOpen) panel.append(heroesPanel());
     panel.append(el("p", { class: "tagline lead" }, "Build a D&D 5e inspired hero:"));
-    const nameIn = el("input", {
-      id: "name",
-      type: "text",
-      value: state.name,
-      maxlength: 40,
-      autocomplete: "off",
-      oninput: (ev) => {
-        state.name = textOf(ev).value;
-        update(false);
-        faces.noteName();
-      },
-    });
+    const nameIn = tipNode(
+      el("input", {
+        id: "name",
+        type: "text",
+        value: state.name,
+        maxlength: 40,
+        autocomplete: "off",
+        oninput: (ev) => {
+          state.name = textOf(ev).value;
+          update(false);
+          faces.noteName();
+        },
+      }),
+      HELP.name,
+    );
     panel.append(
       field(
         "Name",
@@ -2502,32 +2559,38 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     const items = itemList(built);
     if (items) panel.append(items);
     const ch = buildCharacter(tables, request());
-    const inv = el(
-      "textarea",
-      {
-        id: "inventory",
-        rows: 5,
-        oninput: (ev) => {
-          state.inventory = textOf(ev)
-            .value.split("\n")
-            .filter((line) => line.trim());
-          update(false);
+    const inv = tipNode(
+      el(
+        "textarea",
+        {
+          id: "inventory",
+          rows: 5,
+          oninput: (ev) => {
+            state.inventory = textOf(ev)
+              .value.split("\n")
+              .filter((line) => line.trim());
+            update(false);
+          },
         },
-      },
-      (state.inventory || ch.inventory).join("\n"),
+        (state.inventory || ch.inventory).join("\n"),
+      ),
+      HELP.inventory,
     );
     panel.append(field("Inventory", inv, "one per line"));
-    const notes = el(
-      "textarea",
-      {
-        id: "notes",
-        rows: 3,
-        oninput: (ev) => {
-          state.notes = textOf(ev).value;
-          update(false);
+    const notes = tipNode(
+      el(
+        "textarea",
+        {
+          id: "notes",
+          rows: 3,
+          oninput: (ev) => {
+            state.notes = textOf(ev).value;
+            update(false);
+          },
         },
-      },
-      state.notes || "",
+        state.notes || "",
+      ),
+      HELP.notes,
     );
     panel.append(
       field(
@@ -2604,35 +2667,41 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     const row = (hero: HeroRecord) => {
       const cur = hero.id === book.current;
       let armed = false;
-      const del = el(
-        "button",
-        {
-          type: "button",
-          class: "link",
-          "aria-label": `Delete ${label(hero)}`,
-          onclick: (ev) => {
-            if (!armed) {
-              armed = true;
-              if (ev.currentTarget instanceof HTMLElement) ev.currentTarget.textContent = "delete for good?";
-              return;
-            }
-            deleteHero(hero.id);
-          },
-        },
-        "×",
-      );
-      return el(
-        "li",
-        { class: `herorow${cur ? " on" : ""}` },
+      const del = tipNode(
         el(
           "button",
           {
             type: "button",
-            class: "heroname",
-            "aria-current": cur ? "true" : "false",
-            onclick: () => switchHero(hero.id),
+            class: "link",
+            "aria-label": `Delete ${label(hero)}`,
+            onclick: (ev) => {
+              if (!armed) {
+                armed = true;
+                if (ev.currentTarget instanceof HTMLElement) ev.currentTarget.textContent = "delete for good?";
+                return;
+              }
+              deleteHero(hero.id);
+            },
           },
-          label(hero),
+          "×",
+        ),
+        HELP.deleteHero,
+      );
+      return el(
+        "li",
+        { class: `herorow${cur ? " on" : ""}` },
+        tipNode(
+          el(
+            "button",
+            {
+              type: "button",
+              class: "heroname",
+              "aria-current": cur ? "true" : "false",
+              onclick: () => switchHero(hero.id),
+            },
+            label(hero),
+          ),
+          HELP.savedHero,
         ),
         del,
       );
@@ -2648,11 +2717,14 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
           savePrefs();
         },
       },
-      el(
-        "summary",
-        {},
-        `Random rolls (${rolls.length})`,
-        el("span", { class: "hint" }, " — dice heroes you haven't changed; change one and it moves up"),
+      tipNode(
+        el(
+          "summary",
+          {},
+          `Random rolls (${rolls.length})`,
+          el("span", { class: "hint" }, " — dice heroes you haven't changed; change one and it moves up"),
+        ),
+        help("Random rolls", "Dice heroes you haven't changed. Change one and it moves up."),
       ),
       el("ul", { class: "herolist" }, rolls.map(row)),
     );
@@ -2664,18 +2736,21 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
         "div",
         { class: "flabel" },
         "Your heroes",
-        el(
-          "button",
-          {
-            type: "button",
-            class: "link",
-            onclick: () => {
-              prefs.heroesOpen = false;
-              savePrefs();
-              update();
+        tipNode(
+          el(
+            "button",
+            {
+              type: "button",
+              class: "link",
+              onclick: () => {
+                prefs.heroesOpen = false;
+                savePrefs();
+                update();
+              },
             },
-          },
-          "close",
+            "close",
+          ),
+          help("Close", "Hides this list. The heroes stay saved in this browser."),
         ),
       ),
       mine.length
@@ -2684,7 +2759,10 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       el(
         "div",
         { class: "row" },
-        el("button", { type: "button", class: "ghost", onclick: newRandomHero }, "🎲 New random hero"),
+        tipNode(
+          el("button", { type: "button", class: "ghost", onclick: newRandomHero }, "🎲 New random hero"),
+          HELP.newHero,
+        ),
       ),
       rolls.length ? drawer : null,
       el("p", { class: "hint block" }, "Heroes are saved in this browser only."),
@@ -3164,10 +3242,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
   const openPdfInput = $("#open-pdf-file");
   if (!(openPdfInput instanceof HTMLInputElement)) throw new Error("missing #open-pdf-file");
   const openPdf = $("#open-pdf");
-  tipped(openPdf, () => ({
-    title: "Open PDF",
-    lines: [[null, "Open a hero PDF made here. That hero comes back, including content packs saved in the file."]],
-  }));
+  tipChrome();
   openPdf.addEventListener("click", () => openPdfInput.click());
   openPdfInput.addEventListener("change", () => {
     const chosen = openPdfInput.files?.[0];

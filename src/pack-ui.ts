@@ -1,5 +1,7 @@
 // The content-pack panel, shared by both builders. The merge stays in each engine.
 
+import { HELP, tipNode } from "./tips";
+
 type Kid = Node | string | number | false | null | undefined;
 
 interface Attrs {
@@ -63,21 +65,24 @@ function toggleRow(row: PackToggle): HTMLElement {
   return el(
     "li",
     {},
-    el(
-      "label",
-      {},
-      el("input", {
-        type: "checkbox",
-        id: row.id,
-        checked: row.on,
-        onchange: (ev) => {
-          const input = ev.target;
-          if (input instanceof HTMLInputElement) row.toggle(input.checked);
-        },
-      }),
-      " ",
-      el("b", {}, row.title),
-      row.about ? el("span", { class: "hint" }, ` — ${row.about}`) : null,
+    tipNode(
+      el(
+        "label",
+        {},
+        el("input", {
+          type: "checkbox",
+          id: row.id,
+          checked: row.on,
+          onchange: (ev) => {
+            const input = ev.target;
+            if (input instanceof HTMLInputElement) row.toggle(input.checked);
+          },
+        }),
+        " ",
+        el("b", {}, row.title),
+        row.about ? el("span", { class: "hint" }, ` — ${row.about}`) : null,
+      ),
+      row.id === "use-builtin" ? HELP.builtin : HELP.packRow(row.title, row.about),
     ),
   );
 }
@@ -106,7 +111,7 @@ export function contentPackPanel(opts: {
         if (ev.target instanceof HTMLDetailsElement) opts.onToggle(ev.target.open);
       },
     },
-    el("summary", {}, "Content packs", el("span", { class: "hint" }, opts.summaryHint)),
+    tipNode(el("summary", {}, "Content packs", el("span", { class: "hint" }, opts.summaryHint)), HELP.packs),
   );
   if (opts.open) details.open = true;
   const file = el("input", {
@@ -127,32 +132,41 @@ export function contentPackPanel(opts: {
       reader.readAsText(chosen);
     },
   });
-  const url = el("input", {
-    id: "custom-url",
-    type: "url",
-    placeholder: "or paste a link to a custom content file",
-    value: opts.link.value,
-    autocomplete: "off",
-    spellcheck: "false",
-  });
-  const go = el(
-    "button",
-    {
-      type: "button",
-      class: "ghost",
-      onclick: () => {
-        go.disabled = true;
-        opts.link.onLoad(url.value);
-      },
-    },
-    "Load link",
+  const url = tipNode(
+    el("input", {
+      id: "custom-url",
+      type: "url",
+      placeholder: "or paste a link to a custom content file",
+      value: opts.link.value,
+      autocomplete: "off",
+      spellcheck: "false",
+    }),
+    HELP.packLink,
   );
-  const paste = el("textarea", {
-    id: "custom-paste",
-    rows: 3,
-    placeholder: "or paste a pack's JSON here",
-    spellcheck: "false",
-  });
+  const go = tipNode(
+    el(
+      "button",
+      {
+        type: "button",
+        class: "ghost",
+        onclick: () => {
+          go.disabled = true;
+          opts.link.onLoad(url.value);
+        },
+      },
+      "Load link",
+    ),
+    HELP.loadLink,
+  );
+  const paste = tipNode(
+    el("textarea", {
+      id: "custom-paste",
+      rows: 3,
+      placeholder: "or paste a pack's JSON here",
+      spellcheck: "false",
+    }),
+    HELP.paste,
+  );
   const lines = [opts.builtin, ...opts.rows].map(toggleRow);
   for (const problem of opts.problems) lines.push(el("li", { class: "bad" }, `⚠ ${problem}`));
   details.appendChild(
@@ -162,10 +176,18 @@ export function contentPackPanel(opts: {
       el(
         "p",
         { class: "hint block" },
-        el("a", { class: "link", href: opts.guideHref, target: "_blank", rel: "noopener" }, "Instructions"),
+        tipNode(
+          el("a", { class: "link", href: opts.guideHref, target: "_blank", rel: "noopener" }, "Instructions"),
+          HELP.instructions,
+        ),
         " for writing a pack.",
       ),
-      el("div", { class: "row" }, el("label", { for: "custom-file", class: "ghost filebtn" }, "Load a file"), file),
+      el(
+        "div",
+        { class: "row" },
+        tipNode(el("label", { for: "custom-file", class: "ghost filebtn" }, "Load a file"), HELP.loadFile),
+        file,
+      ),
       el(
         "div",
         {},
@@ -175,7 +197,10 @@ export function contentPackPanel(opts: {
               "p",
               { class: "hint block" },
               "Checked for updates every time the builder opens. ",
-              el("button", { type: "button", class: "link", onclick: () => opts.link.onForget() }, "forget link"),
+              tipNode(
+                el("button", { type: "button", class: "link", onclick: () => opts.link.onForget() }, "forget link"),
+                HELP.forgetLink,
+              ),
             )
           : null,
         opts.link.status
@@ -189,16 +214,19 @@ export function contentPackPanel(opts: {
         el(
           "div",
           { class: "row" },
-          el(
-            "button",
-            {
-              type: "button",
-              class: "ghost",
-              onclick: () => {
-                if (paste.value.trim()) opts.onPaste(paste.value);
+          tipNode(
+            el(
+              "button",
+              {
+                type: "button",
+                class: "ghost",
+                onclick: () => {
+                  if (paste.value.trim()) opts.onPaste(paste.value);
+                },
               },
-            },
-            "Add pasted pack",
+              "Add pasted pack",
+            ),
+            HELP.addPaste,
           ),
         ),
       ),
@@ -208,15 +236,18 @@ export function contentPackPanel(opts: {
       el(
         "p",
         { class: "hint block" },
-        el(
-          "button",
-          {
-            type: "button",
-            class: "link",
-            id: "clear-saved",
-            onclick: () => opts.onClear(),
-          },
-          "Clear saved data",
+        tipNode(
+          el(
+            "button",
+            {
+              type: "button",
+              class: "link",
+              id: "clear-saved",
+              onclick: () => opts.onClear(),
+            },
+            "Clear saved data",
+          ),
+          HELP.clearSaved,
         ),
         " forgets heroes and packs stored in this browser.",
       ),

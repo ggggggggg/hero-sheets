@@ -1,5 +1,7 @@
 // Cartoon faces for both builders. The pictures come from DiceBear.
 
+import { HELP, tipNode } from "./tips";
+
 export type Look = "boy" | "girl";
 
 export interface FacePick {
@@ -59,24 +61,27 @@ interface Attrs {
 }
 
 const STYLES = [
-  { id: "pixel", label: "Pixel", pkg: "pixel-art", credit: "Art: “Pixel Art” by DiceBear, CC0" },
+  { id: "pixel", label: "Pixel", pkg: "pixel-art", credit: "Art: “Pixel Art” by DiceBear, CC0", help: HELP.pixel },
   {
     id: "adventurer",
     label: "Adventurer",
     pkg: "adventurer",
     credit: "Art: “Adventurer” by Lisa Wischofsky, CC BY 4.0, via DiceBear",
+    help: HELP.adventurer,
   },
   {
     id: "smile",
     label: "Big smile",
     pkg: "big-smile",
     credit: "Art: “Big Smile” by Ashley Seo, CC BY 4.0, via DiceBear",
+    help: HELP.smile,
   },
   {
     id: "doodle",
     label: "Doodle",
     pkg: "croodles",
     credit: "Art: “Croodles” by Vijay Verma, CC BY 4.0, via DiceBear",
+    help: HELP.doodle,
   },
 ];
 
@@ -355,54 +360,63 @@ export function createFaceKit(hooks: FaceHooks): {
         "div",
         { class: "chips" },
         STYLES.map((style) =>
+          tipNode(
+            el(
+              "button",
+              {
+                type: "button",
+                class: `chip-btn${avatar?.style === style.id ? " on" : ""}`,
+                onclick: () => {
+                  void draw(style.id, avatar?.style === style.id ? null : avatar?.seed || state.name || "Hero");
+                },
+              },
+              style.label,
+            ),
+            style.help,
+          ),
+        ),
+        tipNode(
           el(
             "button",
             {
               type: "button",
-              class: `chip-btn${avatar?.style === style.id ? " on" : ""}`,
+              class: "dice",
+              title: "Random face",
+              "aria-label": "Random face",
               onclick: () => {
-                void draw(style.id, avatar?.style === style.id ? null : avatar?.seed || state.name || "Hero");
+                void draw(avatar?.style ?? "pixel", randomSeed());
               },
             },
-            style.label,
+            "🎲",
           ),
-        ),
-        el(
-          "button",
-          {
-            type: "button",
-            class: "dice",
-            title: "Random face",
-            "aria-label": "Random face",
-            onclick: () => {
-              void draw(avatar?.style ?? "pixel", randomSeed());
-            },
-          },
-          "🎲",
+          HELP.randomFace,
         ),
       ),
       el(
         "div",
         { class: "row" },
-        el("label", { for: "face-seed", class: "hint" }, "Face code"),
-        el("input", {
-          id: "face-seed",
-          type: "text",
-          value: avatar?.seed || "",
-          maxlength: 60,
-          autocomplete: "off",
-          spellcheck: "false",
-          oninput: (ev) => {
-            const input = ev.target;
-            if (!(input instanceof HTMLInputElement)) return;
-            const value = input.value;
-            clearTimeout(seedTimer);
-            seedTimer = window.setTimeout(() => {
-              const current = hooks.read().avatar;
-              void draw(current?.style ?? "pixel", value || " ");
-            }, 250);
-          },
-        }),
+        tipNode(el("label", { for: "face-seed", class: "hint" }, "Face code"), HELP.faceCode),
+        tipNode(
+          el("input", {
+            id: "face-seed",
+            type: "text",
+            value: avatar?.seed || "",
+            maxlength: 60,
+            autocomplete: "off",
+            spellcheck: "false",
+            oninput: (ev) => {
+              const input = ev.target;
+              if (!(input instanceof HTMLInputElement)) return;
+              const value = input.value;
+              clearTimeout(seedTimer);
+              seedTimer = window.setTimeout(() => {
+                const current = hooks.read().avatar;
+                void draw(current?.style ?? "pixel", value || " ");
+              }, 250);
+            },
+          }),
+          HELP.faceCode,
+        ),
       ),
       (() => {
         const lf = lookFor(avatar?.seed || state.name || "Hero");
@@ -424,27 +438,33 @@ export function createFaceKit(hooks: FaceHooks): {
                 ["girl", "Girl"],
               ] as const
             ).map(([value, label]) =>
-              el(
-                "button",
-                {
-                  type: "button",
-                  class: `chip-btn${lf.look === value ? " on" : ""}`,
-                  "aria-pressed": lf.look === value ? "true" : "false",
-                  onclick: () => pickLook(value),
-                },
-                label,
+              tipNode(
+                el(
+                  "button",
+                  {
+                    type: "button",
+                    class: `chip-btn${lf.look === value ? " on" : ""}`,
+                    "aria-pressed": lf.look === value ? "true" : "false",
+                    onclick: () => pickLook(value),
+                  },
+                  label,
+                ),
+                value === "boy" ? HELP.boy : HELP.girl,
               ),
             ),
           ),
           state.look
-            ? el("button", { type: "button", class: "link", onclick: () => pickLook(null) }, "match name")
+            ? tipNode(
+                el("button", { type: "button", class: "link", onclick: () => pickLook(null) }, "match name"),
+                HELP.matchName,
+              )
             : el("span", { class: "hint" }, lf.why),
         );
       })(),
       el(
         "div",
         { class: "row" },
-        el("label", { for: "portrait", class: "ghost filebtn" }, "Upload a picture"),
+        tipNode(el("label", { for: "portrait", class: "ghost filebtn" }, "Upload a picture"), HELP.upload),
         el("input", {
           id: "portrait",
           type: "file",
@@ -459,17 +479,20 @@ export function createFaceKit(hooks: FaceHooks): {
           },
         }),
         state.portrait
-          ? el(
-              "button",
-              {
-                type: "button",
-                class: "ghost",
-                onclick: () => {
-                  hooks.write({ portrait: null, portrait_credit: null, avatar: null });
-                  redraw();
+          ? tipNode(
+              el(
+                "button",
+                {
+                  type: "button",
+                  class: "ghost",
+                  onclick: () => {
+                    hooks.write({ portrait: null, portrait_credit: null, avatar: null });
+                    redraw();
+                  },
                 },
-              },
-              "Remove",
+                "Remove",
+              ),
+              HELP.removePicture,
             )
           : null,
       ),
