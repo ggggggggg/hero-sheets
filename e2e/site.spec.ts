@@ -32,6 +32,8 @@ test.describe("builder", () => {
     await page.waitForSelector("#scaler .page.back");
     await expect(page.locator("#scaler .page")).toHaveCount(2);
     await expect(page.locator("#controls .lead")).toHaveText("Build a D&D 5e inspired hero:");
+    await page.locator("#open-pdf").hover();
+    await expect(page.locator("#tip")).toContainText("That hero comes back");
     await expect(page.locator(".sitefoot")).toContainText("SRD 5.1");
     await expect(page.locator(".sitefoot a[href*='creativecommons.org/licenses/by/4.0/legalcode']")).toHaveCount(1);
     await field(page, "Class").getByRole("button", { name: "Rogue", exact: true }).click();

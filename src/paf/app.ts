@@ -1436,7 +1436,12 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
   });
   const openPdfInput = $("#open-pdf-file");
   if (!(openPdfInput instanceof HTMLInputElement)) throw new Error("missing #open-pdf-file");
-  $("#open-pdf").addEventListener("click", () => openPdfInput.click());
+  const openPdf = $("#open-pdf");
+  tipped(openPdf, () => ({
+    title: "Open PDF",
+    lines: [[null, "Open a hero PDF made here. That hero comes back, including content packs saved in the file."]],
+  }));
+  openPdf.addEventListener("click", () => openPdfInput.click());
   openPdfInput.addEventListener("change", () => {
     const chosen = openPdfInput.files?.[0];
     if (!chosen) return;

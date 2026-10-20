@@ -29,6 +29,8 @@ test("builds a level-3 hero with one once-a-fight power", async ({ page }) => {
   await page.goto("/paf.html");
   await page.waitForSelector("#scaler .page.back");
   await expect(page.locator("#scaler .page")).toHaveCount(2);
+  await page.locator("#open-pdf").hover();
+  await expect(page.locator("#tip")).toContainText("That hero comes back");
   await expect(page.locator("#controls .lead")).toHaveText(
     "Build an even simpler hero for post-apocalyptic fantasy, with Gamma World inspired origins and simplified choices:",
   );
