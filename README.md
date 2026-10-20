@@ -36,8 +36,8 @@ Three packs are already on the site. Each link opens the builder with that pack 
   Dwarf, and that is where his medium armor comes from. Open the link, then press
   “Start as Tobin aka Flame Master”.
 - [Turtles & Pirates](https://ggggggggg.github.io/hero-sheets/?pack=turtles-and-pirates)
-  adds the Turtle-folk ✦ race, who swim at 30 ft and can pop into their shell (+10 Armor,
-  +10 on every save, and everything only does half damage), a Pirate ✦ path for rogues, the
+  adds the Turtle-folk ✦ race, who swim at 30 ft and have Shell Defense (+10 Armor and
+  resistance to all damage), a Pirate ✦ path for rogues, the
   Bubble Shield spell, a Potion of Bounciness, and an anchor.
 - [Mutants & Meltdowns](https://ggggggggg.github.io/hero-sheets/?pack=mutants-and-meltdowns)
   is the world after the Big Oops. It adds Mutant, Beastling, Sprout, Rustbucket, and Pure

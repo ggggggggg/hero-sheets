@@ -75,10 +75,10 @@ describe("mergeCustom", () => {
     expect(ch.combat.speed).toBe(25);
     expect(ch.combat.swim).toBe(30);
     const names = cards(ch);
-    const shell = names.get("Pop into Shell");
+    const shell = names.get("Shell Defense");
+    expect(shell?.tag).toBe("A");
     expect(shell?.desc).toContain("+10 Armor");
-    expect(shell?.desc).toContain("+10 on every save");
-    expect(shell?.desc).toContain("half damage");
+    expect(shell?.desc).toContain("resistance to all damage");
     expect(names.has("Swashbuckle")).toBe(true);
     const heavy = buildCharacter(
       merged,
