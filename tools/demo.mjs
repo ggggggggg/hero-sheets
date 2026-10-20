@@ -22,6 +22,7 @@ const base = `http://localhost:${port}`;
 const demoDir = path.join(root, "demo");
 const tmp = path.join(demoDir, ".tmp");
 const fps = 8;
+const gifWidth = 1120;
 
 function field(page, label) {
   return page.locator(".field").filter({
@@ -388,7 +389,7 @@ try {
     "-i",
     path.join(tmp, "%04d.png"),
     "-vf",
-    "fps=8,scale=760:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=64:stats_mode=diff[p];[s1][p]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle",
+    `fps=8,scale=${gifWidth}:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=64:stats_mode=diff[p];[s1][p]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle`,
     "-loop",
     "0",
     gif,
