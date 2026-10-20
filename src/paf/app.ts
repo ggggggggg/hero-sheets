@@ -4,7 +4,7 @@ import { fitCardFont, previewLayout } from "../fit";
 import { contentPackPanel } from "../pack-ui";
 import { clearSavedKeys, PAF_SAVE_KEYS, refreshBundledPacks } from "../packs";
 import { ABILITY_NAME } from "../tags";
-import { fileStem } from "../text";
+import { escapeHtml, fileStem } from "../text";
 import { createTips, HELP, help, type Tip, tipChrome, tipNode } from "../tips";
 import { ABILITIES, type Ability, type AbilityScores } from "../types";
 import {
@@ -411,9 +411,36 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
       }
     }
     packProblems = problems;
+    const nextMarks: Record<string, string> = {};
+    for (const pack of loadPacks()) {
+      let parsed: Record<string, unknown>;
+      try {
+        parsed = parsePafPack(pack.text);
+      } catch {
+        continue;
+      }
+      const emoji = typeof parsed.emoji === "string" ? parsed.emoji.trim() : "";
+      if (!emoji) continue;
+      for (const table of ["origins", "skills", "armor", "weapons", "flux", "relics", "capstones", "heroes"] as const) {
+        const rows = parsed[table];
+        if (!Array.isArray(rows)) continue;
+        for (const row of rows) {
+          if (typeof row !== "object" || row === null) continue;
+          const record = row as Record<string, unknown>;
+          const key = table === "origins" || table === "capstones" ? record.id : record.name;
+          if (typeof key === "string" && key) nextMarks[`${table}:${key}`] = emoji;
+        }
+      }
+    }
+    marks = nextMarks;
     return current;
   }
+  let marks: Record<string, string> = {};
   let tables = withPacks();
+  function marked(table: string, key: string, label: string): string {
+    const emoji = marks[`${table}:${key}`];
+    return emoji ? `${label} ${emoji}` : label;
+  }
   const faces = createFaceKit({
     read: () => state,
     write: (patch) => {
@@ -916,7 +943,7 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
       chips(
         [state.origin1, state.origin2].map((id) => ({
           id,
-          label: originName(id),
+          label: marked("origins", id, originName(id)),
           color: originColor(id),
           tip: () => slotTip(kind, id),
         })),
@@ -1017,7 +1044,7 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
         chips(
           tables.origins.map((origin) => ({
             id: origin.id,
-            label: origin.name,
+            label: marked("origins", origin.id, origin.name),
             color: origin.accent,
             tip: () => originTip(origin.id),
           })),
@@ -1040,7 +1067,7 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
         chips(
           tables.origins.map((origin) => ({
             id: origin.id,
-            label: origin.name,
+            label: marked("origins", origin.id, origin.name),
             color: origin.accent,
             tip: () => originTip(origin.id),
           })),
@@ -1086,7 +1113,11 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
       field(
         "Bonus skill",
         chips(
-          tables.skills.map((skill) => ({ id: skill.name, label: skill.name, tip: () => skillTip(skill.name) })),
+          tables.skills.map((skill) => ({
+            id: skill.name,
+            label: marked("skills", skill.name, skill.name),
+            tip: () => skillTip(skill.name),
+          })),
           opt.bonus_skill,
           (id) => {
             state.bonus_skill = id;
@@ -1134,7 +1165,7 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
           chips(
             tables.capstones.map((item) => ({
               id: item.id,
-              label: item.name,
+              label: marked("capstones", item.id, item.name),
               tip: () => ({ title: item.name, lines: [[null, item.desc]] }),
             })),
             cap,
@@ -1159,25 +1190,30 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
       field(
         "Armor",
         chips(
-          armorNames.map((name) => ({ id: name, label: name, tip: () => armorTip(name) })),
+          armorNames.map((name) => ({
+            id: name,
+            label: name === "No armor" ? name : marked("armor", name, name),
+            tip: () => armorTip(name),
+          })),
           built.combat.armor,
           (id) => {
             state.armor = id;
             update(true);
           },
         ),
-        [
-          "The highest Armor is used until you pick one. ",
-          dice("armor", () => {
-            state.armor = rollOther(armorNames, built?.combat.armor ?? "No armor");
-            update(true);
-          }),
-        ],
+        dice("armor", () => {
+          state.armor = rollOther(armorNames, built?.combat.armor ?? "No armor");
+          update(true);
+        }),
       ),
       field(
         "Weapon",
         chips(
-          weaponNames.map((name) => ({ id: name, label: name, tip: () => weaponTip(name) })),
+          weaponNames.map((name) => ({
+            id: name,
+            label: marked("weapons", name, name),
+            tip: () => weaponTip(name),
+          })),
           built.attacks[0]?.name ?? "",
           (id) => {
             state.weapon = id;
@@ -1204,7 +1240,7 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
         chips(
           tables.heroes.map((hero) => ({
             id: hero.name,
-            label: `Start as ${hero.name}`,
+            label: marked("heroes", hero.name, `Start as ${hero.name}`),
             tip: () => ({
               title: hero.name,
               lines: [[null, `${originName(hero.origin1)} and ${originName(hero.origin2)}, level ${hero.level}.`]],
@@ -1280,14 +1316,39 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
           ),
           HELP.flux,
         ),
-        el("p", { class: "hint block" }, `Draw ${built.flux} flux when a fight starts. Draw 1 relic, once a fight.`),
+        el(
+          "p",
+          { class: "hint block" },
+          `One deck for every hero. Draw ${built.flux} flux when a fight starts. They go back when the fight ends. Once a fight, draw 1 relic. It works once. `,
+          el(
+            "button",
+            {
+              type: "button",
+              class: "link",
+              onclick: (ev) => {
+                if (ev.currentTarget instanceof HTMLButtonElement) void printDeck(ev.currentTarget);
+              },
+            },
+            "Print the deck",
+          ),
+        ),
         el("h4", { class: "plvl" }, "Flux"),
         ...tables.flux.map((item) =>
-          el("p", { class: "pdesc" }, tipNode(el("b", {}, item.name), help(item.name, item.desc)), ` — ${item.desc}`),
+          el(
+            "p",
+            { class: "pdesc" },
+            tipNode(el("b", {}, marked("flux", item.name, item.name)), help(item.name, item.desc)),
+            ` — ${item.desc}`,
+          ),
         ),
         el("h4", { class: "plvl" }, "Relics"),
         ...tables.relics.map((item) =>
-          el("p", { class: "pdesc" }, tipNode(el("b", {}, item.name), help(item.name, item.desc)), ` — ${item.desc}`),
+          el(
+            "p",
+            { class: "pdesc" },
+            tipNode(el("b", {}, marked("relics", item.name, item.name)), help(item.name, item.desc)),
+            ` — ${item.desc}`,
+          ),
         ),
       ),
       packSection(),
@@ -1306,8 +1367,49 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
     return { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 };
   }
 
+  function deckHtml(): string {
+    const cards = [
+      ...tables.flux.map((item) => ({ kind: "Flux", name: item.name, desc: item.desc })),
+      ...tables.relics.map((item) => ({ kind: "Relic", name: item.name, desc: item.desc })),
+    ];
+    const intro =
+      "One deck for every hero. When a fight starts, draw flux: 1 card, 2 cards from level 4, or 3 cards from level 8. Those cards last until the fight ends, then they go back in the deck. Once a fight, draw 1 relic. It works once.";
+    const pages: string[] = [];
+    for (let i = 0; i < cards.length; i += 6) {
+      const boxes = cards
+        .slice(i, i + 6)
+        .map(
+          (card) =>
+            `<div style="width:350px;height:200px;border:1px dashed #222;border-radius:10px;padding:10px 12px;box-sizing:border-box"><div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase">${escapeHtml(card.kind)}</div><div style="font-size:20px;font-weight:700;margin:6px 0">${escapeHtml(card.name)}</div><div style="font-size:14px;line-height:1.35">${escapeHtml(card.desc)}</div></div>`,
+        )
+        .join("");
+      const title = i === 0 ? "Flux and relic deck" : "Flux and relic deck, continued";
+      const lead = i === 0 ? `<p style="font-size:15px;line-height:1.4;margin:0 0 16px">${escapeHtml(intro)}</p>` : "";
+      pages.push(
+        `<section class="page"><h1 style="font-size:28px;margin:0 0 8px">${escapeHtml(title)}</h1>${lead}<div style="display:flex;flex-wrap:wrap;gap:12px">${boxes}</div></section>`,
+      );
+    }
+    return `<div class="sheet">${pages.join("")}</div>`;
+  }
+
+  async function printDeck(btn: HTMLButtonElement): Promise<void> {
+    btn.disabled = true;
+    try {
+      const blob = await makePdf(deckHtml(), "Flux and relic deck");
+      await saveFile("Flux and relic deck.pdf", blob);
+    } catch (error) {
+      status(messageOf(error) || "Couldn't make the deck.", true);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
   function update(rebuild: boolean): void {
     resolve();
+    if (state.armor == null) {
+      const names = ["No armor", ...tables.armor.map((armor) => armor.name)];
+      state.armor = pick(names);
+    }
     try {
       built = buildCharacter(tables, state);
     } catch (error) {
@@ -1496,5 +1598,6 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
   if (document.fonts) void document.fonts.ready.then(() => renderSheet());
   if (!saved && !fixed) surprise();
   else update(true);
+  if (!fixed && !state.portrait && !state.avatar) void faces.randomFace();
   document.documentElement.dataset.booted = "1";
 }

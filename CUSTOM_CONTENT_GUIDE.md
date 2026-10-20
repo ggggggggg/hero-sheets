@@ -15,7 +15,8 @@ Hand back **one JSON file named `hero-custom.json`** with this shape:
 ```
 
 - It must be **strict JSON**: double quotes, no trailing commas and no comments.
-- Include only the tables you need. Allowed tables: `races`, `subraces`, `classes`, `subclasses`, `features`, `choices`, `scaling`, `spells`, `items`, `weapons`, `armor`. Optional extras: `title`, `about` and `heroes` (ready-made characters, see below).
+- Include only the tables you need. Allowed tables: `races`, `subraces`, `classes`, `subclasses`, `features`, `choices`, `scaling`, `spells`, `items`, `weapons`, `armor`. Optional extras: `title`, `about`, `emoji`, and `heroes` (ready-made characters, see below).
+- `emoji` is one mark, such as `"✦"`, shown after every name from this pack. Leave it out and the names stay plain. Built-in choices have no mark.
 - **Leave out any field you don't need.** Missing fields get the defaults listed below. Unknown fields are an error, which keeps typos from slipping in.
 - A row whose key matches an existing row **replaces** it. For example, `{"id": "dwarf", ...}` in `races` changes the built-in Dwarf. A row with a new key is **added**.
 - The user loads it with "Load a file" in the builder, or pastes a link to it (see below).

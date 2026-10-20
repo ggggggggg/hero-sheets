@@ -1,5 +1,6 @@
 {
   "title": "Turtles & Pirates",
+  "emoji": "🐢",
   "about": "Adds the Turtle-folk race, who swim and can pop into their shell, a Pirate path for rogues, Bubble Shield, a Potion of Bounciness, and an anchor.",
   "races": [
     {"id": "turtlefolk", "name": "Turtle-folk", "speed": 25, "swim": 30, "asi": {"STR": 2, "CON": 1}, "languages": "Common, Aquan"}

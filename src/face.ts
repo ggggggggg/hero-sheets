@@ -290,7 +290,10 @@ export function createFaceKit(hooks: FaceHooks): {
         msg.textContent = "Couldn't load the cartoon faces (they come from the internet). Upload a picture instead.";
       return;
     }
-    if (msg) msg.textContent = "Drawing a face…";
+    hooks.write({ avatar: { style: styleId, seed, look: lookFor(seed).look } });
+    redraw();
+    const drawing = document.getElementById("avatar-msg");
+    if (drawing) drawing.textContent = "Drawing a face…";
     try {
       const [core, styleMod] = await avatarLib(style.pkg);
       const look = lookFor(seed).look;

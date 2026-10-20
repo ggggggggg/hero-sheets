@@ -95,7 +95,10 @@ export const HELP = {
   score: (ability: string) =>
     help(ability, "From 1 to 20. An origin locks this when it is that origin's main ability."),
   scoreLocked: (ability: string) => help(ability, "This origin sets this score."),
-  flux: help("Flux and relics", "Drawn at the table. Write the names in Notes. They are not picked here."),
+  flux: help(
+    "Flux and relics",
+    "One deck for every hero. Draw flux when a fight starts. Draw one relic, once a fight. Print the deck to cut the cards out.",
+  ),
 };
 
 type Kid = Node | string | null | undefined;

@@ -3,7 +3,7 @@ import { type PafTables, tablesFrom } from "./core";
 
 const LISTS = ["origins", "skills", "armor", "weapons", "flux", "relics", "capstones", "heroes"] as const;
 type ListName = (typeof LISTS)[number];
-const META = new Set(["kind", "title", "about"]);
+const META = new Set(["kind", "title", "about", "emoji"]);
 
 function isObj(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);

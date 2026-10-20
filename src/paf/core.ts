@@ -371,8 +371,6 @@ export function buildCharacter(tables: PafTables, req: PafRequest): PafCharacter
     const found = wornOptions.find((armor) => armor.name === req.armor);
     if (!found) throw valueError(`can't wear ${req.armor}`);
     worn = found;
-  } else {
-    for (const armor of wornOptions) if (armor.ac > worn.ac) worn = armor;
   }
   const strMod = mod(scores.STR);
   const dexMod = mod(scores.DEX);
