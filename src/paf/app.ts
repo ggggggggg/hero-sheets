@@ -1254,6 +1254,7 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
     state.utility_first = pick(ids);
     state.expert_first = pick(ids);
     update(true);
+    void faces.randomFace();
   }
 
   window.__setPaf = (origin1, origin2, level) => {
