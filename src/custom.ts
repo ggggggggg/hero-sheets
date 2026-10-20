@@ -291,7 +291,7 @@ function packRows(custom: PackRow, name: TableName): unknown[] {
 export function mergeCustom(tables: Tables, custom: unknown): Tables {
   if (!isObj(custom)) throw new CustomError("custom content should be one JSON object");
   const bad = Object.keys(custom).filter(
-    (key) => !isTableName(key) && key !== "title" && key !== "about" && key !== "heroes",
+    (key) => !isTableName(key) && key !== "title" && key !== "about" && key !== "heroes" && key !== "emoji",
   );
   if (custom.heroes != null) heroList(custom);
   if (bad.length) {

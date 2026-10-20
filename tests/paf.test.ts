@@ -129,15 +129,17 @@ describe("scores, skills, and hit points", () => {
     expect(skill(later, "Science").bonus).toBe(5);
   });
 
-  it("sets defenses from level plus the better modifier, and picks the higher armor", () => {
-    const calm = buildCharacter(tables, req({ origin1: "baseline", origin2: "echo", level: 1 }));
+  it("sets defenses from level plus the better modifier", () => {
+    const calm = buildCharacter(tables, req({ origin1: "baseline", origin2: "echo", level: 1, armor: "Road plate" }));
     expect(calm.combat.tough).toBe(11);
     expect(calm.combat.quick).toBe(11);
     expect(calm.combat.guts).toBe(16);
     expect(calm.combat.armor).toBe("Road plate");
     expect(calm.combat.ac).toBe(17);
     expect(calm.combat.initiative).toBe(1);
-    const quick = buildCharacter(tables, req({ origin1: "whisk", origin2: "spark", level: 3 }));
+    const unset = buildCharacter(tables, req({ origin1: "baseline", origin2: "echo", level: 1 }));
+    expect(unset.combat.armor).toBe("No armor");
+    const quick = buildCharacter(tables, req({ origin1: "whisk", origin2: "spark", level: 3, armor: "Tin coat" }));
     expect(quick.combat.armor).toBe("Tin coat");
     expect(quick.combat.ac).toBe(20);
     expect(quick.combat.speed).toBe(40);

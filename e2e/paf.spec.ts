@@ -58,6 +58,14 @@ test("builds a level-3 hero with one once-a-fight power", async ({ page }) => {
   await expect(sheet.locator(".head .sub")).toContainText("Whisk");
   await expect(sheet.locator(".head .sub")).toContainText("Spark");
   await expect(page.locator("#flux-relics")).toContainText("Extra arm");
+  await page.locator("#flux-relics summary").click();
+  await expect(page.locator("#flux-relics")).toContainText("One deck for every hero");
+  const [deck] = await Promise.all([
+    page.waitForEvent("download"),
+    page.locator("#flux-relics").getByRole("button", { name: "Print the deck" }).click(),
+  ]);
+  expect(deck.suggestedFilename()).toBe("Flux and relic deck.pdf");
+  expect(await deck.path()).toBeTruthy();
   await expect(sheet).not.toContainText("Extra arm");
 });
 
@@ -85,7 +93,7 @@ test("matches the D&D dice, face maker, and content packs", async ({ page }) => 
   await expect(page.locator("#content-packs")).toContainText("Lamp-saint");
   await expect(page.locator("#clear-saved")).toHaveText("Clear saved data");
   await page.locator("#content-packs").getByText("Lamp-saint", { exact: true }).click();
-  await expect(field(page, "First origin").getByRole("button", { name: "Lamp-saint", exact: true })).toBeVisible();
+  await expect(field(page, "First origin").getByRole("button", { name: "Lamp-saint 💡", exact: true })).toBeVisible();
 });
 
 test("the two pages point at each other", async ({ page }) => {
@@ -104,6 +112,8 @@ test("a fresh visit rolls a random hero", async ({ browser }) => {
     const page = await context.newPage();
     await page.goto("/paf.html");
     await page.waitForSelector("#scaler .page.back");
+    await expect(page.getByRole("button", { name: "Pixel", exact: true })).toHaveClass(/on/);
+    await expect(field(page, "Armor").locator("button[aria-pressed='true']")).toHaveCount(1);
     seen.add((await page.locator("#scaler .front").innerText()).slice(0, 80));
     await context.close();
   }

@@ -103,6 +103,7 @@ interface CustomInfo {
   error: string;
   heroes: PackRow[];
   ids: Set<string>;
+  marks: Record<string, string>;
 }
 
 type ListKind = "cantrips" | "spells" | "items" | "path_spells";
@@ -422,7 +423,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     return true;
   }
 
-  let customInfo: CustomInfo = { sources: [], problems: [], error: "", heroes: [], ids: new Set() };
+  let customInfo: CustomInfo = { sources: [], problems: [], error: "", heroes: [], ids: new Set(), marks: {} };
   let memLib: PackCopy[] = [];
   let packOf: Record<string, PackCopy> = {};
   let loadReport: string[] = [];
@@ -472,7 +473,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
 
   function withCustom(): Tables {
     let tables = prefs.noBuiltin ? frameworkOnly(baseTables) : baseTables;
-    customInfo = { sources: [], problems: [], error: "", heroes: [], ids: new Set() };
+    customInfo = { sources: [], problems: [], error: "", heroes: [], ids: new Set(), marks: {} };
     packOf = {};
     const add = (obj: PackRow, label: string, text: string) => {
       try {
@@ -484,16 +485,48 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
         }
         tables = next;
         for (const hero of heroList(obj)) customInfo.heroes.push(hero);
-        for (const key of ["races", "classes", "subclasses", "subraces"] as const) {
+        const emoji = typeof obj.emoji === "string" ? obj.emoji.trim() : "";
+        const owned = new Set(["races", "classes", "subclasses", "subraces"]);
+        for (const key of TABLE_NAMES) {
           const rows = obj[key];
           if (!Array.isArray(rows)) continue;
           for (const row of rows) {
-            if (typeof row === "object" && row !== null && "id" in row && typeof row.id === "string" && row.id) {
-              customInfo.ids.add(`${key}:${row.id}`);
-              packOf[`${key}:${row.id}`] = {
+            if (typeof row !== "object" || row === null) continue;
+            const record = row as PackRow;
+            const card = record.card;
+            const id =
+              typeof record.id === "string" && record.id
+                ? record.id
+                : typeof record.name === "string" && record.name
+                  ? record.name
+                  : typeof card === "object" &&
+                      card !== null &&
+                      "name" in card &&
+                      typeof card.name === "string" &&
+                      card.name
+                    ? card.name
+                    : "";
+            if (!id) continue;
+            if (owned.has(key)) {
+              customInfo.ids.add(`${key}:${id}`);
+              packOf[`${key}:${id}`] = {
                 title: typeof obj.title === "string" ? obj.title : label,
                 text: text || JSON.stringify(obj),
               };
+            }
+            if (emoji) customInfo.marks[`${key}:${id}`] = emoji;
+            if (emoji && Array.isArray(record.options)) {
+              for (const option of record.options) {
+                if (
+                  typeof option === "object" &&
+                  option !== null &&
+                  "name" in option &&
+                  typeof option.name === "string" &&
+                  option.name
+                ) {
+                  customInfo.marks[`choices:${option.name}`] = emoji;
+                }
+              }
             }
           }
         }
@@ -1436,7 +1469,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
                   el(
                     "span",
                     { class: "ptop" },
-                    el("b", {}, name),
+                    el("b", {}, marked(isItem ? "items" : "spells", name, name)),
                     card.tag ? el("span", { class: `ptag t${card.tag}` }, TAGLBL[card.tag] || card.tag) : null,
                     card.note ? el("span", { class: "pnote" }, card.note) : null,
                     offList ? el("span", { class: "swaphint" }, "off book") : null,
@@ -1496,7 +1529,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
         const book = built.bookAuto.includes(name);
         items.push(
           choiceRow({
-            name,
+            name: marked("spells", name, name),
             open: isOpen,
             off: !book,
             locked: true,
@@ -1528,7 +1561,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       const offList = !pool.includes(name);
       items.push(
         choiceRow({
-          name,
+          name: marked("spells", name, name),
           open: isOpen,
           off: offList,
           badge: isCantrip ? null : el("span", { class: "lvl" }, `L${built.spellLevel(name)}`),
@@ -1784,6 +1817,11 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     );
   }
 
+  function marked(table: string, key: string, label: string): string {
+    const emoji = customInfo.marks[`${table}:${key}`];
+    return emoji ? `${label} ${emoji}` : label;
+  }
+
   function armorField(built: HeroOptions): HTMLElement {
     const cur = buildCharacter(tables, request()).combat;
     const curName = cur.armor.replace(/ \+ shield$/, "");
@@ -1819,7 +1857,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
                     update();
                   },
                 },
-                `${armor.name} • ${armor.ac}${off ? " • off book" : ""}${armor.strReq > str ? " ⚠" : ""}`,
+                `${marked("armor", armor.name, armor.name)} • ${armor.ac}${off ? " • off book" : ""}${armor.strReq > str ? " ⚠" : ""}`,
               ),
               () => TIP.armor(armor),
             );
@@ -1932,7 +1970,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
                     update();
                   },
                 },
-                `${weapon.name} • ${weapon.damage}`,
+                `${marked("weapons", weapon.name, weapon.name)} • ${weapon.damage}`,
               ),
               () => ({
                 title: weapon.name,
@@ -1985,7 +2023,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       chipRow(
         built.subraces.map((row) => ({
           id: row.id,
-          label: row.name + (customInfo.ids.has(`subraces:${row.id}`) ? " ✦" : ""),
+          label: marked("subraces", row.id, row.name),
           tip: () => TIP.subrace(row.id),
         })),
         built.subrace,
@@ -2229,7 +2267,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       const warn = built.itemWarn(name);
       items.push(
         choiceRow({
-          name,
+          name: marked("items", name, name),
           open: isOpen,
           off: !!warn,
           badge: el("span", { class: "lvl" }, built.itemRarity(name)),
@@ -2372,7 +2410,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
         chipRow(
           tables.races.map((race) => ({
             id: race.id,
-            label: race.name + (customInfo.ids.has(`races:${race.id}`) ? " ✦" : ""),
+            label: marked("races", race.id, race.name),
             tip: () => TIP.race(race.id),
           })),
           state.race,
@@ -2397,7 +2435,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
         chipRow(
           tables.classes.map((cls) => ({
             id: cls.id,
-            label: cls.name + (customInfo.ids.has(`classes:${cls.id}`) ? " ✦" : ""),
+            label: marked("classes", cls.id, cls.name),
             color: cls.look.accent,
             tip: () => TIP.cls(cls.id),
           })),
@@ -2459,7 +2497,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
           chipRow(
             built.subs.map((sub) => ({
               id: sub.id,
-              label: sub.name + (customInfo.ids.has(`subclasses:${sub.id}`) ? " ✦" : ""),
+              label: marked("subclasses", sub.id, sub.name),
               tip: () => TIP.sub(sub.id),
             })),
             state.subclass,
@@ -2517,7 +2555,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
                       "aria-pressed": picks.includes(option.name) ? "true" : "false",
                       onclick: () => toggle(option.name),
                     },
-                    option.name,
+                    marked("choices", option.name, option.name),
                   ),
                   () => ({
                     title: group.options[i]?.name ?? option.name,
