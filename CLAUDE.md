@@ -4,12 +4,13 @@ A kids' D&D-style character builder. It turns a few picks into a printable 2-pag
 
 ## Layout
 - `src/core.ts`: `buildCharacter`, `sheetHtml`, `options`. The rules engine.
+- `src/fit.ts`: the shared page-fit and preview scale. `src/text.ts`: placeholders, escaping, PDF names. `src/tags.ts`: the action chips.
 - `src/custom.ts`: merges a content pack into the rules tables.
 - `src/export.ts`: builds the PDF in the browser.
 - `src/app.ts`: the builder UI. `src/main.ts` starts it.
 - `src/content.json`: the built-in rules, levels 1–7.
 - `src/styles/sheet.css`: the printed sheet. `src/styles/ui.css`: the builder. `src/styles/fonts.css` points at `src/assets/*.woff2`.
-- `index.html`: the page shell, including the SRD footer.
+- `index.html`: the D&D page shell, including the SRD footer. `paf.html` and `src/paf/` are the post-apocalyptic builder.
 - `examples/*.json`: content packs. The build inlines them, so the site does not fetch them.
 - `CUSTOM_CONTENT_GUIDE.md`: the pack format, written for an AI to follow. The builder links to it.
 
@@ -22,10 +23,10 @@ npm run e2e          # playwright: the built site, including the 2-page fit chec
 npm run demo         # record demo/builder.gif for the README
 npm run lint         # biome, including a ban on written `any`
 npm run typecheck
-npm run build        # one self-contained dist/index.html
+npm run build        # dist/index.html and dist/paf.html, each self-contained
 ```
 
-`npm run build` writes `dist/index.html`. GitHub Actions publishes that file. Don't hand-edit a generated site.
+`npm run build` writes `dist/index.html` and `dist/paf.html`. GitHub Actions publishes `dist/`. Don't hand-edit a generated site.
 
 ## Tests
 - `tests/build.test.ts` and `tests/custom.test.ts` run against `src/`. Editing a content row a hero uses changes their sheet, and editing a row they don't use changes nothing.

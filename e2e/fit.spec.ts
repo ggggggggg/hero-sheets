@@ -1,5 +1,16 @@
 import { readFileSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
+import { FIT_PASS_PX } from "../src/fit";
+import { measureSheet } from "./helpers";
+
+interface OriginCard {
+  id: string;
+  trait: string;
+  novice: { name: string; desc: string };
+  utility: { name: string; desc: string };
+  expert: { name: string; desc: string };
+  crit: { name: string; desc: string };
+}
 
 interface SubRow {
   id: string;
@@ -30,6 +41,24 @@ test("every Mutants & Meltdowns subclass at level 7 fits on two pages", async ({
   expect(bad).toEqual([]);
 });
 
+test("the wordiest level-10 PAF pair is two pages and the back fits", async ({ page }) => {
+  await boot(page, "/paf.html");
+  const [first, second] = wordiestPair();
+  await page.evaluate(
+    ({ first, second }) => {
+      const set = window.__setPaf;
+      if (!set) throw new Error("missing __setPaf");
+      set(first, second, 10);
+    },
+    { first, second },
+  );
+  const got = await measureSheet(page);
+  expect(got.shown, JSON.stringify(got)).toBe("");
+  expect(got.pages, JSON.stringify(got)).toBe(2);
+  expect(got.overflow, JSON.stringify(got)).toBe(false);
+  expect(got.fs, JSON.stringify(got)).toBeGreaterThanOrEqual(FIT_PASS_PX);
+});
+
 async function boot(page: Page, url = "/"): Promise<void> {
   await page.addInitScript(() => {
     localStorage.clear();
@@ -51,29 +80,26 @@ async function checkAll(page: Page, race: string, subs: SubRow[]): Promise<strin
       },
       { race, cls: sub.class_id, sub: sub.id, level: 7 },
     );
-    await page.waitForFunction(() => {
-      const cards = document.querySelector("#scaler .page.back .cards");
-      return cards instanceof HTMLElement && getComputedStyle(cards).getPropertyValue("--fs") !== "";
-    });
-    const got = await page.evaluate(() => {
-      const pages = document.querySelectorAll("#scaler .page").length;
-      const error = document.querySelector("#error");
-      const shown = error instanceof HTMLElement && !error.hidden && error.textContent ? error.textContent : "";
-      const cards = document.querySelector("#scaler .page.back .cards");
-      if (!(cards instanceof HTMLElement)) return { pages, fs: 0, overflow: true, shown };
-      const fs = Number.parseFloat(getComputedStyle(cards).getPropertyValue("--fs"));
-      let overflow = cards.scrollHeight > cards.clientHeight + 1 || cards.scrollWidth > cards.clientWidth + 1;
-      const box = cards.getBoundingClientRect();
-      const tol = 1 + box.width / 400;
-      for (const node of cards.querySelectorAll(".cd, .sec h3")) {
-        const rect = node.getBoundingClientRect();
-        if (rect.right > box.right + tol || rect.bottom > box.bottom + tol) overflow = true;
-      }
-      return { pages, fs, overflow, shown };
-    });
-    if (got.pages !== 2 || got.overflow || !(got.fs >= 9.5) || got.shown) {
+    const got = await measureSheet(page);
+    if (got.pages !== 2 || got.overflow || !(got.fs >= FIT_PASS_PX) || got.shown) {
       bad.push(`${sub.class_id}/${sub.id} ${JSON.stringify(got)}`);
     }
   }
   return bad;
+}
+
+function wordiestPair(): [string, string] {
+  const paf = JSON.parse(readFileSync("src/paf/content.json", "utf8")) as { origins: OriginCard[] };
+  const ranked = paf.origins
+    .map((origin) => ({
+      id: origin.id,
+      words: [origin.trait, origin.novice, origin.utility, origin.expert, origin.crit]
+        .map((part) => (typeof part === "string" ? part : `${part.name} ${part.desc}`))
+        .join(" ").length,
+    }))
+    .sort((a, b) => b.words - a.words);
+  const first = ranked[0];
+  const second = ranked.find((origin) => origin.id !== first?.id);
+  if (!first || !second) throw new Error("PAF needs two origins");
+  return [first.id, second.id];
 }

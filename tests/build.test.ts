@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import * as fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { buildCharacter, CharError, options, sheetHtml } from "../src/core";
+import { buildCharacter, CharError, options, sheetHtml, signed } from "../src/core";
 import { heroRequest, mergeCustom, parseCustomText } from "../src/custom";
 import type { Tables } from "../src/types";
 import { allText, cards, freshTables, picks, req } from "./helpers";
@@ -88,6 +88,144 @@ describe("known heroes", () => {
     const names = cards(ch);
     expect(names.has("Pact of the Chain")).toBe(true);
     expect(names.has("Dark One's Blessing")).toBe(true);
+  });
+
+  it("replaces a sheet number and marks it off book", () => {
+    const hero = req({ cls: "fighter", level: 1 });
+    const book = buildCharacter(tables, hero);
+    const acrobatics = book.skills.find((skill) => skill.name === "Acrobatics");
+    const perception = book.skills.find((skill) => skill.name === "Perception");
+    const strength = book.abilities.find((ability) => ability.key === "STR");
+    if (!acrobatics || !perception || !strength) throw new Error("missing a book number");
+    const tweaked = buildCharacter(
+      tables,
+      req({
+        cls: "fighter",
+        level: 1,
+        numbers: {
+          skills: { Acrobatics: acrobatics.bonus + 4 },
+          saves: { STR: strength.save + 3 },
+          ac: book.combat.ac + 5,
+        },
+      }),
+    );
+    const next = tweaked.skills.find((skill) => skill.name === "Acrobatics");
+    expect(next?.bonus).toBe(acrobatics.bonus + 4);
+    expect(next?.offbook).toBe(true);
+    expect(tweaked.abilities.find((ability) => ability.key === "STR")?.save).toBe(strength.save + 3);
+    expect(tweaked.combat.ac).toBe(book.combat.ac + 5);
+    expect(tweaked.combat.ac_offbook).toBe(true);
+    const html = sheetHtml(tweaked);
+    expect(html).toContain(`${signed(acrobatics.bonus + 4)}*`);
+    expect(html).toContain(`save ${signed(strength.save + 3)}*`);
+    expect(html).toContain("off book");
+    expect(sheetHtml(book)).not.toContain("off book");
+    expect(sheetHtml(book)).not.toContain(`${signed(acrobatics.bonus + 4)}*`);
+    const followed = buildCharacter(
+      tables,
+      req({ cls: "fighter", level: 1, numbers: { skills: { Perception: perception.bonus + 2 } } }),
+    );
+    expect(followed.combat.passive_perception).toBe(10 + perception.bonus + 2);
+    expect(followed.combat.notice_offbook).toBeUndefined();
+    const both = buildCharacter(
+      tables,
+      req({
+        cls: "fighter",
+        level: 1,
+        numbers: { skills: { Perception: perception.bonus + 2 }, notice: 3 },
+      }),
+    );
+    expect(both.combat.passive_perception).toBe(3);
+    expect(both.combat.notice_offbook).toBe(true);
+  });
+
+  it("marks every other off-book number, and a book value stays unmarked", () => {
+    const hero = req({ cls: "wizard", level: 1 });
+    const book = buildCharacter(tables, hero);
+    const melee = book.attacks[0];
+    const acrobatics = book.skills.find((skill) => skill.name === "Acrobatics");
+    const casting = book.spellcasting;
+    if (!melee || !acrobatics || !casting) throw new Error("missing a book number");
+    const same = buildCharacter(
+      tables,
+      req({
+        cls: "wizard",
+        level: 1,
+        numbers: { ac: book.combat.ac, skills: { Acrobatics: acrobatics.bonus } },
+      }),
+    );
+    expect(same.combat.ac).toBe(book.combat.ac);
+    expect(same.combat.ac_offbook).toBeUndefined();
+    expect(same.skills.find((skill) => skill.name === "Acrobatics")?.offbook).toBeUndefined();
+
+    const tweaked = buildCharacter(
+      tables,
+      req({
+        cls: "wizard",
+        level: 1,
+        numbers: {
+          hp: book.combat.max_hp + 9,
+          speed: book.combat.speed + 10,
+          swim: 30,
+          initiative: book.combat.initiative + 4,
+          prof: book.combat.prof + 1,
+          notice: 22,
+          spell_attack: casting.attack + 3,
+          spell_dc: casting.dc + 2,
+          attacks: { [melee.name]: melee.to_hit + 5 },
+        },
+      }),
+    );
+    expect(tweaked.combat.max_hp).toBe(book.combat.max_hp + 9);
+    expect(tweaked.combat.hp_offbook).toBe(true);
+    expect(tweaked.combat.speed).toBe(book.combat.speed + 10);
+    expect(tweaked.combat.speed_offbook).toBe(true);
+    expect(tweaked.combat.swim).toBe(30);
+    expect(tweaked.combat.swim_offbook).toBe(true);
+    expect(tweaked.combat.initiative).toBe(book.combat.initiative + 4);
+    expect(tweaked.combat.initiative_offbook).toBe(true);
+    expect(tweaked.combat.prof).toBe(book.combat.prof + 1);
+    expect(tweaked.combat.prof_offbook).toBe(true);
+    expect(tweaked.combat.passive_perception).toBe(22);
+    expect(tweaked.combat.notice_offbook).toBe(true);
+    expect(tweaked.spellcasting?.attack).toBe(casting.attack + 3);
+    expect(tweaked.spellcasting?.attack_offbook).toBe(true);
+    expect(tweaked.spellcasting?.dc).toBe(casting.dc + 2);
+    expect(tweaked.spellcasting?.dc_offbook).toBe(true);
+    const hit = tweaked.attacks.find((row) => row.name === melee.name);
+    expect(hit?.to_hit).toBe(melee.to_hit + 5);
+    expect(hit?.offbook).toBe(true);
+
+    const html = sheetHtml(tweaked);
+    expect(html).toContain(`<b>${tweaked.combat.max_hp}</b>`);
+    expect(html).toContain(`<b>${tweaked.combat.speed}</b>`);
+    expect(html).toContain("swim 30 • off book");
+    expect(html).toContain('<span class="worn off">off book</span>');
+    expect(html).toContain(`Proficiency <b>${signed(tweaked.combat.prof)}*</b>`);
+    expect(html).toContain("Notice <b>22*</b>");
+    expect(html).toContain(`Spell attack ${signed(casting.attack + 3)}* • DC ${casting.dc + 2}*`);
+    expect(html).toContain(`${signed(melee.to_hit + 5)}*`);
+    expect(sheetHtml(book)).not.toContain("off book");
+    expect(sheetHtml(book)).not.toContain("22*");
+
+    const fighter = buildCharacter(
+      tables,
+      req({ cls: "fighter", level: 1, numbers: { spell_attack: 9, spell_dc: 19 } }),
+    );
+    expect(fighter.spellcasting).toBeNull();
+    expect(sheetHtml(fighter)).not.toContain("Spell attack");
+  });
+
+  it("names an uncommon item with an, and a rare item with a", () => {
+    const low = options(tables, req({ cls: "fighter", level: 1 }));
+    expect(low.itemWarn("Potion of Greater Healing")).toBe(
+      "By the usual rules it's an uncommon item, usually for heroes level 3 and up",
+    );
+    expect(low.itemWarn("Potion of Superior Healing")).toBe(
+      "By the usual rules it's a rare item, usually for heroes level 5 and up",
+    );
+    expect(low.itemWarn("No Such Potion")).toBe("");
+    expect(options(tables, req({ cls: "fighter", level: 5 })).itemWarn("Potion of Greater Healing")).toBe("");
   });
 
   it("waits for the subclass level", () => {

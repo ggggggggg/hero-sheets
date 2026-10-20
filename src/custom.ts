@@ -406,6 +406,7 @@ export function heroRequest(hero: PackRow): HeroRequest {
     notes: hero.notes ? String(hero.notes) : "",
     portrait: hero.portrait ? String(hero.portrait) : null,
     portrait_credit: hero.portrait ? (hero.portrait_credit ? String(hero.portrait_credit) : null) : null,
+    numbers: null,
   };
 }
 
@@ -457,6 +458,7 @@ function blankRequest(
     notes: "",
     portrait: null,
     portrait_credit: null,
+    numbers: null,
   };
 }
 

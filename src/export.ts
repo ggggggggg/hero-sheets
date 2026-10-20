@@ -1,5 +1,5 @@
-const PAGE_W = 816;
-const PAGE_H = 1056;
+import { fitCardFont, PAGE_H, PAGE_W } from "./fit";
+
 const PT_W = 612;
 const PT_H = 792;
 const SCALE = 3;
@@ -8,6 +8,99 @@ export interface JpegPage {
   bytes: Uint8Array;
   w: number;
   h: number;
+}
+
+export interface HeroFile {
+  state: object;
+  packs: { title: string; text: string }[];
+}
+
+export interface HeroSheetFile {
+  state: Record<string, unknown>;
+  packs: { title: string; text: string }[];
+}
+
+const HERO_MARK = "HEROSHEET1 ";
+
+function heroBytes(hero: HeroFile): Uint8Array {
+  const json = JSON.stringify({ v: 1, state: hero.state, packs: hero.packs });
+  const body = new TextEncoder().encode(json);
+  const head = new TextEncoder().encode(`${HERO_MARK}${body.length}\n`);
+  const out = new Uint8Array(head.length + body.length);
+  out.set(head);
+  out.set(body, head.length);
+  return out;
+}
+
+function findBytes(haystack: Uint8Array, needle: Uint8Array, from: number): number {
+  for (let i = from; i + needle.length <= haystack.length; i++) {
+    let same = true;
+    for (let j = 0; j < needle.length; j++) {
+      if (haystack[i + j] !== needle[j]) {
+        same = false;
+        break;
+      }
+    }
+    if (same) return i;
+  }
+  return -1;
+}
+
+function packCopies(value: unknown): { title: string; text: string }[] {
+  if (!Array.isArray(value)) return [];
+  const packs: { title: string; text: string }[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as Record<string, unknown>;
+    if (typeof row.title === "string" && typeof row.text === "string") packs.push({ title: row.title, text: row.text });
+  }
+  return packs;
+}
+
+export function readHeroSheet(bytes: Uint8Array): HeroSheetFile | null {
+  const mark = new TextEncoder().encode(HERO_MARK);
+  let from = 0;
+  while (from < bytes.length) {
+    const at = findBytes(bytes, mark, from);
+    if (at < 0) return null;
+    let cursor = at + mark.length;
+    let length = 0;
+    let digits = 0;
+    while (
+      cursor < bytes.length &&
+      bytes[cursor] !== undefined &&
+      bytes[cursor] >= 48 &&
+      bytes[cursor] <= 57 &&
+      digits < 9
+    ) {
+      length = length * 10 + ((bytes[cursor] ?? 0) - 48);
+      cursor++;
+      digits++;
+    }
+    if (!digits || bytes[cursor] !== 10) {
+      from = at + mark.length;
+      continue;
+    }
+    cursor++;
+    if (cursor + length > bytes.length) return null;
+    const text = new TextDecoder().decode(bytes.subarray(cursor, cursor + length));
+    try {
+      const parsed: unknown = JSON.parse(text);
+      if (parsed && typeof parsed === "object") {
+        const row = parsed as Record<string, unknown>;
+        if (row.state && typeof row.state === "object") {
+          const state = row.state as Record<string, unknown>;
+          const dnd = typeof state.race === "string" && typeof state.cls === "string";
+          const paf = state.kind === "paf" && typeof state.origin1 === "string" && typeof state.origin2 === "string";
+          if (dnd || paf) return { state, packs: packCopies(row.packs) };
+        }
+      }
+    } catch {
+      // a picture in the PDF can contain the marker bytes
+    }
+    from = cursor + length;
+  }
+  return null;
 }
 
 export class ExportError extends Error {
@@ -26,22 +119,7 @@ function sheetCss(): string {
 function fitCards(page: Element): void {
   const cards = page.querySelector(".cards");
   if (!(cards instanceof HTMLElement)) return;
-  const fits = () => {
-    if (cards.scrollHeight > cards.clientHeight + 1 || cards.scrollWidth > cards.clientWidth + 1) return false;
-    const box = cards.getBoundingClientRect();
-    const tol = 1 + box.width / 400;
-    for (const node of cards.querySelectorAll(".cd, .sec h3")) {
-      const rect = node.getBoundingClientRect();
-      if (rect.right > box.right + tol || rect.bottom > box.bottom + tol) return false;
-    }
-    return true;
-  };
-  let fs = 16;
-  cards.style.setProperty("--fs", `${fs}px`);
-  while (!fits() && fs > 8) {
-    fs -= 0.25;
-    cards.style.setProperty("--fs", `${fs}px`);
-  }
+  fitCardFont(cards);
 }
 
 function layOut(html: string): { host: HTMLDivElement; sheet: HTMLElement; pages: HTMLElement[] } {
@@ -120,7 +198,8 @@ async function pageJpeg(svg: string): Promise<JpegPage> {
   return { bytes: new Uint8Array(await blob.arrayBuffer()), w: canvas.width, h: canvas.height };
 }
 
-export function jpegsToPdf(images: JpegPage[], title: string): Uint8Array {
+export function jpegsToPdf(images: JpegPage[], title: string, hero?: HeroFile): Uint8Array {
+  const embedded = hero ? heroBytes(hero) : null;
   const enc = new TextEncoder();
   const chunks: Uint8Array[] = [];
   let len = 0;
@@ -137,16 +216,32 @@ export function jpegsToPdf(images: JpegPage[], title: string): Uint8Array {
     push("\nendobj\n");
   };
   const n = images.length;
+  const extra = embedded ? 2 : 0;
+  const firstPage = 4 + extra;
   push("%PDF-1.4\n%\xe2\xe3\xcf\xd3\n");
-  obj(1, () => push("<< /Type /Catalog /Pages 2 0 R >>"));
-  const kids = images.map((_, i) => `${4 + i * 3} 0 R`).join(" ");
+  obj(1, () =>
+    push(
+      embedded
+        ? "<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles << /Names [(hero.json) 4 0 R] >> >> >>"
+        : "<< /Type /Catalog /Pages 2 0 R >>",
+    ),
+  );
+  const kids = images.map((_, i) => `${firstPage + i * 3} 0 R`).join(" ");
   obj(2, () => push(`<< /Type /Pages /Count ${n} /Kids [${kids}] >>`));
   const safe = String(title || "Hero")
     .replace(/[\\()]/g, "")
     .replace(/[^\x20-\x7e]/g, "");
   obj(3, () => push(`<< /Title (${safe}) /Producer (Hero Sheet Builder) >>`));
+  if (embedded) {
+    obj(4, () => push("<< /Type /Filespec /F (hero.json) /EF << /F 5 0 R >> /Desc (Hero Sheet Builder hero) >>"));
+    obj(5, () => {
+      push(`<< /Type /EmbeddedFile /Subtype /application#2Fjson /Length ${embedded.length} >>\nstream\n`);
+      push(embedded);
+      push("\nendstream");
+    });
+  }
   images.forEach((image, i) => {
-    const page = 4 + i * 3;
+    const page = firstPage + i * 3;
     const contentId = page + 1;
     const imageId = page + 2;
     obj(page, () =>
@@ -164,7 +259,7 @@ export function jpegsToPdf(images: JpegPage[], title: string): Uint8Array {
       push("\nendstream");
     });
   });
-  const total = 3 + n * 3;
+  const total = 3 + extra + n * 3;
   const xref = len;
   let xrefBody = `xref\n0 ${total + 1}\n0000000000 65535 f \n`;
   for (let i = 1; i <= total; i++) xrefBody += `${String(offsets[i] ?? 0).padStart(10, "0")} 00000 n \n`;
@@ -178,14 +273,14 @@ export function jpegsToPdf(images: JpegPage[], title: string): Uint8Array {
   return out;
 }
 
-export async function makePdf(html: string, title: string): Promise<Blob> {
+export async function makePdf(html: string, title: string, hero?: HeroFile): Promise<Blob> {
   const css = sheetCss();
   if (document.fonts) await document.fonts.ready;
   const { host, sheet, pages } = layOut(html);
   try {
     const images: JpegPage[] = [];
     for (const page of pages) images.push(await pageJpeg(pageSvg(sheet, page, css)));
-    const bytes = jpegsToPdf(images, title);
+    const bytes = jpegsToPdf(images, title, hero);
     const copy = new ArrayBuffer(bytes.byteLength);
     new Uint8Array(copy).set(bytes);
     return new Blob([copy], { type: "application/pdf" });

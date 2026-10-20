@@ -2,9 +2,11 @@
 
 ## ▶ Build a hero now → https://ggggggggg.github.io/hero-sheets/
 
+Post-apocalyptic heroes (PAF): https://ggggggggg.github.io/hero-sheets/paf.html
+
 Every fresh visit rolls a brand-new random hero.
 
-![Surprise me, then a level 1 hero and a content pack](demo/builder.gif)
+![A cartoon face, then level, class, Turtles & Pirates, and a Pirate path](demo/builder.gif)
 
 [![tests](https://github.com/ggggggggg/hero-sheets/actions/workflows/tests.yml/badge.svg)](https://github.com/ggggggggg/hero-sheets/actions/workflows/tests.yml)
 
@@ -15,9 +17,12 @@ and print.
 
 It's totally open: copy it, change it, host your own — do whatever you like with it.
 
-**Works fully offline.** The whole builder is one self-contained HTML file — save the page and it
-keeps working with no internet (only the optional cartoon portraits need to be online). A test
-keeps it that way.
+**Works fully offline.** Each page is one self-contained HTML file. Save it and it keeps working
+with no internet. On the D&D page, cartoon portraits load only when someone asks for one. A test
+keeps the offline build that way.
+
+**PAF** is the other builder: two origins, levels 1–10, and a sheet where your level adds to
+attacks, skills, and defenses. A short rest restores all HP. The PAF pages are original.
 
 **Content packs.** You can add your own races, classes, spells and more as plain JSON packs.
 The format is in the [instructions](CUSTOM_CONTENT_GUIDE.md). Drop the JSON into
@@ -46,7 +51,7 @@ Developer notes are in `CLAUDE.md`.
 
 # Developing
 
-The builder is a TypeScript app. `npm run build` writes one self-contained `dist/index.html`.
+The builder is a TypeScript app. `npm run build` writes two self-contained files, `dist/index.html` and `dist/paf.html`.
 
 ```bash
 npm install
@@ -57,11 +62,11 @@ npm run build
 npm run demo
 ```
 
-`src/content.json` is the built-in rules (levels 1–7). `src/core.ts` turns a request into a hero and then into sheet HTML. Text uses `{PLACEHOLDERS}`; anything the tables don't fill raises an error. The PDF is drawn in the browser: each page becomes a JPEG and a small hand-written PDF wraps those images. Cartoon portraits come from DiceBear, loaded only when someone asks for one.
+`src/content.json` is the built-in D&D rules (levels 1–7). `src/core.ts` turns a request into a hero and then into sheet HTML. `src/paf/` is the post-apocalyptic builder (levels 1–10), with its own page. Text uses `{PLACEHOLDERS}`; anything the tables don't fill raises an error. The PDF is drawn in the browser: each page becomes a JPEG and a small hand-written PDF wraps those images. Cartoon portraits on the D&D page come from DiceBear, loaded only when someone asks for one.
 
 Packs live in `examples/*.json`. The format is in the [instructions](CUSTOM_CONTENT_GUIDE.md).
 
-Tests run on GitHub Actions (`.github/workflows/tests.yml`). `npm test` builds every race, class, subclass, and level, and checks that editing a row a hero uses changes the sheet. `npm run e2e` opens the built site and checks that every subclass at level 7 is still exactly two pages.
+Tests run on GitHub Actions (`.github/workflows/tests.yml`). `npm test` builds every race, class, subclass, and level, and checks that editing a row a hero uses changes the sheet. It does the same for every PAF origin. `npm run e2e` opens the built site and checks that every subclass at level 7 is still exactly two pages, and that a level-10 PAF sheet is too.
 
 ## License
 
@@ -70,7 +75,7 @@ one license, the **MIT License** (see `LICENSE`). Send a pack as a pull request 
 under that same license, so only submit content you can license this way (your own, or open material
 like the SRD).
 
-The built-in game content is adapted from the D&D 5.1 SRD, which requires this notice:
+The PAF page is original content under that same MIT license. The D&D builder's game content is adapted from the D&D 5.1 SRD, which requires this notice:
 
 > This work includes material taken from the System Reference Document 5.1 ("SRD 5.1") by Wizards
 > of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document.

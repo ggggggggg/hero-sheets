@@ -246,6 +246,21 @@ export interface ChoicePick {
   picks: string[];
 }
 
+export interface NumberOverrides {
+  skills?: Record<string, number>;
+  saves?: Partial<AbilityScores>;
+  attacks?: Record<string, number>;
+  ac?: number;
+  hp?: number;
+  speed?: number;
+  swim?: number;
+  initiative?: number;
+  prof?: number;
+  notice?: number;
+  spell_attack?: number;
+  spell_dc?: number;
+}
+
 export interface HeroRequest {
   name: string;
   race: string;
@@ -268,6 +283,7 @@ export interface HeroRequest {
   notes: string;
   portrait: string | null;
   portrait_credit: string | null;
+  numbers: NumberOverrides | null;
 }
 
 export interface AbilityRow {
@@ -276,6 +292,7 @@ export interface AbilityRow {
   mod: number;
   save: number;
   save_prof: boolean;
+  save_offbook?: boolean;
 }
 
 export interface SkillRow {
@@ -284,6 +301,7 @@ export interface SkillRow {
   bonus: number;
   prof: boolean;
   expert: boolean;
+  offbook?: boolean;
 }
 
 export interface AttackRow {
@@ -291,6 +309,7 @@ export interface AttackRow {
   to_hit: number;
   damage: string;
   note: string;
+  offbook?: boolean;
 }
 
 export interface SpellSlot {
@@ -304,6 +323,8 @@ export interface Spellcasting {
   dc: number;
   slots: SpellSlot[];
   rest: string;
+  attack_offbook?: boolean;
+  dc_offbook?: boolean;
 }
 
 export interface SheetCard {
@@ -341,6 +362,13 @@ export interface Character {
     hit_dice: number;
     armor: string;
     armor_offbook: boolean;
+    ac_offbook?: boolean;
+    hp_offbook?: boolean;
+    speed_offbook?: boolean;
+    swim_offbook?: boolean;
+    initiative_offbook?: boolean;
+    prof_offbook?: boolean;
+    notice_offbook?: boolean;
   };
   skills: SkillRow[];
   attacks: AttackRow[];
