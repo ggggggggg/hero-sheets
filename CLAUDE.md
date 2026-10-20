@@ -4,14 +4,14 @@ A kids' D&D-style character builder. It turns a few picks into a printable 2-pag
 
 ## Layout
 - `src/core.ts`: `buildCharacter`, `sheetHtml`, `options`. The rules engine.
-- `src/fit.ts`: the shared page-fit and preview scale. `src/text.ts`: placeholders, escaping, PDF names. `src/tags.ts`: the action chips.
+- `src/fit.ts`: the shared page-fit and preview scale. `src/text.ts`: placeholders, escaping, PDF names. `src/tags.ts`: the action chips. `src/face.ts`: the cartoon face maker. `src/pack-ui.ts`: the content-pack panel.
 - `src/custom.ts`: merges a content pack into the rules tables.
 - `src/export.ts`: builds the PDF in the browser.
 - `src/app.ts`: the builder UI. `src/main.ts` starts it.
 - `src/content.json`: the built-in rules, levels 1–7.
 - `src/styles/sheet.css`: the printed sheet. `src/styles/ui.css`: the builder. `src/styles/fonts.css` points at `src/assets/*.woff2`.
 - `index.html`: the D&D page shell, including the SRD footer. `paf.html` and `src/paf/` are the post-apocalyptic builder.
-- `examples/*.json`: content packs. The build inlines them, so the site does not fetch them.
+- `examples/*.json`: D&D content packs. `examples/paf/*.json`: PAF packs. The build inlines them, so the site does not fetch them.
 - `CUSTOM_CONTENT_GUIDE.md`: the pack format, written for an AI to follow. The builder links to it.
 
 ## Commands

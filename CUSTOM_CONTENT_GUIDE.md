@@ -270,3 +270,36 @@ Acrobatics, Animal Handling, Arcana, Athletics, Deception, History, Insight, Int
   ]
 }
 ```
+
+## PAF packs
+
+The PAF page (`paf.html`) has its own packs. A PAF pack is not a D&D pack. It needs `"kind": "paf"`. A row with the same `id` (origins and capstones) or the same `name` (everything else) replaces the built-in row. A new key is added. The built-in set still needs an origin whose id is `baseline`.
+
+Allowed lists: `origins`, `skills`, `armor`, `weapons`, `flux`, `relics`, `capstones`, `heroes`. Optional: `title`, `about`.
+
+An origin needs `id`, `name`, `primary` (STR, DEX, CON, INT, WIS, or CHA), `skill` (one of the ten PAF skills), `trait`, `novice`, `utility`, `expert`, and `crit`. Powers use `{LVL}` and `{STRATK}` `{DEXATK}` `{CONATK}` `{INTATK}` `{WISATK}` `{CHAATK}`. Do not use `{PROF}`.
+
+```json
+{
+  "kind": "paf",
+  "title": "Lamp-saint",
+  "about": "One more origin.",
+  "origins": [
+    {
+      "id": "lampsaint",
+      "name": "Lamp-saint",
+      "primary": "WIS",
+      "skill": "Insight",
+      "speed": 30,
+      "speaks": "Trade-talk",
+      "accent": "#f4c430",
+      "tagline": "A walking lantern.",
+      "trait": "Your head is a lamp. You can shine or go dark.",
+      "novice": { "name": "Lantern beam", "tag": "A", "desc": "To hit {WISATK}, range 40 ft. Damage 1d8 radiant." },
+      "utility": { "name": "Warm light", "tag": "B", "desc": "Once a fight, one friend you can see heals 1d6." },
+      "expert": { "name": "Blinding flash", "tag": "A", "desc": "Once a fight, creatures next to you can't see you until your next turn." },
+      "crit": { "name": "Sunspot", "desc": "On a crit, the target can't hide until your next turn." }
+    }
+  ]
+}
+```

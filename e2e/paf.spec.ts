@@ -29,6 +29,9 @@ test("builds a level-3 hero with one once-a-fight power", async ({ page }) => {
   await page.goto("/paf.html");
   await page.waitForSelector("#scaler .page.back");
   await expect(page.locator("#scaler .page")).toHaveCount(2);
+  await expect(page.locator("#controls .lead")).toHaveText(
+    "Build an even simpler hero for post-apocalyptic fantasy, with Gamma World inspired origins and simplified choices:",
+  );
   await expect(page.locator(".sitefoot")).toContainText("original post-apocalyptic fantasy");
   await expect(page.locator(".sitefoot")).not.toContainText("SRD");
   await expect(page.locator(".sitefoot")).not.toContainText(/gamma/i);
@@ -48,6 +51,25 @@ test("builds a level-3 hero with one once-a-fight power", async ({ page }) => {
   await expect(sheet.locator(".head .sub")).toContainText("Spark");
   await expect(page.locator("#flux-relics")).toContainText("Extra arm");
   await expect(sheet).not.toContainText("Extra arm");
+});
+
+test("matches the D&D dice, face maker, and content packs", async ({ page }) => {
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto("/paf.html");
+  await page.waitForSelector("html[data-booted='1']");
+  await expect(page.getByRole("button", { name: "Random first origin" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Random second origin" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Random level" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Random armor" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Random scores" })).toBeVisible();
+  await expect(page.locator("#controls")).not.toContainText("Re-roll scores");
+  await expect(page.getByRole("button", { name: "Pixel" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Adventurer" })).toBeVisible();
+  await page.locator("#content-packs summary").click();
+  await expect(page.locator("#content-packs")).toContainText("Lamp-saint");
+  await expect(page.locator("#clear-saved")).toHaveText("Clear saved data");
+  await page.locator("#content-packs").getByText("Lamp-saint", { exact: true }).click();
+  await expect(field(page, "First origin").getByRole("button", { name: "Lamp-saint", exact: true })).toBeVisible();
 });
 
 test("the two pages point at each other", async ({ page }) => {
@@ -95,7 +117,8 @@ test("the single file still builds a sheet with the network blocked", async ({ b
   const html = readFileSync(file, "utf8");
   expect(html).toContain("woff2");
   expect(html).not.toMatch(/<(?:script|link)[^>]+(?:src|href)="https?:/);
-  expect(html).not.toMatch(/gamma/i);
+  expect(html).toContain("Gamma World inspired origins");
+  expect(html).not.toMatch(/engineered human|famine in far-go/i);
   const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
   await page.addInitScript(() => {
     localStorage.clear();

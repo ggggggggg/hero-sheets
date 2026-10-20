@@ -93,6 +93,7 @@ export interface PafRequest {
   inventory: string[] | null;
   notes: string;
   portrait: string | null;
+  portrait_credit: string | null;
 }
 
 export interface PafCard {
@@ -132,7 +133,7 @@ export interface PafCharacter {
   attacks: { name: string; to_hit: number; damage: string; note: string }[];
   cards: PafCard[];
   inventory: string[];
-  extras: { notes: string; portrait: string | null };
+  extras: { notes: string; portrait: string | null; portrait_credit: string | null };
   flux: number;
   bonus_skill: string;
   scores: AbilityScores;
@@ -492,7 +493,7 @@ export function buildCharacter(tables: PafTables, req: PafRequest): PafCharacter
     ],
     cards,
     inventory: req.inventory ?? ["A coil of wire", "A snack tin", "Chalk"],
-    extras: { notes: req.notes, portrait: req.portrait },
+    extras: { notes: req.notes, portrait: req.portrait, portrait_credit: req.portrait ? req.portrait_credit : null },
     flux,
     bonus_skill: bonusSkill,
     scores,
@@ -532,7 +533,8 @@ function uses(n: number | null, rest: string | null): string {
 export function sheetHtml(ch: PafCharacter): string {
   const idn = ch.identity;
   const combat = ch.combat;
-  const portrait = ch.extras.portrait ? `<img src="${escapeHtml(ch.extras.portrait)}" alt="">` : "Draw your hero here!";
+  let portrait = ch.extras.portrait ? `<img src="${escapeHtml(ch.extras.portrait)}" alt="">` : "Draw your hero here!";
+  if (ch.extras.portrait_credit) portrait += `<span class="credit">${escapeHtml(ch.extras.portrait_credit)}</span>`;
   const abil = ch.abilities
     .map(
       (ability) =>
