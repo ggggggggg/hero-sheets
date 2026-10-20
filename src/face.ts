@@ -367,86 +367,80 @@ export function createFaceKit(hooks: FaceHooks): {
             style.label,
           ),
         ),
-        avatar
-          ? el(
-              "button",
-              {
-                type: "button",
-                class: "dice",
-                title: "Random face",
-                "aria-label": "Random face",
-                onclick: () => {
-                  void draw(avatar.style, randomSeed());
-                },
-              },
-              "🎲",
-            )
-          : null,
+        el(
+          "button",
+          {
+            type: "button",
+            class: "dice",
+            title: "Random face",
+            "aria-label": "Random face",
+            onclick: () => {
+              void draw(avatar?.style ?? "pixel", randomSeed());
+            },
+          },
+          "🎲",
+        ),
       ),
-      avatar
-        ? el(
-            "div",
-            { class: "row" },
-            el("label", { for: "face-seed", class: "hint" }, "Face code"),
-            el("input", {
-              id: "face-seed",
-              type: "text",
-              value: avatar.seed || "",
-              maxlength: 60,
-              autocomplete: "off",
-              spellcheck: "false",
-              oninput: (ev) => {
-                const input = ev.target;
-                if (!(input instanceof HTMLInputElement)) return;
-                const value = input.value;
-                clearTimeout(seedTimer);
-                seedTimer = window.setTimeout(() => {
-                  const current = hooks.read().avatar;
-                  if (current) void draw(current.style, value || " ");
-                }, 250);
-              },
-            }),
-          )
-        : null,
-      avatar
-        ? (() => {
-            const lf = lookFor(avatar.seed);
-            const pickLook = (value: Look | null) => {
-              hooks.write({ look: value });
+      el(
+        "div",
+        { class: "row" },
+        el("label", { for: "face-seed", class: "hint" }, "Face code"),
+        el("input", {
+          id: "face-seed",
+          type: "text",
+          value: avatar?.seed || "",
+          maxlength: 60,
+          autocomplete: "off",
+          spellcheck: "false",
+          oninput: (ev) => {
+            const input = ev.target;
+            if (!(input instanceof HTMLInputElement)) return;
+            const value = input.value;
+            clearTimeout(seedTimer);
+            seedTimer = window.setTimeout(() => {
               const current = hooks.read().avatar;
-              if (current) void draw(current.style, current.seed);
-            };
-            return el(
-              "div",
-              { class: "row" },
-              el("span", { class: "hint" }, "Look"),
+              void draw(current?.style ?? "pixel", value || " ");
+            }, 250);
+          },
+        }),
+      ),
+      (() => {
+        const lf = lookFor(avatar?.seed || state.name || "Hero");
+        const pickLook = (value: Look | null) => {
+          hooks.write({ look: value });
+          const current = hooks.read().avatar;
+          void draw(current?.style ?? "pixel", current?.seed || state.name || "Hero");
+        };
+        return el(
+          "div",
+          { class: "row" },
+          el("span", { class: "hint" }, "Look"),
+          el(
+            "div",
+            { class: "chips" },
+            (
+              [
+                ["boy", "Boy"],
+                ["girl", "Girl"],
+              ] as const
+            ).map(([value, label]) =>
               el(
-                "div",
-                { class: "chips" },
-                (
-                  [
-                    ["boy", "Boy"],
-                    ["girl", "Girl"],
-                  ] as const
-                ).map(([value, label]) =>
-                  el(
-                    "button",
-                    {
-                      type: "button",
-                      class: `chip-btn${lf.look === value ? " on" : ""}`,
-                      "aria-pressed": lf.look === value ? "true" : "false",
-                      onclick: () => pickLook(value),
-                    },
-                    label,
-                  ),
-                ),
+                "button",
+                {
+                  type: "button",
+                  class: `chip-btn${lf.look === value ? " on" : ""}`,
+                  "aria-pressed": lf.look === value ? "true" : "false",
+                  onclick: () => pickLook(value),
+                },
+                label,
               ),
-              state.look
-                ? el("button", { type: "button", class: "link", onclick: () => pickLook(null) }, "match name")
-                : el("span", { class: "hint" }, lf.why),
-            );
-          })()
-        : null,
+            ),
+          ),
+          state.look
+            ? el("button", { type: "button", class: "link", onclick: () => pickLook(null) }, "match name")
+            : el("span", { class: "hint" }, lf.why),
+        );
+      })(),
       el(
         "div",
         { class: "row" },
@@ -482,7 +476,7 @@ export function createFaceKit(hooks: FaceHooks): {
       el(
         "p",
         { class: "hint block", id: "avatar-msg" },
-        avatar ? "Same code + same style = same face. Share a code to share a face. Credit prints in the corner." : "",
+        "Same code + same style = same face. Share a code to share a face. Credit prints in the corner.",
       ),
     );
   }

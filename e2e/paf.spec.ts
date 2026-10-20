@@ -65,6 +65,10 @@ test("matches the D&D dice, face maker, and content packs", async ({ page }) => 
   await expect(page.locator("#controls")).not.toContainText("Re-roll scores");
   await expect(page.getByRole("button", { name: "Pixel" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Adventurer" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Random face" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Boy" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Girl" })).toBeVisible();
+  await expect(page.locator("label[for='face-seed']")).toHaveText("Face code");
   await page.locator("#content-packs summary").click();
   await expect(page.locator("#content-packs")).toContainText("Lamp-saint");
   await expect(page.locator("#clear-saved")).toHaveText("Clear saved data");
