@@ -52,6 +52,63 @@ test.describe("builder", () => {
     await expect(page.locator("#scaler .page")).toHaveCount(2);
   });
 
+  test("the main page does not resume a saved Tobin", async ({ browser }) => {
+    const context = await browser.newContext();
+    await context.addInitScript(() => {
+      localStorage.setItem(
+        "charsheet-heroes-v1",
+        JSON.stringify({
+          current: "h1",
+          heroes: [
+            {
+              id: "h1",
+              state: { name: "Tobin", race: "dwarf", cls: "warlock", level: 5 },
+              edited: true,
+              updated: 1,
+            },
+          ],
+        }),
+      );
+    });
+    const page = await context.newPage();
+    page.on("pageerror", (error) => {
+      throw error;
+    });
+    await page.setViewportSize({ width: 1400, height: 900 });
+    await page.goto("/");
+    await page.waitForSelector("html[data-booted='1']");
+    await expect(page.locator("#scaler .head .nm")).not.toHaveText(/^Tobin/);
+    await page.locator("#heroes-btn").click();
+    await expect(page.locator(".heroname", { hasText: "Tobin" })).toHaveCount(1);
+    await context.close();
+
+    const kept = await browser.newContext();
+    await kept.addInitScript(() => {
+      localStorage.setItem(
+        "charsheet-heroes-v1",
+        JSON.stringify({
+          current: "h2",
+          heroes: [
+            {
+              id: "h2",
+              state: { name: "Mira", race: "elf", cls: "wizard", level: 3 },
+              edited: true,
+              updated: 1,
+            },
+          ],
+        }),
+      );
+    });
+    const mira = await kept.newPage();
+    mira.on("pageerror", (error) => {
+      throw error;
+    });
+    await mira.goto("/");
+    await mira.waitForSelector("html[data-booted='1']");
+    await expect(mira.locator("#scaler .head .nm")).toHaveText("Mira");
+    await kept.close();
+  });
+
   test("a fresh visit rolls a random hero", async ({ browser }) => {
     const seen = new Set<string>();
     for (let i = 0; i < 4; i++) {
