@@ -955,8 +955,14 @@ export function startPaf(tables: PafTables): void {
   $("#open-pdf").addEventListener("click", () => openPdfInput.click());
   openPdfInput.addEventListener("change", () => {
     const chosen = openPdfInput.files?.[0];
-    openPdfInput.value = "";
-    if (chosen) void openHeroPdf(chosen);
+    if (!chosen) return;
+    void openHeroPdf(chosen)
+      .catch((error: unknown) => {
+        status(messageOf(error) || "Couldn't open that PDF.", true);
+      })
+      .finally(() => {
+        openPdfInput.value = "";
+      });
   });
   $("#surprise").addEventListener("click", surprise);
   $("#heroes-btn").addEventListener("click", () => {
