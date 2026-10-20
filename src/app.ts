@@ -15,6 +15,7 @@ import { fitCardFont, previewLayout } from "./fit";
 import { contentPackPanel } from "./pack-ui";
 import { clearSavedKeys, DND_SAVE_KEYS, refreshBundledPacks } from "./packs";
 import { fileStem } from "./text";
+import { createTips, type Tip } from "./tips";
 import {
   ABILITIES,
   type Ability,
@@ -102,18 +103,6 @@ interface CustomInfo {
   error: string;
   heroes: PackRow[];
   ids: Set<string>;
-}
-
-interface TipPick {
-  label: string;
-  on: boolean;
-  choose: () => void;
-}
-
-interface Tip {
-  title: string;
-  lines: [string | null, string][];
-  picks?: TipPick[];
 }
 
 type ListKind = "cantrips" | "spells" | "items" | "path_spells";
@@ -949,7 +938,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     );
   }
 
-  const TIPS = new WeakMap<Node, () => Tip | null>();
+  const { tipped, show: showTip, hide: hideTip } = createTips();
   const ABN: Record<Ability, string> = {
     STR: "Strength",
     DEX: "Dexterity",
@@ -1183,72 +1172,6 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     },
   };
 
-  function tipped<T extends HTMLElement>(node: T, fn: () => Tip | null): T {
-    TIPS.set(node, fn);
-    node.classList.add("has-tip");
-    return node;
-  }
-
-  const tipBox = (() => {
-    let box: HTMLElement | null = null;
-    return () => {
-      if (!box) box = document.body.appendChild(el("div", { id: "tip", role: "tooltip", hidden: true }));
-      return box;
-    };
-  })();
-  let tipFor: Node | null = null;
-  let tipTimer = 0;
-  let holdFired = false;
-
-  function showTip(node: Node): void {
-    const fn = TIPS.get(node);
-    let tip: Tip | null = null;
-    try {
-      tip = fn ? fn() : null;
-    } catch (error) {
-      if (!(error instanceof CharError)) throw error;
-      tip = null;
-    }
-    if (!tip) return;
-    const box = tipBox();
-    const picks = tip.picks?.length
-      ? el(
-          "div",
-          { class: "tpicks" },
-          tip.picks.map((pick) =>
-            el(
-              "button",
-              {
-                type: "button",
-                class: `tpick${pick.on ? " on" : ""}`,
-                "aria-pressed": pick.on ? "true" : "false",
-                onclick: () => pick.choose(),
-              },
-              pick.label,
-            ),
-          ),
-        )
-      : null;
-    box.replaceChildren(
-      el("b", { class: "tt" }, tip.title),
-      ...(picks ? [picks] : []),
-      ...tip.lines
-        .filter((line) => line[1])
-        .map(([label, text]) => el("p", {}, label ? el("b", {}, `${label}: `) : null, text)),
-    );
-    box.hidden = false;
-    tipFor = node;
-    if (!(node instanceof Element)) return;
-    const rect = node.getBoundingClientRect();
-    const width = Math.min(340, window.innerWidth - 32);
-    box.style.width = `${width}px`;
-    const left = Math.max(16, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - 16));
-    const height = box.offsetHeight;
-    const below = rect.bottom + 8 + height < window.innerHeight || rect.top - 8 - height < 0;
-    box.style.left = `${left}px`;
-    box.style.top = `${below ? rect.bottom - 2 : rect.top + 2 - height}px`;
-  }
-
   function reopenRaceTip(): void {
     for (const node of document.querySelectorAll(".field")) {
       if (!node.querySelector(".flabel")?.textContent?.startsWith("Race")) continue;
@@ -1257,97 +1180,6 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       return;
     }
   }
-
-  function hideTip(): void {
-    clearTimeout(tipTimer);
-    if (!tipFor) return;
-    tipBox().hidden = true;
-    tipFor = null;
-  }
-
-  function tipTarget(ev: Event): HTMLElement | null {
-    if (!(ev.target instanceof Element)) return null;
-    const node = ev.target.closest(".has-tip");
-    return node instanceof HTMLElement && TIPS.has(node) ? node : null;
-  }
-
-  document.addEventListener("pointerover", (ev) => {
-    if (ev.pointerType === "touch") return;
-    if (ev.target instanceof Node && tipBox().contains(ev.target)) {
-      clearTimeout(tipTimer);
-      return;
-    }
-    const node = tipTarget(ev);
-    if (node === tipFor) return;
-    clearTimeout(tipTimer);
-    if (!node) {
-      tipTimer = window.setTimeout(hideTip, 120);
-      return;
-    }
-    tipTimer = window.setTimeout(() => showTip(node), tipFor ? 0 : 350);
-  });
-  document.addEventListener("pointerdown", (ev) => {
-    if (ev.target instanceof Node && tipBox().contains(ev.target)) {
-      holdFired = false;
-      return;
-    }
-    holdFired = false;
-    if (ev.pointerType !== "touch" && ev.pointerType !== "pen") {
-      hideTip();
-      return;
-    }
-    const node = tipTarget(ev);
-    hideTip();
-    if (node)
-      tipTimer = window.setTimeout(() => {
-        holdFired = true;
-        showTip(node);
-      }, 450);
-  });
-  for (const name of ["pointerup", "pointercancel"]) {
-    document.addEventListener(name, () => {
-      if (!holdFired) clearTimeout(tipTimer);
-    });
-  }
-  document.addEventListener(
-    "pointermove",
-    (ev) => {
-      if (ev.pointerType === "touch" && !holdFired) clearTimeout(tipTimer);
-    },
-    { passive: true },
-  );
-  document.addEventListener(
-    "click",
-    (ev) => {
-      if (!holdFired) return;
-      holdFired = false;
-      ev.preventDefault();
-      ev.stopPropagation();
-    },
-    true,
-  );
-  document.addEventListener("contextmenu", (ev) => {
-    if (tipTarget(ev)) ev.preventDefault();
-  });
-  document.addEventListener("focusin", (ev) => {
-    if (ev.target instanceof Node && tipBox().contains(ev.target)) return;
-    const node = tipTarget(ev);
-    if (node?.matches(":focus-visible")) showTip(node);
-    else if (!node) hideTip();
-  });
-  document.addEventListener("keydown", (ev) => {
-    if (ev.key === "Escape") hideTip();
-  });
-  window.addEventListener(
-    "scroll",
-    (ev) => {
-      const box = tipBox();
-      if (ev.target instanceof Node && box.contains(ev.target)) return;
-      if (document.activeElement && box.contains(document.activeElement)) return;
-      hideTip();
-    },
-    true,
-  );
 
   function field(label: string, control: Node, hint?: Kid | Kid[]): HTMLElement {
     return el(

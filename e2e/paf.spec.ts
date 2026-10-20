@@ -141,3 +141,45 @@ test("the single file still builds a sheet with the network blocked", async ({ b
   await expect(page.locator("#scaler .head .sub")).toContainText("Howl");
   await page.close();
 });
+
+test("every selection oval has a popup", async ({ page }) => {
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto("/paf.html");
+  await page.waitForSelector("html[data-booted='1']");
+  const tip = page.locator("#tip");
+  const hover = async (locator: ReturnType<typeof field>) => {
+    await locator.scrollIntoViewIfNeeded();
+    await page.mouse.move(8, 8);
+    await page.waitForTimeout(200);
+    await locator.hover();
+  };
+
+  await hover(field(page, "First origin").getByRole("button", { name: "Whisk", exact: true }));
+  await expect(tip).toContainText("Ears up, plans flexible.");
+  await expect(tip).toContainText("Scratch");
+  await expect(tip).toContainText("Hamstring");
+
+  await hover(field(page, "Level").getByRole("button", { name: "2", exact: true }));
+  await expect(tip).toContainText("Level 2");
+  await expect(tip).toContainText("HP");
+
+  await hover(field(page, "Bonus skill").getByRole("button", { name: "Acrobatics", exact: true }));
+  await expect(tip).toContainText("Dexterity");
+
+  await hover(field(page, "Armor").getByRole("button", { name: "Road plate", exact: true }));
+  await expect(tip).toContainText("Heavy");
+
+  await hover(field(page, "Weapon").getByRole("button", { name: "Knife", exact: true }));
+  await expect(tip).toContainText("1d6");
+
+  await field(page, "Level").getByRole("button", { name: "3", exact: true }).click();
+  await hover(field(page, "Once a fight first").getByRole("button", { name: "Bramble", exact: true }));
+  await expect(tip).toContainText("Root down");
+
+  await field(page, "Level").getByRole("button", { name: "10", exact: true }).click();
+  await hover(field(page, "Capstone").getByRole("button", { name: "Twice", exact: true }));
+  await expect(tip).toContainText("always-on power");
+
+  await hover(field(page, "Ready heroes").getByRole("button", { name: "Start as Pip", exact: true }));
+  await expect(tip).toContainText("Whisk and Spark, level 3.");
+});

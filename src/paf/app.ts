@@ -3,17 +3,21 @@ import { createFaceKit, type FacePick, type Look } from "../face";
 import { fitCardFont, previewLayout } from "../fit";
 import { contentPackPanel } from "../pack-ui";
 import { clearSavedKeys, PAF_SAVE_KEYS, refreshBundledPacks } from "../packs";
+import { ABILITY_NAME } from "../tags";
 import { fileStem } from "../text";
+import { createTips, type Tip } from "../tips";
 import { ABILITIES, type Ability, type AbilityScores } from "../types";
 import {
   buildCharacter,
   CharError,
   options,
   type PafCharacter,
+  type PafOrigin,
   type PafRequest,
   type PafTables,
   pairOrigins,
   sheetHtml,
+  signed,
 } from "./core";
 import { mergePaf, packTitle, parsePafPack } from "./custom";
 
@@ -276,6 +280,7 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
   const first = baseTables.origins[0];
   const second = baseTables.origins[1] ?? first;
   if (!first || !second) throw new Error("PAF content needs two origins");
+  const { tipped } = createTips();
 
   function freshState(): PafState {
     return {
@@ -426,6 +431,124 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
     return tables.origins.find((origin) => origin.id === id)?.accent;
   }
 
+  function originBy(id: string): PafOrigin | undefined {
+    return tables.origins.find((origin) => origin.id === id);
+  }
+
+  function preview(over: Partial<PafRequest>): PafCharacter | null {
+    try {
+      return buildCharacter(tables, { ...state, ...over });
+    } catch (error) {
+      if (!(error instanceof CharError)) throw error;
+      return null;
+    }
+  }
+
+  function cardDesc(ch: PafCharacter | null, name: string): string {
+    return ch?.cards.find((card) => card.name === name)?.desc ?? "";
+  }
+
+  function originSheet(id: string, level: number): PafCharacter | null {
+    return preview({
+      origin1: id,
+      origin2: "baseline",
+      level,
+      crit_first: id,
+      utility_first: id,
+      expert_first: id,
+    });
+  }
+
+  function originTip(id: string): Tip | null {
+    const origin = originBy(id);
+    if (!origin) return null;
+    const now = Math.max(1, state.level);
+    const lines: [string | null, string][] = [
+      [null, origin.tagline],
+      [null, origin.trait],
+      [
+        null,
+        `${ABILITY_NAME[origin.primary]} 18 as the first origin, 16 as the second. 20 if both origins use ${ABILITY_NAME[origin.primary]}.`,
+      ],
+      [null, `${origin.skill} • speed ${origin.speed} ft • speaks ${origin.speaks}`],
+    ];
+    const powers: [string, string, number][] = [
+      ["Always", origin.novice.name, 1],
+      ["Critical", origin.crit.name, 2],
+      ["Once a fight", origin.utility.name, 3],
+      ["Big power", origin.expert.name, 5],
+    ];
+    for (const [label, name, level] of powers) {
+      const desc = cardDesc(originSheet(id, Math.max(now, level)), name);
+      if (!desc) continue;
+      const when = now >= level ? label : `level ${level}`;
+      lines.push([`${name} (${when})`, desc]);
+    }
+    return { title: origin.name, lines };
+  }
+
+  function levelTip(n: number): Tip | null {
+    const now = preview({ level: n });
+    const prev = n > 1 ? preview({ level: n - 1 }) : null;
+    if (!now) return null;
+    const lines: [string | null, string][] = [
+      [null, `${now.combat.max_hp} HP • attacks, skills, and defenses +${now.combat.level_bonus}`],
+    ];
+    if (prev) {
+      const had = new Set(prev.cards.map((card) => card.name));
+      const fresh = now.cards.filter((card) => !had.has(card.name)).map((card) => card.name);
+      if (fresh.length) lines.push(["New", fresh.join(", ")]);
+      if (now.flux !== prev.flux) lines.push(["Flux", `Draw ${now.flux} when a fight starts`]);
+    }
+    return { title: `Level ${n}`, lines };
+  }
+
+  function skillTip(name: string): Tip | null {
+    const skill = tables.skills.find((row) => row.name === name);
+    if (!skill) return null;
+    return {
+      title: skill.name,
+      lines: [[null, `${ABILITY_NAME[skill.ability]}. +4, and it stacks with an origin.`]],
+    };
+  }
+
+  function armorTip(name: string): Tip | null {
+    const ch = preview({ armor: name });
+    if (!ch) return null;
+    if (name === "No armor") {
+      return {
+        title: name,
+        lines: [[null, `Armor ${ch.combat.ac}. 10 + level + the better of Dexterity and Intelligence.`]],
+      };
+    }
+    const row = tables.armor.find((armor) => armor.name === name);
+    if (!row) return null;
+    const how =
+      row.kind === "light"
+        ? `Light, +${row.bonus}, and the better of Dexterity and Intelligence.`
+        : `Heavy, +${row.bonus}. Dexterity and Intelligence do not add.`;
+    return { title: name, lines: [[null, `Armor ${ch.combat.ac}. ${how}`]] };
+  }
+
+  function weaponTip(name: string): Tip | null {
+    const row = tables.weapons.find((weapon) => weapon.name === name);
+    const attack = preview({ weapon: name })?.attacks[0];
+    if (!row || !attack) return null;
+    return {
+      title: row.name,
+      lines: [[null, `${attack.damage}, ${ABILITY_NAME[row.ability]}. ${row.note}. To hit ${signed(attack.to_hit)}.`]],
+    };
+  }
+
+  function slotTip(kind: "crit" | "utility" | "expert", id: string): Tip | null {
+    const origin = originBy(id);
+    if (!origin) return null;
+    const power = kind === "crit" ? origin.crit : kind === "utility" ? origin.utility : origin.expert;
+    const level = kind === "crit" ? 2 : kind === "utility" ? 3 : 5;
+    const desc = cardDesc(originSheet(id, Math.max(state.level, level)), power.name);
+    return { title: power.name, lines: [[origin.name, desc]] };
+  }
+
   function resolve(): void {
     if (!tables.origins.some((origin) => origin.id === state.origin1)) state.origin1 = first.id;
     if (!tables.origins.some((origin) => origin.id === state.origin2)) state.origin2 = second.id;
@@ -473,7 +596,7 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
   }
 
   function chips(
-    items: { id: string; label: string; color?: string }[],
+    items: { id: string; label: string; color?: string; tip: () => Tip | null }[],
     current: string,
     onPick: (id: string) => void,
   ): HTMLElement {
@@ -481,16 +604,19 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
       "div",
       { class: "chips", role: "group" },
       items.map((item) =>
-        el(
-          "button",
-          {
-            type: "button",
-            class: `chip-btn${item.id === current ? " on" : ""}`,
-            "aria-pressed": item.id === current ? "true" : "false",
-            style: item.color ? `--c:${item.color}` : null,
-            onclick: () => onPick(item.id),
-          },
-          item.label,
+        tipped(
+          el(
+            "button",
+            {
+              type: "button",
+              class: `chip-btn${item.id === current ? " on" : ""}`,
+              "aria-pressed": item.id === current ? "true" : "false",
+              style: item.color ? `--c:${item.color}` : null,
+              onclick: () => onPick(item.id),
+            },
+            item.label,
+          ),
+          item.tip,
         ),
       ),
     );
@@ -766,15 +892,22 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
     });
   }
 
-  function whichField(label: string, current: string | null, set: (id: string) => void): HTMLElement {
+  function whichField(
+    label: string,
+    current: string | null,
+    kind: "crit" | "utility" | "expert",
+    set: (id: string) => void,
+  ): HTMLElement {
     const chosen = current === state.origin2 ? state.origin2 : state.origin1;
     return field(
       label,
       chips(
-        [
-          { id: state.origin1, label: originName(state.origin1), color: originColor(state.origin1) },
-          { id: state.origin2, label: originName(state.origin2), color: originColor(state.origin2) },
-        ],
+        [state.origin1, state.origin2].map((id) => ({
+          id,
+          label: originName(id),
+          color: originColor(id),
+          tip: () => slotTip(kind, id),
+        })),
         chosen,
         (id) => {
           set(id);
@@ -832,6 +965,12 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
         { class: "tagline lead" },
         "Build an even simpler hero for post-apocalyptic fantasy, with Gamma World inspired origins and simplified choices:",
       ),
+      el(
+        "p",
+        { class: "tiphint" },
+        el("span", { class: "mouse" }, "Hover over any choice to see what it does."),
+        el("span", { class: "touch" }, "Press and hold any choice to see what it does."),
+      ),
       field(
         "Name",
         el("input", {
@@ -854,7 +993,12 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
       field(
         "First origin",
         chips(
-          tables.origins.map((origin) => ({ id: origin.id, label: origin.name, color: origin.accent })),
+          tables.origins.map((origin) => ({
+            id: origin.id,
+            label: origin.name,
+            color: origin.accent,
+            tip: () => originTip(origin.id),
+          })),
           state.origin1,
           (id) => {
             state.origin1 = id;
@@ -872,7 +1016,12 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
       field(
         "Second origin",
         chips(
-          tables.origins.map((origin) => ({ id: origin.id, label: origin.name, color: origin.accent })),
+          tables.origins.map((origin) => ({
+            id: origin.id,
+            label: origin.name,
+            color: origin.accent,
+            tip: () => originTip(origin.id),
+          })),
           state.origin2,
           (id) => {
             state.origin2 = id;
@@ -894,8 +1043,8 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
         "Level",
         chips(
           Array.from({ length: tables.max_level }, (_, i) => {
-            const n = String(i + 1);
-            return { id: n, label: n };
+            const n = i + 1;
+            return { id: String(n), label: String(n), tip: () => levelTip(n) };
           }),
           String(state.level),
           (id) => {
@@ -915,7 +1064,7 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
       field(
         "Bonus skill",
         chips(
-          tables.skills.map((skill) => ({ id: skill.name, label: skill.name })),
+          tables.skills.map((skill) => ({ id: skill.name, label: skill.name, tip: () => skillTip(skill.name) })),
           opt.bonus_skill,
           (id) => {
             state.bonus_skill = id;
@@ -936,21 +1085,21 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
     );
     if (opt.show_crit && state.origin1 !== state.origin2) {
       nodes.push(
-        whichField("Critical first", state.crit_first, (id) => {
+        whichField("Critical first", state.crit_first, "crit", (id) => {
           state.crit_first = id;
         }),
       );
     }
     if (opt.show_utility && state.origin1 !== state.origin2) {
       nodes.push(
-        whichField("Once a fight first", state.utility_first, (id) => {
+        whichField("Once a fight first", state.utility_first, "utility", (id) => {
           state.utility_first = id;
         }),
       );
     }
     if (opt.show_expert && state.origin1 !== state.origin2) {
       nodes.push(
-        whichField("Big power first", state.expert_first, (id) => {
+        whichField("Big power first", state.expert_first, "expert", (id) => {
           state.expert_first = id;
         }),
       );
@@ -961,7 +1110,11 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
         field(
           "Capstone",
           chips(
-            tables.capstones.map((item) => ({ id: item.id, label: item.name })),
+            tables.capstones.map((item) => ({
+              id: item.id,
+              label: item.name,
+              tip: () => ({ title: item.name, lines: [[null, item.desc]] }),
+            })),
             cap,
             (id) => {
               state.uber = id;
@@ -984,7 +1137,7 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
       field(
         "Armor",
         chips(
-          armorNames.map((name) => ({ id: name, label: name })),
+          armorNames.map((name) => ({ id: name, label: name, tip: () => armorTip(name) })),
           built.combat.armor,
           (id) => {
             state.armor = id;
@@ -1002,7 +1155,7 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
       field(
         "Weapon",
         chips(
-          weaponNames.map((name) => ({ id: name, label: name })),
+          weaponNames.map((name) => ({ id: name, label: name, tip: () => weaponTip(name) })),
           built.attacks[0]?.name ?? "",
           (id) => {
             state.weapon = id;
@@ -1027,7 +1180,14 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
       field(
         "Ready heroes",
         chips(
-          tables.heroes.map((hero) => ({ id: hero.name, label: `Start as ${hero.name}` })),
+          tables.heroes.map((hero) => ({
+            id: hero.name,
+            label: `Start as ${hero.name}`,
+            tip: () => ({
+              title: hero.name,
+              lines: [[null, `${originName(hero.origin1)} and ${originName(hero.origin2)}, level ${hero.level}.`]],
+            }),
+          })),
           "",
           (name) => {
             const hero = tables.heroes.find((item) => item.name === name);
