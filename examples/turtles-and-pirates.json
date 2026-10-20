@@ -5,8 +5,8 @@
     {"id": "turtlefolk", "name": "Turtle-folk", "speed": 25, "swim": 30, "asi": {"STR": 2, "CON": 1}, "languages": "Common, Aquan"}
   ],
   "features": [
-    {"owner_kind": "race", "owner_id": "turtlefolk", "card": {"name": "Pop into Shell", "tag": "A",
-      "desc": "Pop into your shell: +10 Armor, +10 on every save, and everything only does half damage to you. You can't move or attack until you pop out (bonus action)."}},
+    {"owner_kind": "race", "owner_id": "turtlefolk", "card": {"name": "Shell Defense", "tag": "A",
+      "desc": "Pull into your shell: +10 Armor and resistance to all damage. You can't move or attack until you pop out (bonus action)."}},
     {"owner_kind": "race", "owner_id": "turtlefolk", "card": {"name": "Hold Breath", "desc": "Hold your breath for 1 hour."}},
     {"owner_kind": "subclass", "owner_id": "pirate", "lvl": 3, "card": {"name": "Swashbuckle", "tag": "B",
       "desc": "Swing on a rope up to 30 ft, then your next attack this turn gets {PROF} extra damage."},
