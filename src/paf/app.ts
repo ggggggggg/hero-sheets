@@ -5,7 +5,7 @@ import { contentPackPanel } from "../pack-ui";
 import { clearSavedKeys, PAF_SAVE_KEYS, refreshBundledPacks } from "../packs";
 import { ABILITY_NAME } from "../tags";
 import { fileStem } from "../text";
-import { createTips, type Tip } from "../tips";
+import { createTips, HELP, help, type Tip, tipChrome, tipNode } from "../tips";
 import { ABILITIES, type Ability, type AbilityScores } from "../types";
 import {
   buildCharacter,
@@ -148,10 +148,13 @@ function field(label: string, control: Node, hint?: Kid | Kid[]): HTMLElement {
 }
 
 function dice(label: string, fn: () => void): HTMLButtonElement {
-  return el(
-    "button",
-    { type: "button", class: "dice", title: `Random ${label}`, "aria-label": `Random ${label}`, onclick: fn },
-    "🎲",
+  return tipNode(
+    el(
+      "button",
+      { type: "button", class: "dice", title: `Random ${label}`, "aria-label": `Random ${label}`, onclick: fn },
+      "🎲",
+    ),
+    HELP.dice(label),
   );
 }
 
@@ -683,35 +686,41 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
       .map((hero) => {
         const label = heroLabel(hero);
         let armed = false;
-        const del = el(
-          "button",
-          {
-            type: "button",
-            class: "link",
-            "aria-label": `Delete ${label}`,
-            onclick: (ev) => {
-              if (!armed) {
-                armed = true;
-                if (ev.currentTarget instanceof HTMLElement) ev.currentTarget.textContent = "delete for good?";
-                return;
-              }
-              deleteHero(hero.id);
-            },
-          },
-          "×",
-        );
-        return el(
-          "li",
-          { class: `herorow${hero.id === book.current ? " on" : ""}` },
+        const del = tipNode(
           el(
             "button",
             {
               type: "button",
-              class: "heroname",
-              "aria-current": hero.id === book.current ? "true" : "false",
-              onclick: () => switchHero(hero.id),
+              class: "link",
+              "aria-label": `Delete ${label}`,
+              onclick: (ev) => {
+                if (!armed) {
+                  armed = true;
+                  if (ev.currentTarget instanceof HTMLElement) ev.currentTarget.textContent = "delete for good?";
+                  return;
+                }
+                deleteHero(hero.id);
+              },
             },
-            label,
+            "×",
+          ),
+          HELP.deleteHero,
+        );
+        return el(
+          "li",
+          { class: `herorow${hero.id === book.current ? " on" : ""}` },
+          tipNode(
+            el(
+              "button",
+              {
+                type: "button",
+                class: "heroname",
+                "aria-current": hero.id === book.current ? "true" : "false",
+                onclick: () => switchHero(hero.id),
+              },
+              label,
+            ),
+            HELP.savedHero,
           ),
           del,
         );
@@ -719,21 +728,24 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
     return el(
       "details",
       { id: "heroes", class: "adv heroes", open: true },
-      el("summary", {}, "My heroes"),
-      el(
-        "button",
-        {
-          type: "button",
-          class: "addbtn",
-          onclick: () => {
-            const id = newId();
-            state = freshState();
-            book.heroes.push({ id, state: structuredClone(state), updated: Date.now() });
-            book.current = id;
-            update(true);
+      tipNode(el("summary", {}, "My heroes"), HELP.heroes),
+      tipNode(
+        el(
+          "button",
+          {
+            type: "button",
+            class: "addbtn",
+            onclick: () => {
+              const id = newId();
+              state = freshState();
+              book.heroes.push({ id, state: structuredClone(state), updated: Date.now() });
+              book.current = id;
+              update(true);
+            },
           },
-        },
-        "New hero",
+          "New hero",
+        ),
+        HELP.blankHero,
       ),
       el("ul", { class: "herolist" }, rows),
     );
@@ -927,34 +939,41 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
     const locked = new Set<Ability>(opt.locked);
     const scoreRows = ABILITIES.map((ability) => {
       const score = built?.scores[ability] ?? 10;
+      const abilityName = ABILITY_NAME[ability];
       if (locked.has(ability)) {
-        return el(
-          "div",
-          { class: "row" },
-          el("b", { class: "numname" }, ability),
-          el("b", {}, String(score)),
-          el("span", { class: "hint" }, "from your origin"),
+        return tipNode(
+          el(
+            "div",
+            { class: "row" },
+            el("b", { class: "numname" }, ability),
+            el("b", {}, String(score)),
+            el("span", { class: "hint" }, "from your origin"),
+          ),
+          HELP.scoreLocked(abilityName),
         );
       }
-      return el(
-        "label",
-        { class: "row" },
-        el("b", { class: "numname" }, ability),
-        el("input", {
-          type: "number",
-          min: "1",
-          max: "20",
-          value: String(score),
-          style: "width:5em",
-          "aria-label": ability,
-          oninput: (ev) => {
-            const n = Number(textOf(ev));
-            if (!(n >= 1 && n <= 20)) return;
-            const base = built?.scores ?? scoreBlank();
-            state.scores = { ...base, [ability]: n };
-            update(false);
-          },
-        }),
+      return tipNode(
+        el(
+          "label",
+          { class: "row" },
+          el("b", { class: "numname" }, ability),
+          el("input", {
+            type: "number",
+            min: "1",
+            max: "20",
+            value: String(score),
+            style: "width:5em",
+            "aria-label": ability,
+            oninput: (ev) => {
+              const n = Number(textOf(ev));
+              if (!(n >= 1 && n <= 20)) return;
+              const base = built?.scores ?? scoreBlank();
+              state.scores = { ...base, [ability]: n };
+              update(false);
+            },
+          }),
+        ),
+        HELP.score(abilityName),
       );
     });
     const nodes: Node[] = [];
@@ -973,17 +992,20 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
       ),
       field(
         "Name",
-        el("input", {
-          id: "name",
-          type: "text",
-          value: state.name,
-          "aria-label": "Name",
-          oninput: (ev) => {
-            state.name = textOf(ev);
-            update(false);
-            faces.noteName();
-          },
-        }),
+        tipNode(
+          el("input", {
+            id: "name",
+            type: "text",
+            value: state.name,
+            "aria-label": "Name",
+            oninput: (ev) => {
+              state.name = textOf(ev);
+              update(false);
+              faces.noteName();
+            },
+          }),
+          HELP.name,
+        ),
         dice("name", () => {
           state.name = rollOther(NAMES, state.name);
           update(true);
@@ -1216,44 +1238,57 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
       ),
       field(
         "Inventory",
-        el("textarea", {
-          rows: "4",
-          "aria-label": "Inventory",
-          oninput: (ev) => {
-            state.inventory = textOf(ev)
-              .split("\n")
-              .map((line) => line.trim())
-              .filter((line) => line);
-            update(false);
-          },
-        }),
+        tipNode(
+          el("textarea", {
+            rows: "4",
+            "aria-label": "Inventory",
+            oninput: (ev) => {
+              state.inventory = textOf(ev)
+                .split("\n")
+                .map((line) => line.trim())
+                .filter((line) => line);
+              update(false);
+            },
+          }),
+          HELP.inventory,
+        ),
       ),
       field(
         "Notes",
-        el("textarea", {
-          rows: "4",
-          "aria-label": "Notes",
-          oninput: (ev) => {
-            state.notes = textOf(ev);
-            update(false);
-          },
-        }),
+        tipNode(
+          el("textarea", {
+            rows: "4",
+            "aria-label": "Notes",
+            oninput: (ev) => {
+              state.notes = textOf(ev);
+              update(false);
+            },
+          }),
+          HELP.notes,
+        ),
       ),
       field("Picture", faces.controls(), "or leave blank and draw one"),
       el(
         "details",
         { id: "flux-relics", class: "adv" },
-        el(
-          "summary",
-          {},
-          "Flux and relics",
-          el("span", { class: "hint" }, "Drawn at the table. Write the names in Notes."),
+        tipNode(
+          el(
+            "summary",
+            {},
+            "Flux and relics",
+            el("span", { class: "hint" }, "Drawn at the table. Write the names in Notes."),
+          ),
+          HELP.flux,
         ),
         el("p", { class: "hint block" }, `Draw ${built.flux} flux when a fight starts. Draw 1 relic, once a fight.`),
         el("h4", { class: "plvl" }, "Flux"),
-        ...tables.flux.map((item) => el("p", { class: "pdesc" }, el("b", {}, item.name), ` — ${item.desc}`)),
+        ...tables.flux.map((item) =>
+          el("p", { class: "pdesc" }, tipNode(el("b", {}, item.name), help(item.name, item.desc)), ` — ${item.desc}`),
+        ),
         el("h4", { class: "plvl" }, "Relics"),
-        ...tables.relics.map((item) => el("p", { class: "pdesc" }, el("b", {}, item.name), ` — ${item.desc}`)),
+        ...tables.relics.map((item) =>
+          el("p", { class: "pdesc" }, tipNode(el("b", {}, item.name), help(item.name, item.desc)), ` — ${item.desc}`),
+        ),
       ),
       packSection(),
     );
@@ -1437,10 +1472,7 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
   const openPdfInput = $("#open-pdf-file");
   if (!(openPdfInput instanceof HTMLInputElement)) throw new Error("missing #open-pdf-file");
   const openPdf = $("#open-pdf");
-  tipped(openPdf, () => ({
-    title: "Open PDF",
-    lines: [[null, "Open a hero PDF made here. That hero comes back, including content packs saved in the file."]],
-  }));
+  tipChrome();
   openPdf.addEventListener("click", () => openPdfInput.click());
   openPdfInput.addEventListener("change", () => {
     const chosen = openPdfInput.files?.[0];

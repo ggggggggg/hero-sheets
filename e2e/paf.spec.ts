@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { jpegsToPdf } from "../src/export";
-import { field } from "./helpers";
+import { field, hoverTip } from "./helpers";
 
 const scratch = mkdtempSync(path.join(tmpdir(), "paf-pdf-"));
 const jpeg = { bytes: new Uint8Array([0xff, 0xd8, 0xff, 0xd9]), w: 1, h: 1 };
@@ -31,6 +31,12 @@ test("builds a level-3 hero with one once-a-fight power", async ({ page }) => {
   await expect(page.locator("#scaler .page")).toHaveCount(2);
   await page.locator("#open-pdf").hover();
   await expect(page.locator("#tip")).toContainText("That hero comes back");
+  await page.locator("#pdf").hover();
+  await expect(page.locator("#tip")).toContainText("Saves this hero as a PDF");
+  await hoverTip(page, page.locator("#name"));
+  await expect(page.locator("#tip")).toContainText("name printed on the sheet");
+  await hoverTip(page, page.getByRole("button", { name: "Random first origin" }));
+  await expect(page.locator("#tip")).toContainText("Picks a different one at random");
   await expect(page.locator("#controls .lead")).toHaveText(
     "Build an even simpler hero for post-apocalyptic fantasy, with Gamma World inspired origins and simplified choices:",
   );
@@ -66,6 +72,10 @@ test("matches the D&D dice, face maker, and content packs", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Random scores" })).toBeVisible();
   await expect(page.locator("#controls")).not.toContainText("Re-roll scores");
   await expect(page.getByRole("button", { name: "Pixel" })).toBeVisible();
+  await hoverTip(page, page.getByRole("button", { name: "Pixel" }));
+  await expect(page.locator("#tip")).toContainText("blocky cartoon");
+  await hoverTip(page, page.locator("#content-packs summary"));
+  await expect(page.locator("#tip")).toContainText("Turn a pack on to use it");
   await expect(page.getByRole("button", { name: "Adventurer" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Random face" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Boy" })).toBeVisible();

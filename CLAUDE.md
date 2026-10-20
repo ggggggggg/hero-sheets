@@ -4,7 +4,7 @@ A kids' D&D-style character builder. It turns a few picks into a printable 2-pag
 
 ## Layout
 - `src/core.ts`: `buildCharacter`, `sheetHtml`, `options`. The rules engine.
-- `src/fit.ts`: the shared page-fit and preview scale. `src/text.ts`: placeholders, escaping, PDF names. `src/tags.ts`: the action chips. `src/face.ts`: the cartoon face maker. `src/pack-ui.ts`: the content-pack panel. `src/tips.ts`: the hover cards on selection ovals.
+- `src/fit.ts`: the shared page-fit and preview scale. `src/text.ts`: placeholders, escaping, PDF names. `src/tags.ts`: the action chips. `src/face.ts`: the cartoon face maker. `src/pack-ui.ts`: the content-pack panel. `src/tips.ts`: the hover cards, and the shared wording for controls both pages use.
 - `src/custom.ts`: merges a content pack into the rules tables.
 - `src/export.ts`: builds the PDF in the browser.
 - `src/app.ts`: the builder UI. `src/main.ts` starts it.

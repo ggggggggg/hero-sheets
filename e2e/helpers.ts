@@ -5,6 +5,13 @@ export function field(page: Page, label: string): Locator {
   return page.locator(".field").filter({ has: page.locator(".flabel", { hasText: new RegExp(`^${label}`) }) });
 }
 
+export async function hoverTip(page: Page, locator: Locator): Promise<void> {
+  await locator.scrollIntoViewIfNeeded();
+  await page.mouse.move(8, 8);
+  await page.waitForTimeout(200);
+  await locator.hover();
+}
+
 export async function measureSheet(
   page: Page,
 ): Promise<{ pages: number; fs: number; overflow: boolean; shown: string }> {

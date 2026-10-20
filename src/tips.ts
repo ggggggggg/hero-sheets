@@ -1,4 +1,4 @@
-// Hover and press-and-hold cards for selection ovals. Both builders use this.
+// Hover and press-and-hold cards. Both builders use this, including the shared wording.
 
 import { CharError } from "./text";
 
@@ -13,6 +13,90 @@ export interface Tip {
   lines: [string | null, string][];
   picks?: TipPick[];
 }
+
+type TipFn = () => Tip | null;
+type Tipper = <T extends HTMLElement>(node: T, fn: TipFn) => T;
+
+let tipper: Tipper | null = null;
+
+export function help(title: string, text: string): () => Tip {
+  return () => ({ title, lines: [[null, text]] });
+}
+
+export function tipNode<T extends HTMLElement>(node: T, fn: TipFn): T {
+  return tipper ? tipper(node, fn) : node;
+}
+
+export function tipChrome(): void {
+  const buttons: [string, () => Tip][] = [
+    ["#surprise", HELP.surprise],
+    ["#heroes-btn", HELP.heroes],
+    ["#open-pdf", HELP.openPdf],
+    ["#pdf", HELP.downloadPdf],
+    ["#tab-build", HELP.build],
+    ["#tab-sheet", HELP.sheet],
+  ];
+  for (const [sel, fn] of buttons) {
+    const node = document.querySelector(sel);
+    if (node instanceof HTMLElement) tipNode(node, fn);
+  }
+  const link = document.querySelector("header a.switch");
+  if (link instanceof HTMLElement) tipNode(link, link.getAttribute("href")?.includes("paf") ? HELP.toPaf : HELP.toDnd);
+}
+
+export const HELP = {
+  surprise: help("Surprise me", "Makes a new hero with random choices and draws a face."),
+  heroes: help("My heroes", "Heroes saved in this browser. Pick one to bring it back."),
+  savedHero: help("Saved hero", "Brings this hero back."),
+  deleteHero: help("Delete", "Asks once, then forgets this hero. It is only stored in this browser."),
+  newHero: help("New random hero", "Starts another hero and keeps this one in the list."),
+  blankHero: help("New hero", "Starts a level 1 hero and keeps this one in the list."),
+  openPdf: help(
+    "Open PDF",
+    "Open a hero PDF made here. That hero comes back, including content packs saved in the file.",
+  ),
+  downloadPdf: help(
+    "Download PDF",
+    "Saves this hero as a PDF. Open that file later on this page to get the same hero back.",
+  ),
+  build: help("Build", "The choices. The sheet updates as you pick."),
+  sheet: help("See the sheet", "The printed pages, big enough to read before you download."),
+  toPaf: help("PAF", "The other builder. A simpler hero for post-apocalyptic fantasy."),
+  toDnd: help("D&D heroes", "The other builder. A D&D 5e hero."),
+  name: help("Name", "The name printed on the sheet. Many names also pick Boy or Girl for the picture."),
+  dice: (label: string) => help(`Random ${label}`, "Picks a different one at random."),
+  inventory: help("Inventory", "One thing per line. It prints on the sheet."),
+  notes: help("Notes", "Anything you want to remember. It prints on the sheet."),
+  pixel: help("Pixel", "A blocky cartoon. The same face code always draws the same face."),
+  adventurer: help("Adventurer", "A painted cartoon. The same face code always draws the same face."),
+  smile: help("Big smile", "A round cartoon. The same face code always draws the same face."),
+  doodle: help("Doodle", "A scribbled cartoon. The same face code always draws the same face."),
+  randomFace: help("Random face", "Draws a new face in this style."),
+  faceCode: help("Face code", "Same code and same style make the same face. Share a code to share a face."),
+  boy: help("Boy", "Draws this face with a boy look."),
+  girl: help("Girl", "Draws this face with a girl look."),
+  matchName: help("Match name", "Lets the name pick Boy or Girl again."),
+  upload: help("Upload a picture", "Uses a picture from this computer instead of a cartoon."),
+  removePicture: help("Remove", "Clears the picture."),
+  packs: help("Content packs", "Extra choices from a file. Turn a pack on to use it."),
+  instructions: help("Instructions", "How to write a content pack. Opens in a new tab."),
+  loadFile: help("Load a file", "Picks a content pack file from this computer."),
+  packLink: help("Pack link", "A web address for a content pack file."),
+  loadLink: help("Load link", "Loads the content pack at that address."),
+  forgetLink: help("Forget link", "Stops checking that address for a newer pack."),
+  paste: help("Pasted pack", "Paste the pack's JSON here."),
+  addPaste: help("Add pasted pack", "Adds the pack in the box."),
+  clearSaved: help("Clear saved data", "Forgets the heroes and content packs stored in this browser."),
+  builtin: help("Built-in choices", "The choices that come with this page. Turn this off to use only your packs."),
+  packRow: (title: string, about: string) => help(title, about || "Turn this pack on to add its choices."),
+  step: (label: string) => help(label, "Changes the number on the sheet. Off book means it isn't the usual one."),
+  resetNumbers: help("Reset", "Puts the usual numbers back."),
+  addSpell: (what: string) => help(`Add a ${what}`, "Opens the list for this class."),
+  score: (ability: string) =>
+    help(ability, "From 1 to 20. An origin locks this when it is that origin's main ability."),
+  scoreLocked: (ability: string) => help(ability, "This origin sets this score."),
+  flux: help("Flux and relics", "Drawn at the table. Write the names in Notes. They are not picked here."),
+};
 
 type Kid = Node | string | null | undefined;
 
@@ -203,13 +287,11 @@ export function createTips(): {
     true,
   );
 
-  return {
-    tipped(node, fn) {
-      tips.set(node, fn);
-      node.classList.add("has-tip");
-      return node;
-    },
-    show,
-    hide,
+  const tipped: Tipper = (node, fn) => {
+    tips.set(node, fn);
+    node.classList.add("has-tip");
+    return node;
   };
+  tipper = tipped;
+  return { tipped, show, hide };
 }
