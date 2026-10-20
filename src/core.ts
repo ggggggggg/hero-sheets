@@ -1,3 +1,5 @@
+import { ABILITY_NAME, accentTint, tagChip, tagLegend } from "./tags";
+import { CharError, escapeHtml, expand, signed } from "./text";
 import {
   ABILITIES,
   type Ability,
@@ -18,6 +20,7 @@ import {
   type WeaponOption,
 } from "./types";
 
+export { CharError, expand, signed } from "./text";
 export type {
   Ability,
   AbilityScores,
@@ -27,37 +30,8 @@ export type {
   Tables,
 } from "./types";
 
-const PH = /\{([A-Z0-9_]+)\}/g;
-
-export class CharError extends Error {
-  readonly kind: "ValueError" | "KeyError";
-  constructor(kind: "ValueError" | "KeyError", message: string) {
-    super(message);
-    this.kind = kind;
-  }
-}
-
 const valueError = (message: string) => new CharError("ValueError", message);
 const keyError = (message: string) => new CharError("KeyError", message);
-
-export function signed(n: number): string {
-  return n >= 0 ? `+${n}` : String(n);
-}
-
-export function expand(text: string, vars: Record<string, string | number>): string {
-  let out = text || "";
-  for (let i = 0; i < 4; i++) {
-    const next = out.replace(PH, (_match, key: string) => {
-      if (!(key in vars)) throw keyError(`no value for placeholder {${key}}`);
-      return String(vars[key]);
-    });
-    if (next === out) break;
-    out = next;
-  }
-  PH.lastIndex = 0;
-  if (/\{([A-Z0-9_]+)\}/.test(out)) throw keyError(`unresolved placeholder in: ${out}`);
-  return out;
-}
 
 function isAbility(value: string): value is Ability {
   return ABILITIES.some((ability) => ability === value);
@@ -568,7 +542,7 @@ export function buildCharacter(tables: Tables, req: HeroRequest): Character {
     card("Potions & Magic Items", row.card, String(row.uses), row.rest);
   }
 
-  return {
+  const character: Character = {
     identity: {
       name: req.name,
       race: race.name,
@@ -616,6 +590,85 @@ export function buildCharacter(tables: Tables, req: HeroRequest): Character {
       portrait_credit: req.portrait ? req.portrait_credit || null : null,
     },
   };
+  applyNumbers(character, req.numbers);
+  return character;
+}
+
+function applyOffbook(book: number, next: number | undefined, write: (value: number) => void): void {
+  if (typeof next === "number" && next !== book) write(next);
+}
+
+function applyNumbers(ch: Character, numbers: HeroRequest["numbers"]): void {
+  if (!numbers) return;
+  const skills = numbers.skills;
+  if (skills) {
+    for (const skill of ch.skills) {
+      applyOffbook(skill.bonus, skills[skill.name], (next) => {
+        skill.bonus = next;
+        skill.offbook = true;
+      });
+    }
+  }
+  const perception = ch.skills.find((skill) => skill.name === "Perception");
+  if (perception?.offbook && typeof numbers.notice !== "number") ch.combat.passive_perception = 10 + perception.bonus;
+  const saves = numbers.saves;
+  if (saves) {
+    for (const ability of ch.abilities) {
+      applyOffbook(ability.save, saves[ability.key], (next) => {
+        ability.save = next;
+        ability.save_offbook = true;
+      });
+    }
+  }
+  const combat = ch.combat;
+  applyOffbook(combat.ac, numbers.ac, (next) => {
+    combat.ac = next;
+    combat.ac_offbook = true;
+  });
+  applyOffbook(combat.max_hp, numbers.hp, (next) => {
+    combat.max_hp = next;
+    combat.hp_offbook = true;
+  });
+  applyOffbook(combat.speed, numbers.speed, (next) => {
+    combat.speed = next;
+    combat.speed_offbook = true;
+  });
+  applyOffbook(combat.swim, numbers.swim, (next) => {
+    combat.swim = next;
+    combat.swim_offbook = true;
+  });
+  applyOffbook(combat.initiative, numbers.initiative, (next) => {
+    combat.initiative = next;
+    combat.initiative_offbook = true;
+  });
+  applyOffbook(combat.prof, numbers.prof, (next) => {
+    combat.prof = next;
+    combat.prof_offbook = true;
+  });
+  applyOffbook(combat.passive_perception, numbers.notice, (next) => {
+    combat.passive_perception = next;
+    combat.notice_offbook = true;
+  });
+  const casting = ch.spellcasting;
+  if (casting) {
+    applyOffbook(casting.attack, numbers.spell_attack, (next) => {
+      casting.attack = next;
+      casting.attack_offbook = true;
+    });
+    applyOffbook(casting.dc, numbers.spell_dc, (next) => {
+      casting.dc = next;
+      casting.dc_offbook = true;
+    });
+  }
+  const attacks = numbers.attacks;
+  if (attacks) {
+    for (const attack of ch.attacks) {
+      applyOffbook(attack.to_hit, attacks[attack.name], (next) => {
+        attack.to_hit = next;
+        attack.offbook = true;
+      });
+    }
+  }
 }
 
 interface RaceBuilt {
@@ -638,45 +691,11 @@ function stripChars(text: string, chars: string): string {
   return text.slice(start, end);
 }
 
-const ICON: Record<string, string> = {
-  A: '<svg viewBox="0 0 24 24"><path d="M14.5 3H21v6.5L10 20.5l-2-2-3 3-2.5-2.5 3-3-2-2z" fill="currentColor"/></svg>',
-  B: '<svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="currentColor"/></svg>',
-  R: '<svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 9.5 8 11 4.5-1.5 8-6 8-11V5z" fill="currentColor"/></svg>',
-  ON: '<svg viewBox="0 0 24 24"><path d="m12 2 3 6.6 7.2.8-5.4 4.9 1.5 7.1L12 17.8 5.7 21.4l1.5-7.1L1.8 9.4 9 8.6z" fill="currentColor"/></svg>',
-  F: '<svg viewBox="0 0 24 24"><path d="M12 1c.6 5 2 9.4 11 11-9 1.6-10.4 6-11 11-.6-5-2-9.4-11-11 9-1.6 10.4-6 11-11z" fill="currentColor"/></svg>',
-};
-const TAGS: [string, string, string][] = [
-  ["A", "ACTION", "#222"],
-  ["B", "BONUS", "#e08a00"],
-  ["R", "REACTION", "#2878c8"],
-  ["ON", "ALWAYS ON", "#7a7a7a"],
-  ["F", "FREE", "#2a9d5c"],
-];
-const TAGMAP = Object.fromEntries(TAGS.map(([key, label, color]) => [key, [label, color] as [string, string]]));
-const ABIL_NAME: Record<Ability, string> = {
-  STR: "Strength",
-  DEX: "Dexterity",
-  CON: "Constitution",
-  INT: "Intelligence",
-  WIS: "Wisdom",
-  CHA: "Charisma",
-};
 const STAR =
   '<svg viewBox="0 0 24 24"><path d="m12 2 3 6.6 7.2.8-5.4 4.9 1.5 7.1L12 17.8 5.7 21.4l1.5-7.1L1.8 9.4 9 8.6z" fill="#fff" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
 const BOX_LIMIT = 12;
 
-function escapeHtml(value: unknown): string {
-  if (value === null || value === undefined) return "";
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;");
-}
-
 const repeat = (text: string, n: number) => (n > 0 ? text.repeat(n) : "");
-const tint = (hex: string) => (hex.length === 7 ? `${hex}1a` : "#f2f2f2");
 
 function uses(n: number | null, rest: string | null): string {
   if (n === null) return "";
@@ -700,13 +719,13 @@ function frontHtml(ch: Character): string {
   const abil = ch.abilities
     .map(
       (ability) =>
-        `<div class="ab"><div class="lbl">${escapeHtml(ABIL_NAME[ability.key] || ability.key)}</div><div class="m">${signed(ability.mod)}</div><div class="sc">${ability.score}</div><div class="sv"><i class="pd${ability.save_prof ? " on" : ""}"></i> save ${signed(ability.save)}</div></div>`,
+        `<div class="ab"><div class="lbl">${escapeHtml(ABILITY_NAME[ability.key] || ability.key)}</div><div class="m">${signed(ability.mod)}</div><div class="sc">${ability.score}</div><div class="sv"><i class="pd${ability.save_prof ? " on" : ""}"></i> save ${signed(ability.save)}${star(ability.save_offbook)}</div></div>`,
     )
     .join("");
   const skills = ch.skills
     .map(
       (skill) =>
-        `<div class="sk"><span><i class="pd${skill.expert ? " ex" : skill.prof ? " on" : ""}"></i> ${escapeHtml(skill.name)}</span><b>${signed(skill.bonus)}</b></div>`,
+        `<div class="sk"><span><i class="pd${skill.expert ? " ex" : skill.prof ? " on" : ""}"></i> ${escapeHtml(skill.name)}</span><b${skill.offbook ? ' class="off"' : ""}>${signed(skill.bonus)}${star(skill.offbook)}</b></div>`,
     )
     .join("");
   const inv = ch.inventory.map((line) => `<div>${escapeHtml(line)}</div>`).join("");
@@ -718,7 +737,7 @@ function frontHtml(ch: Character): string {
     `<div class="lv"><b>${idn.level}</b><span class="lbl">Level</span></div></div>` +
     `<div class="fr1"><div class="portrait" data-role="portrait">${portrait}</div><div class="abil">${abil}</div></div>` +
     `<div class="box skills"><h4>Skills</h4><div class="skgrid">${skills}</div>` +
-    `<div class="facts"><span>Proficiency <b>${signed(combat.prof)}</b></span><span>Notice <b>${combat.passive_perception}</b></span><span>Speaks: ${escapeHtml(idn.languages)}</span><span class="player">Player</span></div></div>` +
+    `<div class="facts"><span>Proficiency <b>${signed(combat.prof)}${star(combat.prof_offbook)}</b></span><span>Notice <b>${combat.passive_perception}${star(combat.notice_offbook)}</b></span><span>Speaks: ${escapeHtml(idn.languages)}</span><span class="player">Player</span></div></div>` +
     `<div class="inv"><div class="box col" data-role="inventory"><h4>Inventory</h4><div class="lines">${inv}</div>` +
     '<div class="coins"><div>GOLD</div><div>SILVER</div><div>COPPER</div></div></div>' +
     `<div class="box col" data-role="notes"><h4>Notes</h4><div class="lines">${escapeHtml(ch.extras.notes)}</div></div></div>` +
@@ -731,21 +750,21 @@ function backHtml(ch: Character): string {
   const combat = ch.combat;
   const sc = ch.spellcasting;
   const sub = idn.subclass ? ` (${escapeHtml(idn.subclass)})` : "";
+  const armorOff = combat.armor_offbook || !!combat.ac_offbook;
   const tiles =
-    `<div class="tile"><b>${combat.ac}</b><span class="lbl">Armor</span><span class="worn">${escapeHtml(combat.armor || "")}${
-      combat.armor_offbook ? " • off book" : ""
-    }</span></div>` +
-    `<div class="tile hp"><div class="mx"><b>${combat.max_hp}</b><span class="lbl">Max HP</span></div>` +
+    `<div class="tile"><b>${combat.ac}</b><span class="lbl">Armor</span>${worn(
+      `${escapeHtml(combat.armor || "")}${armorOff ? " • off book" : ""}`,
+      armorOff,
+    )}</div>` +
+    `<div class="tile hp"><div class="mx"><b>${combat.max_hp}</b><span class="lbl">Max HP</span>${worn(combat.hp_offbook ? "off book" : "", !!combat.hp_offbook)}</div>` +
     '<div><div class="w"></div><span class="lbl">HP now</span></div><div><div class="w"></div><span class="lbl">Temp HP</span></div></div>' +
-    `<div class="tile"><b>${combat.speed}</b><span class="lbl">Speed (ft)</span>${
-      combat.swim > 0 ? `<span class="worn">swim ${combat.swim}</span>` : ""
-    }</div>` +
-    `<div class="tile"><b>${signed(combat.initiative)}</b><span class="lbl">Initiative</span></div>`;
+    `<div class="tile"><b>${combat.speed}</b><span class="lbl">Speed (ft)</span>${speedWorn(combat)}</div>` +
+    `<div class="tile"><b>${signed(combat.initiative)}</b><span class="lbl">Initiative</span>${worn(combat.initiative_offbook ? "off book" : "", !!combat.initiative_offbook)}</div>`;
   const mini = `<div class="mini"><span>Death saves &nbsp;OK ${repeat('<i class="dot"></i>', 3)} &nbsp;Uh-oh ${repeat('<i class="dot"></i>', 3)}</span></div>`;
   let atk = ch.attacks
     .map(
       (attack) =>
-        `<tr><td class="n">${escapeHtml(attack.name)}</td><td>${signed(attack.to_hit)}</td><td>${escapeHtml(attack.damage)}</td><td>${escapeHtml(attack.note)}</td></tr>`,
+        `<tr><td class="n">${escapeHtml(attack.name)}</td><td>${signed(attack.to_hit)}${star(attack.offbook)}</td><td>${escapeHtml(attack.damage)}</td><td>${escapeHtml(attack.note)}</td></tr>`,
     )
     .join("");
   atk = `<div class="box"><table class="atk"><tr><th>Attack</th><th>To hit</th><th>Damage</th><th>Range</th></tr>${atk}</table></div>`;
@@ -756,7 +775,7 @@ function backHtml(ch: Character): string {
       .join("");
     const rest = sc.rest === "short" ? "short" : "long";
     magic =
-      `<div class="magic"><span class="big">Spell attack ${signed(sc.attack)} • DC ${sc.dc}</span>${rows}` +
+      `<div class="magic"><span class="big">Spell attack ${signed(sc.attack)}${star(sc.attack_offbook)} • DC ${sc.dc}${star(sc.dc_offbook)}</span>${rows}` +
       (sc.slots.length ? `<small>color a star per spell • back after a ${rest} rest</small>` : "") +
       "</div>";
   }
@@ -770,19 +789,14 @@ function backHtml(ch: Character): string {
   for (const [name, items] of secs) {
     let html = "";
     for (const entry of items) {
-      const mapped = TAGMAP[entry.tag] ?? [entry.tag, "#555"];
-      const chip = entry.tag
-        ? `<span class="chip" style="background:${mapped[1]}">${ICON[entry.tag] || ""}${escapeHtml(mapped[0])}</span>`
-        : "";
+      const chip = tagChip(entry.tag);
       const note = entry.note ? `<span class="chip note">${escapeHtml(entry.note)}</span>` : "";
       const conc = entry.conc ? '<span class="chip conc">Concentration</span>' : "";
       html += `<div class="cd" data-card="${escapeHtml(entry.name)}"><span class="n">${escapeHtml(entry.name)}</span>${chip}${note}${conc}<div class="d">${escapeHtml(entry.desc)}</div>${uses(entry.uses, entry.rest)}</div>`;
     }
     body += `<div class="sec"><h3>${escapeHtml(name)}</h3>${html}</div>`;
   }
-  const legend = TAGS.map(
-    ([key, label, color]) => `<span class="chip" style="background:${color};margin:0">${ICON[key]}${label}</span>`,
-  ).join("");
+  const legend = tagLegend();
   return (
     '<section class="page back">' +
     `<div class="bhead"><div class="nm disp">${escapeHtml(idn.name)}</div><div class="disp" style="font-size:15px">` +
@@ -797,7 +811,23 @@ function backHtml(ch: Character): string {
 
 export function sheetHtml(ch: Character): string {
   const accent = ch.identity.accent || "#444444";
-  return `<div class="sheet" style="--ac:${escapeHtml(accent)};--tint:${tint(accent)}">${frontHtml(ch)}${backHtml(ch)}</div>`;
+  return `<div class="sheet" style="--ac:${escapeHtml(accent)};--tint:${accentTint(accent)}">${frontHtml(ch)}${backHtml(ch)}</div>`;
+}
+
+function star(off?: boolean): string {
+  return off ? "*" : "";
+}
+
+function worn(text: string, off = false): string {
+  if (!text) return "";
+  return `<span class="worn${off ? " off" : ""}">${text}</span>`;
+}
+
+function speedWorn(combat: Character["combat"]): string {
+  const off = !!(combat.speed_offbook || combat.swim_offbook);
+  const swim = combat.swim > 0 ? `swim ${combat.swim}` : "";
+  if (!off) return worn(swim);
+  return worn([swim, "off book"].filter(Boolean).join(" • "), true);
 }
 
 function cleared(req: HeroRequest, over: Partial<HeroRequest> = {}): HeroRequest {
@@ -810,6 +840,7 @@ function cleared(req: HeroRequest, over: Partial<HeroRequest> = {}): HeroRequest
     path_spells: null,
     armor: null,
     shield: null,
+    numbers: null,
     ...over,
   };
 }
@@ -957,10 +988,13 @@ export function options(tables: Tables, req: HeroRequest): HeroOptions {
     const row = itemBy.get(name);
     if (!row) return "";
     const why: string[] = [];
-    if (row.min_level > level) why.push(`it's a ${row.rarity} item, usually for heroes level ${row.min_level} and up`);
+    if (row.min_level > level) {
+      const article = /^[aeiou]/i.test(row.rarity) ? "an" : "a";
+      why.push(`it's ${article} ${row.rarity} item, usually for heroes level ${row.min_level} and up`);
+    }
     if (row.use_by.length && !row.use_by.includes(cls.id))
       why.push(`usually only ${row.use_by.map(className).join(", ")} can use it`);
-    return why.length ? `Talk to your DM: by the usual rules ${why.join(", and ")}.` : "";
+    return why.length ? `By the usual rules ${why.join(", and ")}` : "";
   };
   out.itemRarity = (name) => itemBy.get(name)?.rarity ?? "";
   out.itemCard = (name) => itemBy.get(name)?.card ?? null;

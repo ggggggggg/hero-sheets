@@ -28,6 +28,7 @@ export function req(over: Partial<HeroRequest> = {}): HeroRequest {
     notes: "",
     portrait: null,
     portrait_credit: null,
+    numbers: null,
     ...over,
   };
 }

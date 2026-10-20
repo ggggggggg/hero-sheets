@@ -31,7 +31,15 @@
   },
   "overrides": [
     {
-      "includes": ["src/content.json", "src/styles/**", "examples/**", "**/*.md", "**/*.py", "**/*.html"],
+      "includes": [
+        "src/content.json",
+        "src/paf/content.json",
+        "src/styles/**",
+        "examples/**",
+        "**/*.md",
+        "**/*.py",
+        "**/*.html"
+      ],
       "formatter": { "enabled": false },
       "linter": { "enabled": false }
     }

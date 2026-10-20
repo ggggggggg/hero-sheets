@@ -94,7 +94,7 @@ try {
   await ready(page);
   await page.addStyleTag({
     content:
-      "#demo-cursor{position:fixed;z-index:100000;width:16px;height:16px;margin:2px 0 0 2px;border-radius:50%;background:#6a1b9a;border:3px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.45);pointer-events:none}",
+      "#demo-cursor{position:fixed;z-index:100000;width:16px;height:16px;margin:2px 0 0 2px;border-radius:50%;background:#6a1b9a;border:3px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.45);pointer-events:none}#tip{display:none!important}",
   });
   await page.evaluate(() => {
     const cursor = document.createElement("div");
@@ -171,13 +171,6 @@ try {
     await place(landed.x, landed.y);
     await page.mouse.click(landed.x, landed.y);
   };
-  const pin = async () => {
-    await page.evaluate(() => {
-      window.scrollTo(0, 0);
-      const controls = document.getElementById("controls");
-      if (controls) controls.scrollTop = 0;
-    });
-  };
   const scrollToEl = async (locator, pad = 36, markName) => {
     const plan = await locator.evaluate((el, padding) => {
       const controls = document.getElementById("controls");
@@ -207,82 +200,175 @@ try {
     }
   };
 
-  const sub = page.locator(".page.front .head .sub");
-  const level = page.locator(".page.front .lv b");
-  const levelBtn = field(page, "Level").getByRole("button", { name: "1", exact: true });
-  await levelBtn.click();
-  await level.filter({ hasText: /^1$/ }).waitFor();
-  await pin();
-  await assertFrame(page, "Hill Dwarf");
+  const scrollWindow = async (to, markName) => {
+    const from = await page.evaluate(() => window.scrollY);
+    const delta = to - from;
+    if (Math.abs(delta) < 6) return;
+    const steps = Math.min(30, Math.max(14, Math.round(Math.abs(delta) / 55)));
+    const mid = Math.round(steps / 2);
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      const eased = 1 - (1 - t) ** 3;
+      await page.evaluate((y) => window.scrollTo(0, y), Math.round(from + delta * eased));
+      if (markName && i === mid) marks[markName] = shots.length;
+      await snap();
+    }
+  };
+  const seeActions = async (markName) => {
+    const to = await page.evaluate(() => {
+      const sheet = document.querySelector(".page.back");
+      if (!(sheet instanceof HTMLElement)) return null;
+      return Math.max(0, sheet.getBoundingClientRect().top + window.scrollY - 12);
+    });
+    if (to == null) throw new Error("back page is missing");
+    await scrollWindow(to, markName);
+  };
+  const assertActions = async (label) => {
+    const info = await page.evaluate(() => {
+      const cards = document.querySelector(".page.back .cards");
+      const box = cards instanceof HTMLElement ? cards.getBoundingClientRect() : null;
+      const head = document.querySelector(".page.back .bhead")?.textContent ?? "";
+      const names = [...document.querySelectorAll(".page.back .cd .n")].map((node) => node.textContent ?? "");
+      const brand = document.querySelector(".brand")?.getBoundingClientRect().top ?? 0;
+      return {
+        top: Math.round(box?.top ?? -1),
+        bottom: Math.round(box?.bottom ?? -1),
+        height: Math.round(box?.height ?? 0),
+        brand: Math.round(brand),
+        head,
+        names,
+      };
+    });
+    const onScreen = info.top < 640 && info.bottom > 200 && info.height > 80;
+    if (!onScreen || info.brand > 0) throw new Error(`actions are off screen ${JSON.stringify(info)}`);
+    if (label && !info.head.includes(label) && !info.names.some((name) => name.includes(label))) {
+      throw new Error(`sheet is missing ${label}: ${info.head} / ${info.names.join(", ")}`);
+    }
+  };
+  const faceSrc = () => page.evaluate(() => document.querySelector(".portrait img")?.getAttribute("src") ?? "");
+  const waitFace = async (previous) => {
+    await page.waitForFunction(
+      (prev) => {
+        const img = document.querySelector(".portrait img");
+        const src = img?.getAttribute("src") ?? "";
+        const msg = document.querySelector("#avatar-msg")?.textContent ?? "";
+        return src.startsWith("data:image/") && src !== prev && msg !== "Drawing a face…" && !msg.startsWith("Couldn't");
+      },
+      previous,
+      { timeout: 20_000 },
+    );
+  };
+  const assertFace = async () => {
+    const info = await page.evaluate(() => {
+      const img = document.querySelector(".portrait img");
+      const box = img?.getBoundingClientRect();
+      const src = img?.getAttribute("src") ?? "";
+      return {
+        ok: src.startsWith("data:image/"),
+        top: Math.round(box?.top ?? -1),
+        bottom: Math.round(box?.bottom ?? -1),
+        h: Math.round(box?.height ?? 0),
+      };
+    });
+    if (!info.ok || info.h < 80 || info.top < 30 || info.bottom > 760) {
+      throw new Error(`face is not on the upper sheet ${JSON.stringify(info)}`);
+    }
+  };
 
-  const surpriseBtn = page.locator("#surprise");
-  const surpriseAt = await center(surpriseBtn);
-  await place(surpriseAt.x, surpriseAt.y);
+  const picture = field(page, "Picture");
+  const pixel = picture.getByRole("button", { name: "Pixel", exact: true });
+  const adventurer = picture.getByRole("button", { name: "Adventurer", exact: true });
+  const sheetHead = page.locator(".page.back .bhead");
+  const levelBtn = (n) => field(page, "Level").getByRole("button", { name: String(n), exact: true });
+  const packsSummary = page.locator("#content-packs summary");
+  const turtles = page.locator("#content-packs li", { hasText: "Turtles & Pirates" }).getByRole("checkbox");
+  const turtle = field(page, "Race").getByRole("button", { name: /Turtle-folk/ });
+  const pirate = field(page, "Path").getByRole("button", { name: /Pirate/ });
+
+  await place(90, 40);
   marks.start = shots.length;
   await hold(0.8);
-  const beforeName = await page.locator(".page.front .head .nm").innerText();
-  const beforeSub = await sub.innerText();
-  await press(surpriseBtn);
-  await page.waitForFunction(
-    ({ name, subtitle }) => {
-      const nextName = document.querySelector(".page.front .head .nm")?.textContent ?? "";
-      const nextSub = document.querySelector(".page.front .head .sub")?.textContent ?? "";
-      return nextName !== name || nextSub !== subtitle;
-    },
-    { name: beforeName, subtitle: beforeSub },
-  );
-  await level.filter({ hasText: /^5$/ }).waitFor();
-  await page.waitForFunction(() => (document.querySelector("#avatar-msg")?.textContent ?? "") !== "Drawing a face…");
-  await pin();
-  await assertFrame(page);
-  marks.surprise = shots.length;
-  await hold(0.7);
+  await assertFrame(page, "Hill Dwarf");
 
-  await press(levelBtn);
-  await level.filter({ hasText: /^1$/ }).waitFor();
-  await pin();
-  await assertFrame(page);
+  await scrollToEl(pixel, 48, "picture");
+  const beforePixel = await faceSrc();
+  await press(pixel);
+  await waitFace(beforePixel);
+  await assertFace();
+  await assertFrame(page, "Hill Dwarf");
+  marks.face = shots.length;
+  await hold(2);
+
+  const beforeStyle = await faceSrc();
+  await press(adventurer);
+  await waitFace(beforeStyle);
+  await assertFace();
+  marks.face2 = shots.length;
+  await hold(2);
+
+  await seeActions("down");
+  await assertActions("Level 5");
+  await hold(0.6);
+
+  await scrollToEl(levelBtn(7), 48);
+  await press(levelBtn(7));
+  await sheetHead.filter({ hasText: "Level 7" }).waitFor();
+  await seeActions();
+  await assertActions("Level 7");
+  marks.level = shots.length;
+  await hold(2);
+
+  const rogue = field(page, "Class").getByRole("button", { name: "Rogue", exact: true });
+  await scrollToEl(rogue, 48);
+  await press(rogue);
+  await sheetHead.filter({ hasText: "Rogue" }).waitFor();
+  await seeActions();
+  await assertActions("Rogue");
+  marks.class = shots.length;
+  await hold(2);
+
+  await scrollToEl(levelBtn(1), 48);
+  await press(levelBtn(1));
+  await sheetHead.filter({ hasText: "Level 1" }).waitFor();
+  await seeActions();
+  await assertActions("Level 1");
   marks.low = shots.length;
-  await hold(1.2);
+  await hold(2);
 
-  await press(field(page, "Race").getByRole("button", { name: "Elf", exact: true }));
-  await sub.filter({ hasText: "Elf" }).waitFor();
-  await level.filter({ hasText: /^1$/ }).waitFor();
-  await pin();
-  await assertFrame(page, "Elf");
-  marks.elf = shots.length;
-  await hold(1.1);
-
-  await press(field(page, "Class").getByRole("button", { name: "Rogue", exact: true }));
-  await sub.filter({ hasText: "Rogue" }).waitFor();
-  await level.filter({ hasText: /^1$/ }).waitFor();
-  await pin();
-  await assertFrame(page, "Rogue");
-  marks.fighter = shots.length;
-  await hold(1.1);
-
-  const packsSummary = page.locator("#content-packs summary");
-  await scrollToEl(packsSummary, 24, "down");
+  await scrollToEl(packsSummary, 24);
   await press(packsSummary);
   await page.waitForSelector("#content-packs[open]");
-  const add = page.locator("#content-packs li", { hasText: "Turtles & Pirates" }).getByRole("checkbox");
-  await scrollToEl(add, 80);
-  await center(add);
-  await assertFrame(page, "Rogue");
-  marks.packs = shots.length;
-  await hold(1.2);
-
-  await press(add);
-  const turtle = field(page, "Race").getByRole("button", { name: /Turtle-folk/ });
+  await scrollToEl(turtles, 80);
+  await press(turtles);
   await turtle.waitFor();
-  await scrollToEl(turtle, 80, "back");
-  await press(turtle);
-  await sub.filter({ hasText: "Turtle-folk" }).waitFor();
-  await level.filter({ hasText: /^1$/ }).waitFor();
-  await pin();
-  await assertFrame(page, "Turtle-folk");
-  marks.end = shots.length;
+  await seeActions();
+  await assertActions("Level 1");
+  marks.packs = shots.length;
   await hold(1.6);
+
+  await scrollToEl(turtle, 80);
+  await press(turtle);
+  await page.locator(".page.back .cd .n", { hasText: "Pop into Shell" }).waitFor();
+  await seeActions();
+  await assertActions("Pop into Shell");
+  marks.turtle = shots.length;
+  await hold(2.2);
+
+  await scrollToEl(levelBtn(3), 48);
+  await press(levelBtn(3));
+  await sheetHead.filter({ hasText: "Level 3" }).waitFor();
+  await seeActions();
+  await assertActions("Level 3");
+  marks.mid = shots.length;
+  await hold(2);
+
+  await scrollToEl(pirate, 48);
+  await press(pirate);
+  await page.locator(".page.back .cd .n", { hasText: "Swashbuckle" }).waitFor();
+  await seeActions();
+  await assertActions("Swashbuckle");
+  marks.end = shots.length;
+  await hold(3);
 
   await browser.close();
   const first = shots[0];

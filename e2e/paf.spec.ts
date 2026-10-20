@@ -1,0 +1,116 @@
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
+import { jpegsToPdf } from "../src/export";
+import { field } from "./helpers";
+
+const scratch = mkdtempSync(path.join(tmpdir(), "paf-pdf-"));
+const jpeg = { bytes: new Uint8Array([0xff, 0xd8, 0xff, 0xd9]), w: 1, h: 1 };
+
+function writeSheet(name: string, state: object): string {
+  const file = path.join(scratch, name);
+  writeFileSync(file, jpegsToPdf([jpeg], "Hero", { state, packs: [] }));
+  return file;
+}
+
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.clear();
+    window.CHARSHEET_FIXED_START = true;
+  });
+  page.on("pageerror", (error) => {
+    throw error;
+  });
+});
+
+test("builds a level-3 hero with one once-a-fight power", async ({ page }) => {
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto("/paf.html");
+  await page.waitForSelector("#scaler .page.back");
+  await expect(page.locator("#scaler .page")).toHaveCount(2);
+  await expect(page.locator(".sitefoot")).toContainText("original post-apocalyptic fantasy");
+  await expect(page.locator(".sitefoot")).not.toContainText("SRD");
+  await expect(page.locator(".sitefoot")).not.toContainText(/gamma/i);
+  await expect(page.locator("header a.switch")).toHaveAttribute("href", "index.html");
+  await expect(page.locator("#controls")).not.toContainText(/best/i);
+
+  await field(page, "First origin").getByRole("button", { name: "Whisk", exact: true }).click();
+  await field(page, "Second origin").getByRole("button", { name: "Spark", exact: true }).click();
+  await field(page, "Level").getByRole("button", { name: "3", exact: true }).click();
+
+  const sheet = page.locator("#scaler");
+  await expect(sheet.locator(".cd[data-card='Vanish']")).toHaveCount(1);
+  await expect(sheet.locator(".cd[data-card='Jolt']")).toHaveCount(0);
+  await expect(sheet).not.toContainText(/proficiency/i);
+  await expect(sheet).toContainText("Draw 1");
+  await expect(sheet.locator(".head .sub")).toContainText("Whisk");
+  await expect(sheet.locator(".head .sub")).toContainText("Spark");
+  await expect(page.locator("#flux-relics")).toContainText("Extra arm");
+  await expect(sheet).not.toContainText("Extra arm");
+});
+
+test("the two pages point at each other", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForSelector("html[data-booted='1']");
+  await expect(page.locator("header a.switch")).toHaveAttribute("href", "paf.html");
+  await page.goto("/paf.html");
+  await page.waitForSelector("html[data-booted='1']");
+  await expect(page.locator("header a.switch")).toHaveAttribute("href", "index.html");
+});
+
+test("a fresh visit rolls a random hero", async ({ browser }) => {
+  const seen = new Set<string>();
+  for (let i = 0; i < 4; i++) {
+    const context = await browser.newContext({ viewport: { width: 1400, height: 900 } });
+    const page = await context.newPage();
+    await page.goto("/paf.html");
+    await page.waitForSelector("#scaler .page.back");
+    seen.add((await page.locator("#scaler .front").innerText()).slice(0, 80));
+    await context.close();
+  }
+  expect(seen.size).toBeGreaterThan(1);
+});
+
+test("each page refuses the other page's PDF", async ({ page }) => {
+  const pafPdf = writeSheet("paf.pdf", { kind: "paf", origin1: "whisk", origin2: "spark", name: "Pip", level: 3 });
+  const dndPdf = writeSheet("dnd.pdf", { name: "Tobin", race: "human", cls: "fighter", level: 1 });
+
+  await page.goto("/");
+  await page.waitForSelector("#scaler .page.back");
+  await page.locator("#open-pdf-file").setInputFiles(pafPdf);
+  await expect(page.locator("#status")).toHaveText("This PDF is a post-apocalyptic hero. Open it on the PAF page.");
+
+  await page.goto("/paf.html");
+  await page.waitForSelector("#scaler .page.back");
+  await page.locator("#open-pdf-file").setInputFiles(dndPdf);
+  await expect(page.locator("#status")).toHaveText("This PDF is a D&D hero. Open it on the D&D heroes page.");
+  await page.locator("#open-pdf-file").setInputFiles(pafPdf);
+  await expect(page.locator("#scaler .head .nm")).toHaveText("Pip");
+  await expect(page.locator("#status")).toHaveText("Opened Pip.");
+});
+
+test("the single file still builds a sheet with the network blocked", async ({ browser }) => {
+  const file = path.resolve("dist/paf.html");
+  const html = readFileSync(file, "utf8");
+  expect(html).toContain("woff2");
+  expect(html).not.toMatch(/<(?:script|link)[^>]+(?:src|href)="https?:/);
+  expect(html).not.toMatch(/gamma/i);
+  const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
+  await page.addInitScript(() => {
+    localStorage.clear();
+    window.CHARSHEET_FIXED_START = true;
+  });
+  await page.route("**", (route) => {
+    const url = route.request().url();
+    if (url.startsWith("http://") || url.startsWith("https://")) return route.abort();
+    return route.continue();
+  });
+  await page.context().setOffline(true);
+  await page.goto(`file://${file}`);
+  await page.waitForSelector("#scaler .page.back");
+  await expect(page.locator("#scaler .page")).toHaveCount(2);
+  await field(page, "First origin").getByRole("button", { name: "Howl", exact: true }).click();
+  await expect(page.locator("#scaler .head .sub")).toContainText("Howl");
+  await page.close();
+});

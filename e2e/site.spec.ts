@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
+import { field } from "./helpers";
 
 const SOLO_PACK = JSON.stringify({
   title: "Solo World",
@@ -199,7 +200,3 @@ test.describe("builder", () => {
     await page.close();
   });
 });
-
-function field(page: import("@playwright/test").Page, label: string) {
-  return page.locator(".field").filter({ has: page.locator(".flabel", { hasText: new RegExp(`^${label}`) }) });
-}

@@ -1,4 +1,4 @@
-import { buildCharacter, CharError, options, sheetHtml } from "./core";
+import { buildCharacter, CharError, options, sheetHtml, signed } from "./core";
 import {
   CustomError,
   checkCustom,
@@ -9,7 +9,9 @@ import {
   parseCustomText,
   TABLE_NAMES,
 } from "./custom";
-import { ExportError, makePdf } from "./export";
+import { ExportError, makePdf, readHeroSheet } from "./export";
+import { fitCardFont, previewLayout } from "./fit";
+import { fileStem } from "./text";
 import {
   ABILITIES,
   type Ability,
@@ -18,6 +20,7 @@ import {
   type ClassRow,
   type HeroOptions,
   type HeroRequest,
+  type NumberOverrides,
   type Race,
   type SheetCard,
   type Tables,
@@ -62,6 +65,7 @@ interface HeroState {
   shield: boolean | null;
   avatar: AvatarState | null;
   look: Look | null;
+  numbers: NumberOverrides | null;
 }
 
 interface HeroRecord {
@@ -235,6 +239,127 @@ function readJson(text: string): unknown {
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function textList(value: unknown): string[] | null | undefined {
+  if (value === null) return null;
+  if (!Array.isArray(value)) return undefined;
+  const list: string[] = [];
+  for (const item of value) {
+    if (typeof item !== "string") return undefined;
+    list.push(item);
+  }
+  return list;
+}
+
+function scoresOf(value: unknown): AbilityScores | null | undefined {
+  if (value === null) return null;
+  if (!value || typeof value !== "object") return undefined;
+  const row = value as Record<string, unknown>;
+  const scores: Partial<AbilityScores> = {};
+  for (const ability of ABILITIES) {
+    const score = row[ability];
+    if (typeof score !== "number" || !Number.isFinite(score)) return undefined;
+    scores[ability] = score;
+  }
+  return scores as AbilityScores;
+}
+
+function avatarOf(value: unknown): AvatarState | null | undefined {
+  if (value === null) return null;
+  if (!value || typeof value !== "object") return undefined;
+  const row = value as Record<string, unknown>;
+  const look = row.look === "boy" || row.look === "girl" ? row.look : null;
+  if (typeof row.style !== "string" || typeof row.seed !== "string" || !look) return undefined;
+  return { style: row.style, seed: row.seed, look };
+}
+
+function heroPatch(raw: Record<string, unknown>): Partial<HeroState> | null {
+  if (typeof raw.race !== "string" || typeof raw.cls !== "string") return null;
+  const patch: Partial<HeroState> = { race: raw.race, cls: raw.cls };
+  if (typeof raw.name === "string") patch.name = raw.name;
+  if (typeof raw.subclass === "string" || raw.subclass === null) patch.subclass = raw.subclass;
+  if (typeof raw.level === "number" && Number.isFinite(raw.level)) patch.level = raw.level;
+  if (raw.choices && typeof raw.choices === "object" && !Array.isArray(raw.choices)) {
+    const choices: Record<string, string[]> = {};
+    let ok = true;
+    for (const [group, picks] of Object.entries(raw.choices as Record<string, unknown>)) {
+      const list = textList(picks);
+      if (!list) {
+        ok = false;
+        break;
+      }
+      choices[group] = list;
+    }
+    if (ok) patch.choices = choices;
+  }
+  for (const key of ["cantrips", "spells", "path_spells", "items", "inventory"] as const) {
+    const list = textList(raw[key]);
+    if (list !== undefined) patch[key] = list;
+  }
+  if (typeof raw.item_seed === "string" || raw.item_seed === null) patch.item_seed = raw.item_seed;
+  if (typeof raw.notes === "string") patch.notes = raw.notes;
+  if (typeof raw.portrait === "string" || raw.portrait === null) patch.portrait = raw.portrait;
+  if (typeof raw.portrait_credit === "string" || raw.portrait_credit === null)
+    patch.portrait_credit = raw.portrait_credit;
+  if (typeof raw.subrace === "string" || raw.subrace === null) patch.subrace = raw.subrace;
+  if (typeof raw.weapon === "string" || raw.weapon === null) patch.weapon = raw.weapon;
+  const raceAsi = scoresOf(raw.race_asi);
+  if (raceAsi !== undefined) patch.race_asi = raceAsi;
+  const baseScores = scoresOf(raw.base_scores);
+  if (baseScores !== undefined) patch.base_scores = baseScores;
+  if (typeof raw.armor === "string" || raw.armor === null) patch.armor = raw.armor;
+  if (typeof raw.shield === "boolean" || raw.shield === null) patch.shield = raw.shield;
+  const avatar = avatarOf(raw.avatar);
+  if (avatar !== undefined) patch.avatar = avatar;
+  if (raw.look === "boy" || raw.look === "girl" || raw.look === null) patch.look = raw.look;
+  const numbers = numbersOf(raw.numbers);
+  if (numbers !== undefined) patch.numbers = numbers;
+  return patch;
+}
+
+function numMap(value: unknown): Record<string, number> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const out: Record<string, number> = {};
+  for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof item === "number" && Number.isFinite(item)) out[key] = item;
+  }
+  return out;
+}
+
+function numbersOf(value: unknown): NumberOverrides | null | undefined {
+  if (value == null) return value === null ? null : undefined;
+  if (typeof value !== "object" || Array.isArray(value)) return undefined;
+  const row = value as Record<string, unknown>;
+  const numbers: NumberOverrides = {};
+  const skills = numMap(row.skills);
+  if (skills && Object.keys(skills).length) numbers.skills = skills;
+  const attacks = numMap(row.attacks);
+  if (attacks && Object.keys(attacks).length) numbers.attacks = attacks;
+  if (row.saves && typeof row.saves === "object" && !Array.isArray(row.saves)) {
+    const saves: Partial<AbilityScores> = {};
+    const saved = row.saves as Record<string, unknown>;
+    for (const ability of ABILITIES) {
+      const score = saved[ability];
+      if (typeof score === "number" && Number.isFinite(score)) saves[ability] = score;
+    }
+    if (Object.keys(saves).length) numbers.saves = saves;
+  }
+  for (const key of [
+    "ac",
+    "hp",
+    "speed",
+    "swim",
+    "initiative",
+    "prof",
+    "notice",
+    "spell_attack",
+    "spell_dc",
+  ] as const) {
+    const score = row[key];
+    if (typeof score === "number" && Number.isFinite(score)) numbers[key] = score;
+  }
+  return Object.keys(numbers).length ? numbers : null;
 }
 
 function errorCode(error: unknown): string | undefined {
@@ -550,6 +675,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     portrait_credit: null,
     avatar: null,
     look: null,
+    numbers: null,
   };
 
   const savePrefs = () => {
@@ -759,6 +885,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       notes: state.notes || "",
       portrait: state.portrait,
       portrait_credit: state.portrait ? state.portrait_credit : null,
+      numbers: state.numbers,
     };
   }
 
@@ -853,6 +980,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       armor: null,
       shield: null,
       inventory: null,
+      numbers: null,
       ...over,
     };
   }
@@ -1060,7 +1188,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
         ["Armor training", from.join(". ")],
       ];
       if (armor.strReq) lines.push(["Strength", `Needs Strength ${armor.strReq}, or you move 10 ft slower`]);
-      if (!armor.trained) lines.push([null, "Off the list for this hero. Check with your DM."]);
+      if (!armor.trained) lines.push([null, dmText("Off the list for this hero")]);
       return { title: armor.name, lines };
     },
   };
@@ -1260,6 +1388,73 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       "🎲",
     );
 
+  function dmText(reason: string): string {
+    const sentence = reason.endsWith(".") ? reason : `${reason}.`;
+    return `${sentence} Check with your DM.`;
+  }
+
+  function dmWarn(reason: string, ...extra: Kid[]): HTMLElement {
+    return el("p", { class: "hint block warn" }, dmText(reason), ...extra);
+  }
+
+  function stepBtn(
+    label: string,
+    down: boolean,
+    disabled: boolean,
+    onclick: () => void,
+    mini = false,
+  ): HTMLButtonElement {
+    return el(
+      "button",
+      { type: "button", class: `step${mini ? " mini" : ""}`, "aria-label": label, disabled, onclick },
+      down ? "−" : "+",
+    );
+  }
+
+  function swapHint(open: boolean, off: boolean): string {
+    if (open) return "close";
+    return off ? "off book • swap ▾" : "swap ▾";
+  }
+
+  function choiceRow(opts: {
+    name: string;
+    open: boolean;
+    off: boolean;
+    locked?: boolean;
+    badge?: HTMLElement | null;
+    desc: string;
+    hint: string;
+    title?: string;
+    onOpen: () => void;
+    roll: HTMLElement | null;
+    onRemove: () => void;
+  }): HTMLElement {
+    return el(
+      "li",
+      { class: `spell${opts.locked ? " locked" : ""}${opts.open ? " open" : ""}${opts.off ? " offbook" : ""}` },
+      el(
+        "button",
+        {
+          type: "button",
+          class: "sname",
+          "aria-expanded": opts.open ? "true" : "false",
+          title: opts.title,
+          onclick: opts.onOpen,
+        },
+        el("b", {}, opts.name),
+        opts.badge ?? null,
+        el("small", {}, opts.desc),
+        el("span", { class: "swaphint" }, opts.hint),
+      ),
+      opts.roll,
+      el(
+        "button",
+        { type: "button", class: "icon", title: "Remove", "aria-label": `Remove ${opts.name}`, onclick: opts.onRemove },
+        "✕",
+      ),
+    );
+  }
+
   let liveDesc: Record<string, string> = {};
   let picker: Picker | null = null;
   const TAGLBL: Record<string, string> = { A: "Action", B: "Bonus", R: "Reaction", ON: "Always on", F: "Free" };
@@ -1386,7 +1581,8 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
                 const card = texts[name] ||
                   (isItem ? built.itemCard(name) : built.spellCard(name)) || { desc: "", tag: "", note: "" };
                 const currentName = index >= 0 && current[index] === name;
-                const offList = widen && !allowed.includes(name);
+                const warn = isItem ? built.itemWarn(name) : "";
+                const offList = !!warn || (widen && !allowed.includes(name));
                 return el(
                   "button",
                   {
@@ -1404,7 +1600,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
                     offList ? el("span", { class: "swaphint" }, "off book") : null,
                   ),
                   el("span", { class: "pdesc" }, (card.desc || "").replace(/\{[A-Z0-9_]+\}/g, "…")),
-                  isItem && built.itemWarn(name) ? el("span", { class: "pwarn" }, `⚠ ${built.itemWarn(name)}`) : null,
+                  warn ? el("span", { class: "pwarn" }, dmText(warn)) : null,
                 );
               }),
             ),
@@ -1457,44 +1653,27 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
         const isOpen = picker?.kind === "path_spells" && picker.index === i;
         const book = built.bookAuto.includes(name);
         items.push(
-          el(
-            "li",
-            { class: `spell locked${isOpen ? " open" : ""}${book ? "" : " offbook"}` },
-            el(
-              "button",
-              {
-                type: "button",
-                class: "sname",
-                "aria-expanded": isOpen ? "true" : "false",
-                onclick: () => {
-                  picker = isOpen ? null : { kind: "path_spells", index: i };
-                  update();
-                },
-              },
-              el("b", {}, name),
-              el("span", { class: "lvl" }, `L${built.spellLevel(name)}`),
-              el("small", {}, liveDesc[name] || (built.spellCard(name)?.desc || "").replace(/\{[A-Z0-9_]+\}/g, "…")),
-              el("span", { class: "swaphint" }, book ? "path spell • swap ▾" : "off book • swap ▾"),
-            ),
-            dice(name, () => {
+          choiceRow({
+            name,
+            open: isOpen,
+            off: !book,
+            locked: true,
+            badge: el("span", { class: "lvl" }, `L${built.spellLevel(name)}`),
+            desc: liveDesc[name] || (built.spellCard(name)?.desc || "").replace(/\{[A-Z0-9_]+\}/g, "…"),
+            hint: book ? "path spell • swap ▾" : "off book • swap ▾",
+            onOpen: () => {
+              picker = isOpen ? null : { kind: "path_spells", index: i };
+              update();
+            },
+            roll: dice(name, () => {
               const free = built.anyPool.filter((item) => !pathCur.includes(item) && !current.includes(item));
               if (!free.length) return;
               const arr = pathCur.slice();
               arr[i] = pick(free);
               setPath(arr);
             }),
-            el(
-              "button",
-              {
-                type: "button",
-                class: "icon",
-                title: "Remove",
-                "aria-label": `Remove ${name}`,
-                onclick: () => setPath(pathCur.filter((_, j) => j !== i)),
-              },
-              "✕",
-            ),
-          ),
+            onRemove: () => setPath(pathCur.filter((_, j) => j !== i)),
+          }),
         );
         if (isOpen)
           items.push(
@@ -1506,42 +1685,24 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       const isOpen = picker?.kind === kind && picker.index === i;
       const offList = !pool.includes(name);
       items.push(
-        el(
-          "li",
-          { class: `spell${isOpen ? " open" : ""}${offList ? " offbook" : ""}` },
-          el(
-            "button",
-            {
-              type: "button",
-              class: "sname",
-              "aria-expanded": isOpen ? "true" : "false",
-              title: "Click to see other choices",
-              onclick: () => open(i),
-            },
-            el("b", {}, name),
-            isCantrip ? null : el("span", { class: "lvl" }, `L${built.spellLevel(name)}`),
-            el("small", {}, liveDesc[name] || (built.spellCard(name)?.desc || "").replace(/\{[A-Z0-9_]+\}/g, "…")),
-            el("span", { class: "swaphint" }, isOpen ? "close" : offList ? "off book • swap ▾" : "swap ▾"),
-          ),
-          dice(name, () => {
+        choiceRow({
+          name,
+          open: isOpen,
+          off: offList,
+          badge: isCantrip ? null : el("span", { class: "lvl" }, `L${built.spellLevel(name)}`),
+          desc: liveDesc[name] || (built.spellCard(name)?.desc || "").replace(/\{[A-Z0-9_]+\}/g, "…"),
+          hint: swapHint(isOpen, offList),
+          title: "Click to see other choices",
+          onOpen: () => open(i),
+          roll: dice(name, () => {
             const free = pool.filter((item) => !current.includes(item) && !built.auto.includes(item));
             if (!free.length) return;
             const arr = current.slice();
             arr[i] = pick(free);
             set(arr);
           }),
-          el(
-            "button",
-            {
-              type: "button",
-              class: "icon",
-              title: "Remove",
-              "aria-label": `Remove ${name}`,
-              onclick: () => set(current.filter((_, j) => j !== i)),
-            },
-            "✕",
-          ),
-        ),
+          onRemove: () => set(current.filter((_, j) => j !== i)),
+        }),
       );
       if (isOpen) items.push(el("li", { class: "pwrap" }, pickerPanel(kind, built, current, i)));
     });
@@ -1588,15 +1749,16 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       .filter(Boolean)
       .join("; ");
     const stray = current.filter((name) => !pool.includes(name));
+    const notes: HTMLElement[] = [];
     if (stray.length) {
-      items.unshift(el("li", { class: "offnote" }, `⚠ Off the list: ${stray.join(", ")}. Check with your DM.`));
+      const names = stray.join(", ");
+      notes.push(dmWarn(`${names} ${stray.length > 1 ? "are" : "is"} off the list for this hero`));
     }
     if (offBook) {
-      items.unshift(
-        el(
-          "li",
-          { class: "offnote" },
-          `⚠ Going off book: ${what}. Check with your DM. `,
+      notes.push(
+        dmWarn(
+          what,
+          " ",
           el(
             "button",
             {
@@ -1616,7 +1778,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     const allDice = dice(isCantrip ? "cantrips" : "spells", () => {
       set(shuffle(pool.filter((name) => !built.auto.includes(name))).slice(0, max));
     });
-    return field(isCantrip ? "Cantrips" : "Spells", el("ul", { class: "spells" }, items), [
+    return field(isCantrip ? "Cantrips" : "Spells", el("div", {}, notes, el("ul", { class: "spells" }, items)), [
       `${current.length} of ${max} picked `,
       reset,
       " ",
@@ -1668,66 +1830,27 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
         "div",
         { class: "abrow" },
         el("span", { class: "abname", title: ABN[key] }, el("span", { class: "abshort" }, key)),
-        el(
-          "button",
-          {
-            type: "button",
-            class: "step",
-            "aria-label": `Lower ${ABN[key]}`,
-            onclick: () => set(key, base[key] - 1),
-            disabled: base[key] <= 3,
-          },
-          "−",
-        ),
+        stepBtn(`Lower ${ABN[key]}`, true, base[key] <= 3, () => set(key, base[key] - 1)),
         el("b", { class: "abbase", "aria-label": `${ABN[key]} ${base[key]}` }, String(base[key])),
-        el(
-          "button",
-          {
-            type: "button",
-            class: "step",
-            "aria-label": `Raise ${ABN[key]}`,
-            onclick: () => set(key, base[key] + 1),
-            disabled: base[key] >= 18,
-          },
-          "+",
-        ),
-        el(
-          "button",
-          {
-            type: "button",
-            class: "step mini",
-            "aria-label": `Lower race bonus for ${ABN[key]}`,
-            onclick: () => setR(rb - 1),
-            disabled: rb <= 0,
-          },
-          "−",
-        ),
+        stepBtn(`Raise ${ABN[key]}`, false, base[key] >= 18, () => set(key, base[key] + 1)),
+        stepBtn(`Lower race bonus for ${ABN[key]}`, true, rb <= 0, () => setR(rb - 1), true),
         el("span", { class: "abbonus" }, rb ? sg(rb) : "0"),
-        el(
-          "button",
-          {
-            type: "button",
-            class: "step mini",
-            "aria-label": `Raise race bonus for ${ABN[key]}`,
-            onclick: () => setR(rb + 1),
-            disabled: rb >= 3,
-          },
-          "+",
-        ),
+        stepBtn(`Raise race bonus for ${ABN[key]}`, false, rb >= 3, () => setR(rb + 1), true),
         el("span", { class: "abfinal" }, `${fin[key].score} (${sg(fin[key].mod)})${lvlUp ? " ↑" : ""}`),
         el("span", { class: "abcost" }, cost === null ? "—" : `${cost} pt`),
       );
     });
-    const over = pb && !offChart && total !== pb.budget;
-    const summary = pb
-      ? el(
-          "p",
-          { class: `pbline${offChart || over ? " warn" : ""}` },
-          offChart
-            ? "Point buy: some scores are outside 8–15, so this is off the point-buy chart. Talk to your DM about stat rules — most DMs are fine with point buy."
-            : `Point buy: ${total} of ${pb.budget} points${total > pb.budget ? " (over budget — talk to your DM about stat rules; most DMs are fine with point buy)" : total < pb.budget ? ` (${pb.budget - total} to spend)` : " ✓"}`,
-        )
-      : null;
+    const summary = !pb
+      ? null
+      : offChart
+        ? dmWarn("These scores are outside the 8–15 point-buy chart")
+        : total > pb.budget
+          ? dmWarn(`Point buy is ${total} of ${pb.budget} points, which is over budget`)
+          : el(
+              "p",
+              { class: "pbline" },
+              `Point buy: ${total} of ${pb.budget} points${total < pb.budget ? ` (${pb.budget - total} to spend)` : " ✓"}`,
+            );
     const reset = el(
       "button",
       {
@@ -1777,11 +1900,9 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
         summary,
         el(
           "p",
-          { class: `pbline${rTotal !== usualTotal ? " warn" : ""}` },
+          { class: "pbline" },
           "Race bonus: put it wherever you like (newer rules let you pick). ",
-          state.race_asi
-            ? `Adds up to +${rTotal}${rTotal !== usualTotal ? ` (usual is +${usualTotal} — check with your DM)` : ""}. `
-            : "",
+          state.race_asi ? `Adds up to +${rTotal}. ` : "",
           state.race_asi
             ? el(
                 "button",
@@ -1797,6 +1918,9 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
               )
             : null,
         ),
+        state.race_asi && rTotal !== usualTotal
+          ? dmWarn(`This race bonus adds up to +${rTotal}. The usual is +${usualTotal}`)
+          : null,
         levelBoost ? el("p", { class: "hint block" }, "↑ includes level-up boosts.") : null,
       ),
       [state.base_scores || state.race_asi ? "" : "default • ", reset, " ", roll],
@@ -1906,9 +2030,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
           { class: "hint block" },
           `Armor ${cur.ac} with ${cur.armor.toLowerCase()}. Numbers show the Armor each choice gives (shield not included).`,
         ),
-        offbook
-          ? el("p", { class: "hint block warn" }, `${curName} is off the list for this hero. Check with your DM.`)
-          : null,
+        offbook ? dmWarn(`${curName} is off the list for this hero`) : null,
       ),
       [state.armor || state.shield != null ? "" : "default • ", reset],
     );
@@ -2015,7 +2137,187 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     );
   }
 
+  const NUMBER_KEYS = [
+    "ac",
+    "hp",
+    "speed",
+    "swim",
+    "initiative",
+    "prof",
+    "notice",
+    "spell_attack",
+    "spell_dc",
+  ] as const;
+
+  function editNumbers(change: (draft: NumberOverrides) => void): void {
+    const draft: NumberOverrides = {
+      ...state.numbers,
+      skills: { ...state.numbers?.skills },
+      saves: { ...state.numbers?.saves },
+      attacks: { ...state.numbers?.attacks },
+    };
+    change(draft);
+    const next: NumberOverrides = {};
+    if (draft.skills && Object.keys(draft.skills).length) next.skills = draft.skills;
+    if (draft.saves && Object.keys(draft.saves).length) next.saves = draft.saves;
+    if (draft.attacks && Object.keys(draft.attacks).length) next.attacks = draft.attacks;
+    for (const key of NUMBER_KEYS) {
+      const value = draft[key];
+      if (typeof value === "number") next[key] = value;
+    }
+    state.numbers = Object.keys(next).length ? next : null;
+    update();
+  }
+
+  function numberRow(
+    label: string,
+    value: number,
+    book: number,
+    lo: number,
+    hi: number,
+    text: (n: number) => string,
+    onChange: (next: number) => void,
+  ): HTMLElement {
+    const off = value !== book;
+    const clamp = (n: number) => Math.max(lo, Math.min(hi, n));
+    return el(
+      "div",
+      { class: `numrow${off ? " offbook" : ""}` },
+      el("span", { class: "numname" }, label),
+      stepBtn(`Lower ${label}`, true, value <= lo, () => onChange(clamp(value - 1))),
+      el("b", { "aria-label": `${label} ${text(value)}` }, text(value)),
+      stepBtn(`Raise ${label}`, false, value >= hi, () => onChange(clamp(value + 1))),
+      el("span", { class: "hint" }, off ? "off book" : "book"),
+    );
+  }
+
+  function resetNumbers(clear: (draft: NumberOverrides) => void, changed: boolean): HTMLElement {
+    return el(
+      "button",
+      {
+        type: "button",
+        class: "link",
+        onclick: () => editNumbers(clear),
+      },
+      changed ? "reset" : "default • reset",
+    );
+  }
+
+  function skillsField(book: Character, live: Character): HTMLElement {
+    let changed = false;
+    const rows = live.skills.map((skill) => {
+      const bookBonus = book.skills.find((row) => row.name === skill.name)?.bonus ?? skill.bonus;
+      if (skill.bonus !== bookBonus) changed = true;
+      return numberRow(skill.name, skill.bonus, bookBonus, -10, 20, signed, (next) => {
+        editNumbers((draft) => {
+          const skills = draft.skills ?? {};
+          if (next === bookBonus) delete skills[skill.name];
+          else skills[skill.name] = next;
+          draft.skills = skills;
+        });
+      });
+    });
+    return field(
+      "Skills",
+      el("div", { class: "numgrid", id: "skill-numbers" }, rows, changed ? dmWarn("Off book") : null),
+      resetNumbers((draft) => {
+        draft.skills = {};
+      }, changed),
+    );
+  }
+
+  function savesField(book: Character, live: Character): HTMLElement {
+    let changed = false;
+    const rows = ABILITIES.map((key) => {
+      const bookSave = book.abilities.find((row) => row.key === key)?.save ?? 0;
+      const save = live.abilities.find((row) => row.key === key)?.save ?? bookSave;
+      if (save !== bookSave) changed = true;
+      return numberRow(ABN[key], save, bookSave, -10, 20, signed, (next) => {
+        editNumbers((draft) => {
+          const saves = { ...draft.saves };
+          if (next === bookSave) delete saves[key];
+          else saves[key] = next;
+          draft.saves = saves;
+        });
+      });
+    });
+    return field(
+      "Saves",
+      el("div", { class: "numgrid", id: "save-numbers" }, rows, changed ? dmWarn("Off book") : null),
+      resetNumbers((draft) => {
+        draft.saves = {};
+      }, changed),
+    );
+  }
+
+  function sheetNumbersField(book: Character, live: Character): HTMLElement {
+    const bookPerception = book.skills.find((skill) => skill.name === "Perception")?.bonus;
+    const livePerception = live.skills.find((skill) => skill.name === "Perception")?.bonus;
+    const noticeBook =
+      bookPerception !== undefined && livePerception !== undefined && livePerception !== bookPerception
+        ? 10 + livePerception
+        : book.combat.passive_perception;
+    const rows: HTMLElement[] = [];
+    let changed = false;
+    const add = (
+      label: string,
+      value: number,
+      bookValue: number,
+      lo: number,
+      hi: number,
+      text: (n: number) => string,
+      key: (typeof NUMBER_KEYS)[number],
+    ) => {
+      if (value !== bookValue) changed = true;
+      rows.push(
+        numberRow(label, value, bookValue, lo, hi, text, (next) => {
+          editNumbers((draft) => {
+            if (next === bookValue) delete draft[key];
+            else draft[key] = next;
+          });
+        }),
+      );
+    };
+    const plain = (n: number) => String(n);
+    add("Armor class", live.combat.ac, book.combat.ac, 0, 40, plain, "ac");
+    add("Max HP", live.combat.max_hp, book.combat.max_hp, 1, 400, plain, "hp");
+    add("Speed", live.combat.speed, book.combat.speed, 0, 200, plain, "speed");
+    add("Swim", live.combat.swim, book.combat.swim, 0, 200, plain, "swim");
+    add("Initiative", live.combat.initiative, book.combat.initiative, -10, 20, signed, "initiative");
+    add("Proficiency", live.combat.prof, book.combat.prof, 0, 10, signed, "prof");
+    add("Notice", live.combat.passive_perception, noticeBook, 0, 40, plain, "notice");
+    if (live.spellcasting && book.spellcasting) {
+      add("Spell attack", live.spellcasting.attack, book.spellcasting.attack, -10, 20, signed, "spell_attack");
+      add("Spell DC", live.spellcasting.dc, book.spellcasting.dc, 0, 40, plain, "spell_dc");
+    }
+    for (const attack of live.attacks) {
+      const bookHit = book.attacks.find((row) => row.name === attack.name)?.to_hit;
+      if (bookHit === undefined) continue;
+      if (attack.to_hit !== bookHit) changed = true;
+      rows.push(
+        numberRow(`${attack.name} to hit`, attack.to_hit, bookHit, -10, 20, signed, (next) => {
+          editNumbers((draft) => {
+            const attacks = draft.attacks ?? {};
+            if (next === bookHit) delete attacks[attack.name];
+            else attacks[attack.name] = next;
+            draft.attacks = attacks;
+          });
+        }),
+      );
+    }
+    return field(
+      "Other numbers",
+      el("div", { class: "numgrid", id: "sheet-numbers" }, rows, changed ? dmWarn("Off book") : null),
+      resetNumbers((draft) => {
+        for (const key of NUMBER_KEYS) delete draft[key];
+        draft.attacks = {};
+      }, changed),
+    );
+  }
+
   function advanced(built: HeroOptions): HTMLElement {
+    const book = buildCharacter(tables, { ...request(), numbers: null });
+    const live = buildCharacter(tables, request());
     const details = el(
       "details",
       {
@@ -2028,33 +2330,19 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       el(
         "summary",
         {},
-        "Fine-tune: armor, weapon, ability scores & subrace",
+        "Fine-tune: armor, scores, saves, skills & other numbers",
         el("span", { class: "hint" }, "The defaults are usually fine, but you can change all of these."),
       ),
       armorField(built),
       weaponField(built),
       abilityField(built),
+      savesField(book, live),
+      skillsField(book, live),
+      sheetNumbersField(book, live),
       subraceField(built),
     );
     if (prefs.adv) details.open = true;
     return details;
-  }
-
-  function warnBtn(text: string): HTMLButtonElement {
-    const button = el(
-      "button",
-      {
-        type: "button",
-        class: "icon warn",
-        "aria-label": text,
-        onclick: (ev) => {
-          ev.stopPropagation();
-          showTip(button);
-        },
-      },
-      "⚠",
-    );
-    return tipped(button, () => ({ title: "Check with your DM", lines: [[null, text]] }));
   }
 
   function itemList(built: HeroOptions): HTMLElement | null {
@@ -2069,46 +2357,28 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     const items: HTMLElement[] = [];
     current.forEach((name, i) => {
       const isOpen = picker?.kind === "items" && picker.index === i;
+      const warn = built.itemWarn(name);
       items.push(
-        el(
-          "li",
-          { class: `spell${isOpen ? " open" : ""}` },
-          el(
-            "button",
-            {
-              type: "button",
-              class: "sname",
-              "aria-expanded": isOpen ? "true" : "false",
-              onclick: () => {
-                picker = isOpen ? null : { kind: "items", index: i };
-                update();
-              },
-            },
-            el("b", {}, name),
-            el("span", { class: "lvl" }, built.itemRarity(name)),
-            el("small", {}, liveDesc[name] || built.itemCard(name)?.desc || ""),
-            el("span", { class: "swaphint" }, isOpen ? "close" : "swap ▾"),
-          ),
-          built.itemWarn(name) ? warnBtn(built.itemWarn(name)) : null,
-          dice(name, () => {
+        choiceRow({
+          name,
+          open: isOpen,
+          off: !!warn,
+          badge: el("span", { class: "lvl" }, built.itemRarity(name)),
+          desc: liveDesc[name] || built.itemCard(name)?.desc || "",
+          hint: swapHint(isOpen, !!warn),
+          onOpen: () => {
+            picker = isOpen ? null : { kind: "items", index: i };
+            update();
+          },
+          roll: dice(name, () => {
             const free = built.itemPool.filter((item) => !current.includes(item) && !built.itemWarn(item));
             if (!free.length) return;
             const arr = current.slice();
             arr[i] = pick(free);
             set(arr);
           }),
-          el(
-            "button",
-            {
-              type: "button",
-              class: "icon",
-              title: "Remove",
-              "aria-label": `Remove ${name}`,
-              onclick: () => set(current.filter((_, j) => j !== i)),
-            },
-            "✕",
-          ),
-        ),
+          onRemove: () => set(current.filter((_, j) => j !== i)),
+        }),
       );
       if (isOpen) items.push(el("li", { class: "pwrap" }, pickerPanel("items", built, current, i)));
     });
@@ -2159,7 +2429,10 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       { class: "hint block" },
       `${built.caster ? "" : "Heroes without spells get a few extra potions and items so they have more fun things to do. "}Check with your DM about which magic items to start with.`,
     );
-    return field("Potions & Magic Items", el("div", {}, el("ul", { class: "spells" }, items), note), [
+    const notes = current
+      .filter((name) => built.itemWarn(name))
+      .map((name) => dmWarn(`${name}: ${built.itemWarn(name)}`));
+    return field("Potions & Magic Items", el("div", {}, notes, el("ul", { class: "spells" }, items), note), [
       `${hint}${current.length} of ${max} `,
       reset,
       " ",
@@ -2611,6 +2884,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       portrait_credit: req.portrait_credit,
       avatar: null,
       look: null,
+      numbers: null,
     };
     update();
     const avatarField = hero.avatar;
@@ -3266,35 +3540,17 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
   function fitBack(root: ParentNode): void {
     const cards = root.querySelector(".page.back .cards");
     if (!(cards instanceof HTMLElement) || !cards.clientHeight) return;
-    const fits = () => {
-      if (cards.scrollHeight > cards.clientHeight + 1 || cards.scrollWidth > cards.clientWidth + 1) return false;
-      const box = cards.getBoundingClientRect();
-      const tol = 1 + box.width / 400;
-      for (const node of cards.querySelectorAll(".cd, .sec h3")) {
-        const rect = node.getBoundingClientRect();
-        if (rect.right > box.right + tol || rect.bottom > box.bottom + tol) return false;
-      }
-      return true;
-    };
-    let fs = 16;
-    cards.style.setProperty("--fs", `${fs}px`);
-    while (!fits() && fs > 8) {
-      fs -= 0.25;
-      cards.style.setProperty("--fs", `${fs}px`);
-    }
+    fitCardFont(cards);
   }
 
   function scalePreview(): void {
     const wrap = $("#preview");
     const sheet = wrap.querySelector(".sheet");
-    if (!(sheet instanceof HTMLElement) || !wrap.clientWidth) return;
-    const side = wrap.clientWidth >= 2 * 816 * 0.55 + 24;
-    sheet.classList.toggle("side", side);
-    const natW = side ? 816 * 2 + 24 : 816;
-    const natH = side ? 1056 : 1056 * 2 + 24;
-    const scale = Math.min(1, wrap.clientWidth / natW);
-    sheet.style.transform = `scale(${scale})`;
-    $("#scaler").style.height = `${natH * scale}px`;
+    const layout = previewLayout(wrap.clientWidth);
+    if (!(sheet instanceof HTMLElement) || !layout) return;
+    sheet.classList.toggle("side", layout.side);
+    sheet.style.transform = `scale(${layout.scale})`;
+    $("#scaler").style.height = `${layout.height}px`;
   }
 
   function renderSheet(): void {
@@ -3330,15 +3586,11 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
   }
 
   function fileBase(): string {
-    const banned = new Set('\\/:*?"<>|'.split(""));
-    const clean = (value: string) =>
-      [...value]
-        .filter((ch) => ch.charCodeAt(0) >= 32 && !banned.has(ch))
-        .join("")
-        .replace(/\s+/g, " ")
-        .trim();
     const idn = buildCharacter(tables, request()).identity;
-    return `${clean(idn.name) || "Hero"} - Level ${idn.level} ${clean(idn.cls)}${idn.subclass ? ` (${clean(idn.subclass)})` : ""}`;
+    const name = fileStem(idn.name) || "Hero";
+    const cls = fileStem(idn.cls);
+    const sub = idn.subclass ? ` (${fileStem(idn.subclass)})` : "";
+    return `${name} - Level ${idn.level} ${cls}${sub}`;
   }
 
   let dlCap: DownloadCap | null | undefined;
@@ -3380,8 +3632,12 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     btn.disabled = true;
     status("Making your PDF…");
     try {
+      save();
       const html = sheetHtml(buildCharacter(tables, request()));
-      const blob = await makePdf(html, state.name || "Hero");
+      const blob = await makePdf(html, state.name || "Hero", {
+        state: structuredClone(state),
+        packs: currentHero()?.packs ?? [],
+      });
       await saveFile(`${fileBase()}.pdf`, blob);
       status("PDF ready — print it double-sided, flip on the long edge.");
     } catch (error) {
@@ -3396,6 +3652,104 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     } finally {
       btn.disabled = false;
     }
+  }
+
+  function keepHeroPacks(packs: PackCopy[], race: string, cls: string): string | null {
+    const savedLib = loadLib();
+    const savedBuiltin = !!prefs.noBuiltin;
+    const savedUrl = storage.get(CUSTOM_URL_KEY);
+    const savedUrlText = storage.get(`${CUSTOM_URL_KEY}-text`);
+    const savedMem = memUrlText;
+    const savedStatus = urlStatus;
+    const restore = () => {
+      saveLib(savedLib);
+      prefs.noBuiltin = savedBuiltin;
+      memUrlText = savedMem;
+      urlStatus = savedStatus;
+      if (savedUrl) storage.set(CUSTOM_URL_KEY, savedUrl);
+      else storage.remove(CUSTOM_URL_KEY);
+      if (savedUrlText) storage.set(`${CUSTOM_URL_KEY}-text`, savedUrlText);
+      else storage.remove(`${CUSTOM_URL_KEY}-text`);
+      savePrefs();
+      tables = withCustom();
+      RACES = byId(tables.races);
+      CLASSES = byId(tables.classes);
+    };
+    const problem = () => customInfo.error || customInfo.problems[0] || "";
+    saveLib(packs.map((pack) => ({ title: pack.title, text: pack.text })));
+    storage.remove(CUSTOM_URL_KEY);
+    storage.remove(`${CUSTOM_URL_KEY}-text`);
+    memUrlText = null;
+    urlStatus = "";
+    loadReport = [];
+    prefs.noBuiltin = false;
+    tables = withCustom();
+    const reason = problem();
+    if (reason) {
+      restore();
+      return reason;
+    }
+    prefs.noBuiltin = true;
+    tables = withCustom();
+    const packOnly = !problem() && !!byId(tables.races)[race] && !!byId(tables.classes)[cls];
+    if (!packOnly) {
+      prefs.noBuiltin = false;
+      tables = withCustom();
+    }
+    RACES = byId(tables.races);
+    CLASSES = byId(tables.classes);
+    if (!RACES[race] || !CLASSES[cls]) {
+      restore();
+      return "This hero's race or class isn't in the pack from that PDF.";
+    }
+    prefs.custom = true;
+    savePrefs();
+    return null;
+  }
+
+  async function openHeroPdf(file: File): Promise<void> {
+    let bytes: Uint8Array;
+    try {
+      bytes = new Uint8Array(await file.arrayBuffer());
+    } catch (error) {
+      status(messageOf(error) || "Couldn't read that PDF.", true);
+      return;
+    }
+    const sheet = readHeroSheet(bytes);
+    if (!sheet) {
+      status("This PDF has no hero from Hero Sheet Builder.", true);
+      return;
+    }
+    if (sheet.state.kind === "paf") {
+      status("This PDF is a post-apocalyptic hero. Open it on the PAF page.", true);
+      return;
+    }
+    const patch = heroPatch(sheet.state);
+    if (!patch?.race || !patch.cls) {
+      status("This PDF's hero is missing a race or class.", true);
+      return;
+    }
+    save();
+    const kept = keepHeroPacks(sheet.packs, patch.race, patch.cls);
+    if (kept) {
+      status(kept, true);
+      update();
+      return;
+    }
+    const slot: HeroRecord = {
+      id: newId(),
+      state: patch,
+      edited: true,
+      updated: Date.now(),
+      packs: sheet.packs,
+    };
+    book.heroes.push(slot);
+    book.current = slot.id;
+    state = { ...DEFAULT, ...patch, choices: { ...(patch.choices ?? {}) } };
+    picker = null;
+    update();
+    status(`Opened ${state.name}.`);
+    setView("build");
   }
 
   function setView(view: "build" | "sheet"): void {
@@ -3429,6 +3783,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     state.base_scores = null;
     state.armor = null;
     state.shield = null;
+    state.numbers = null;
     rolling = true;
     update();
     markRolled();
@@ -3470,6 +3825,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     state.base_scores = null;
     state.race_asi = null;
     state.inventory = null;
+    state.numbers = null;
     picker = null;
   }
 
@@ -3489,6 +3845,14 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
   setView("build");
   $("#pdf").addEventListener("click", (ev) => {
     if (ev.currentTarget instanceof HTMLButtonElement) void exportPdf(ev.currentTarget);
+  });
+  const openPdfInput = $("#open-pdf-file");
+  if (!(openPdfInput instanceof HTMLInputElement)) throw new Error("missing #open-pdf-file");
+  $("#open-pdf").addEventListener("click", () => openPdfInput.click());
+  openPdfInput.addEventListener("change", () => {
+    const chosen = openPdfInput.files?.[0];
+    openPdfInput.value = "";
+    if (chosen) void openHeroPdf(chosen);
   });
   $("#surprise").addEventListener("click", newRandomHero);
   $("#heroes-btn").addEventListener("click", () => {

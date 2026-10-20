@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAF — post-apocalyptic heroes</title>
+</head>
+<body>
+<div id="bootmsg" class="bootmsg">Loading the builder&hellip;</div>
+<noscript><div class="bootmsg bad">This builder needs JavaScript, and it's turned off here.</div></noscript>
+<script>
+(function () {
+  var shown = false;
+  function show(msg) {
+    var b = document.getElementById("bootmsg");
+    if (!b) return;
+    b.className = "bootmsg bad";
+    b.textContent = (shown ? b.textContent + " | " : "Something went wrong starting the builder (please screenshot this): ") + msg;
+    shown = true;
+  }
+  window.addEventListener("error", function (e) { show((e.message || "error") + " [" + (e.lineno || "?") + ":" + (e.colno || "?") + "]"); });
+  window.addEventListener("unhandledrejection", function (e) { var r = e.reason; show("promise: " + (r && (r.message || r)) ); });
+  setTimeout(function () {
+    if (document.documentElement.getAttribute("data-booted") !== "1") show("the page script never finished loading.");
+    else if (!shown) { var b = document.getElementById("bootmsg"); if (b) b.remove(); }
+  }, 6000);
+})();
+</script>
+<header class="top">
+  <div class="brand"><i aria-hidden="true"></i>PAF <a class="switch" href="index.html">D&amp;D heroes</a></div>
+  <div class="actions">
+    <button type="button" id="surprise"><span aria-hidden="true">&#x1F3B2;</span> <span class="lg">Surprise me</span><span class="sm">Surprise</span></button>
+    <button type="button" id="heroes-btn"><span class="lg">My heroes</span><span class="sm">Heroes</span></button>
+    <button type="button" id="open-pdf"><span class="lg">Open PDF</span><span class="sm">Open</span></button>
+    <input id="open-pdf-file" type="file" accept="application/pdf,.pdf" class="visually-hidden" tabindex="-1" aria-hidden="true">
+    <button type="button" id="pdf"><span class="lg">Download PDF</span><span class="sm">PDF</span></button>
+  </div>
+  <nav class="tabs" aria-label="Switch view">
+    <button type="button" id="tab-build" aria-pressed="true">Build</button>
+    <button type="button" id="tab-sheet" aria-pressed="false">See the sheet</button>
+  </nav>
+  <span id="status" role="status" hidden></span>
+</header>
+<main class="layout">
+  <aside id="controls" aria-label="Build your hero"></aside>
+  <section class="previewcol" aria-label="Your sheet">
+    <div id="error" hidden></div>
+    <div id="preview"><div id="scaler"></div></div>
+  </section>
+</main>
+<footer class="sitefoot">
+  <p>PAF is original post-apocalyptic fantasy. It is not affiliated with any other game.</p>
+  <p>Hero Sheet Builder is MIT-licensed. Source: <a href="https://github.com/ggggggggg/hero-sheets">github.com/ggggggggg/hero-sheets</a>.</p>
+</footer>
+<script type="module" src="/src/paf/main.ts"></script>
+</body>
+</html>
