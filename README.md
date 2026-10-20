@@ -1,8 +1,8 @@
 # Hero Sheet Builder
 
-## ▶ Build a hero now → https://ggggggggg.github.io/hero-sheets/
+## ▶ Build a D&D 5e inspired hero → https://ggggggggg.github.io/hero-sheets/
 
-Post-apocalyptic heroes (PAF): https://ggggggggg.github.io/hero-sheets/paf.html
+Build an even simpler hero for post-apocalyptic fantasy, with Gamma World inspired origins and simplified choices → https://ggggggggg.github.io/hero-sheets/paf.html
 
 Every fresh visit rolls a brand-new random hero.
 
