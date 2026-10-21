@@ -33,6 +33,7 @@
     {
       "includes": [
         "src/content.json",
+        "src/spell-rules.json",
         "src/paf/content.json",
         "src/styles/**",
         "examples/**",

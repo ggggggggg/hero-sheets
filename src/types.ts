@@ -2,6 +2,10 @@ export const ABILITIES = ["STR", "DEX", "CON", "INT", "WIS", "CHA"] as const;
 export type Ability = (typeof ABILITIES)[number];
 export type AbilityScores = Record<Ability, number>;
 
+export function isAbility(value: string): value is Ability {
+  return (ABILITIES as readonly string[]).includes(value);
+}
+
 export interface PointBuy {
   low: number;
   costs: number[];
@@ -23,6 +27,7 @@ export interface Rules {
 export interface Skill {
   name: string;
   ability: Ability;
+  use?: string;
 }
 
 export interface SlotRow {
@@ -110,6 +115,7 @@ export interface ClassRow {
   melee_slot: number;
   look: { accent: string; tagline: string };
   gear: string[];
+  multiclass?: { all?: Ability[]; any?: Ability[] } | null;
 }
 
 export interface AutoSpell {
@@ -224,6 +230,38 @@ export interface WeaponRow {
   note: string;
 }
 
+export interface FeatGrant {
+  cantrips: number;
+  spells: number;
+}
+
+export interface Feat {
+  id: string;
+  name: string;
+  card: Card;
+  asi_pick?: Ability[];
+  hp_per_level?: number;
+  speed?: number;
+  init?: number;
+  notice?: number;
+  skills?: string[];
+  skill_picks?: number;
+  save_pick?: boolean;
+  armor_prof?: string[];
+  shield?: boolean;
+  medium_dex?: number;
+  weapon_picks?: number;
+  languages?: number;
+  need_scores?: Partial<AbilityScores>;
+  need_any?: Partial<AbilityScores>;
+  need_armor?: string[];
+  need_caster?: boolean;
+  choose?: string[];
+  grant?: FeatGrant;
+  uses?: string;
+  rest?: string;
+}
+
 export interface Tables {
   rules: Rules[];
   skills: Skill[];
@@ -239,6 +277,7 @@ export interface Tables {
   items: Item[];
   armor: ArmorRow[];
   weapons: WeaponRow[];
+  feats: Feat[];
 }
 
 export interface ChoicePick {
@@ -259,6 +298,17 @@ export interface NumberOverrides {
   notice?: number;
   spell_attack?: number;
   spell_dc?: number;
+  caster_attack?: Record<string, number>;
+  caster_dc?: Record<string, number>;
+}
+
+export interface ClassDip {
+  cls: string;
+  subclass: string | null;
+  level: number;
+  cantrips: string[] | null;
+  spells: string[] | null;
+  path_spells: string[] | null;
 }
 
 export interface HeroRequest {
@@ -277,6 +327,8 @@ export interface HeroRequest {
   armor: string | null;
   shield: boolean | null;
   weapon: string | null;
+  extra_weapons?: string[] | null;
+  extra_languages?: string[] | null;
   base_scores: AbilityScores | null;
   race_asi: AbilityScores | null;
   inventory: string[] | null;
@@ -284,6 +336,19 @@ export interface HeroRequest {
   portrait: string | null;
   portrait_credit: string | null;
   numbers: NumberOverrides | null;
+  use_feats?: boolean;
+  /** Feats on specific class boosts. When set, including [], this is the whole list. */
+  feats?: FeatAsk[] | null;
+  /** A single feat on the first class's first boost. Used only when `feats` is left unset. */
+  feat?: string | null;
+  feat_asi?: Ability | null;
+  feat_skills?: string[] | null;
+  feat_pick?: string | null;
+  feat_extra?: string[] | null;
+  use_multiclass?: boolean;
+  dip?: ClassDip | null;
+  weapon_plus?: number;
+  armor_plus?: number;
 }
 
 export interface AbilityRow {
@@ -293,6 +358,14 @@ export interface AbilityRow {
   save: number;
   save_prof: boolean;
   save_offbook?: boolean;
+  parts: SkillPart[];
+  note?: string;
+}
+
+export interface SkillPart {
+  label: string;
+  amount: number;
+  from: string;
 }
 
 export interface SkillRow {
@@ -301,6 +374,8 @@ export interface SkillRow {
   bonus: number;
   prof: boolean;
   expert: boolean;
+  parts: SkillPart[];
+  use?: string;
   offbook?: boolean;
 }
 
@@ -310,6 +385,7 @@ export interface AttackRow {
   damage: string;
   note: string;
   offbook?: boolean;
+  edit?: string;
 }
 
 export interface SpellSlot {
@@ -321,8 +397,20 @@ export interface Spellcasting {
   ability: string;
   attack: number;
   dc: number;
+  dc_base: number;
   slots: SpellSlot[];
   rest: string;
+  parts: SkillPart[];
+  attack_offbook?: boolean;
+  dc_offbook?: boolean;
+}
+
+export interface CasterLine {
+  name: string;
+  attack: number;
+  dc: number;
+  dc_base: number;
+  parts: SkillPart[];
   attack_offbook?: boolean;
   dc_offbook?: boolean;
 }
@@ -336,6 +424,34 @@ export interface SheetCard {
   uses: number | null;
   rest: string | null;
   conc: boolean;
+  edit?: string;
+  why?: string;
+}
+
+/** One feat sitting on one class's ability boost. `at` is that class's level, not the hero's. */
+export interface FeatAsk {
+  cls: string;
+  at: number;
+  id: string;
+  asi?: Ability | null;
+  skills?: string[] | null;
+  pick?: string | null;
+  extra?: string[] | null;
+}
+
+export interface FeatPick {
+  cls: string;
+  at: number;
+  id: string;
+  name: string;
+  ability: Ability | null;
+  skills: string[];
+  pick: string;
+  extra: string[];
+  warn: string;
+  armor: string[];
+  shield: boolean;
+  weapons: string[];
 }
 
 export interface Character {
@@ -348,6 +464,11 @@ export interface Character {
     accent: string;
     tagline: string;
     languages: string;
+    language_notes: { name: string; from: string }[];
+    language_slots: number;
+    second: string | null;
+    offbook: string | null;
+    main_level: number;
   };
   abilities: AbilityRow[];
   combat: {
@@ -357,11 +478,15 @@ export interface Character {
     initiative: number;
     prof: number;
     passive_perception: number;
+    notice_parts: SkillPart[];
     max_hp: number;
+    hp_parts: SkillPart[];
+    speed_parts: SkillPart[];
     hit_die: string;
     hit_dice: number;
     armor: string;
     armor_offbook: boolean;
+    dice: string | null;
     ac_offbook?: boolean;
     hp_offbook?: boolean;
     speed_offbook?: boolean;
@@ -373,9 +498,14 @@ export interface Character {
   skills: SkillRow[];
   attacks: AttackRow[];
   spellcasting: Spellcasting | null;
+  casters: CasterLine[];
+  pact: Spellcasting | null;
   cards: SheetCard[];
   inventory: string[];
   extras: { notes: string; portrait: string | null; portrait_credit: string | null };
+  /** The first feat, when there is one. The same row is `feats[0]`. */
+  feat: FeatPick | null;
+  feats: FeatPick[];
 }
 
 export interface ArmorOption {

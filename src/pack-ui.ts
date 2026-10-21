@@ -106,7 +106,7 @@ export function contentPackPanel(opts: {
     "details",
     {
       id: "content-packs",
-      class: "adv custom packs",
+      class: "adv custom",
       ontoggle: (ev) => {
         if (ev.target instanceof HTMLDetailsElement) opts.onToggle(ev.target.open);
       },

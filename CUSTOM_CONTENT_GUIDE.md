@@ -15,7 +15,7 @@ Hand back **one JSON file named `hero-custom.json`** with this shape:
 ```
 
 - It must be **strict JSON**: double quotes, no trailing commas and no comments.
-- Include only the tables you need. Allowed tables: `races`, `subraces`, `classes`, `subclasses`, `features`, `choices`, `scaling`, `spells`, `items`, `weapons`, `armor`. Optional extras: `title`, `about`, `emoji`, and `heroes` (ready-made characters, see below).
+- Include only the tables you need. Allowed tables: `races`, `subraces`, `classes`, `subclasses`, `features`, `choices`, `scaling`, `spells`, `items`, `weapons`, `armor`, `feats`. Optional extras: `title`, `about`, `emoji`, and `heroes` (ready-made characters, see below).
 - `emoji` is one mark, such as `"✦"`, shown after every name from this pack. Leave it out and the names stay plain. Built-in choices have no mark.
 - **Leave out any field you don't need.** Missing fields get the defaults listed below. Unknown fields are an error, which keeps typos from slipping in.
 - A row whose key matches an existing row **replaces** it. For example, `{"id": "dwarf", ...}` in `races` changes the built-in Dwarf. A row with a new key is **added**.
@@ -103,6 +103,7 @@ Below, the value after each field is its default. Fields marked **required** hav
 - `id` and `name` are **required**.
 - `hit_die` (default 8) is one of 6, 8, 10 or 12.
 - `primary` (default STR, DEX, CON, INT, WIS, CHA) lists all six abilities, most important first. The standard array 15/14/13/12/10/8 goes in that order, and level-up boosts go to the first ones.
+- `multiclass` is optional. It says which abilities need 13 to take the class as a second class: `{"all": ["STR", "CHA"], "any": []}` means every listed score, and `{"all": [], "any": ["STR", "DEX"]}` means one of them. Leave it out and the builder asks for 13 in the first `primary` ability. A hero can still take the class when a score is short; the sheet marks that split off book.
 - `saves` (default `[]`) are the abilities whose saving throws the class is trained in.
 - `skills` (default `[]`) are trained skills. `expertise` (default `[]`) is a list like `[{"lvl": 1, "skills": ["Stealth"]}]`, which doubles those skills from that level.
 - `armor` is unarmored defense: base 10 + DEX + the abilities listed in `add`. Default `{"base": 10, "dex_cap": 99, "add": [], "shield": 0, "worn": false}`. A barbarian-style class uses `"add": ["CON"]`.
@@ -120,8 +121,8 @@ Below, the value after each field is its default. Fields marked **required** hav
   - `kind`: `"full"` (like a wizard), `"half"` (like a paladin: spells start at level 2), `"pact"` (like a warlock: few slots that come back on a short rest, always cast at the highest level) or `"none"`;
   - `ability`: the spellcasting ability;
   - `cantrips`: 7 numbers, one for each of levels 1–7;
-  - `mode`: `"known"` uses `known`, 7 numbers for spells known; `"prepared"` uses ability mod + floor(level × `level_mult`), capped at `cap`.
-- `spell_order` and `cantrip_order` (default `[]`) list the spells a new hero starts with, in order. Every name must exist in `spells`, either built-in or in your file.
+  - `mode`: `"known"` uses `known`, one number per level. `"prepared"` uses ability mod + floor(level × `level_mult`). Through level 7 that count stays at most `cap`. Above 7 it is the formula.
+- `spell_order` and `cantrip_order` (default `[]`) are the preference lists. A new hero takes the earliest spell of each level they can cast, skipping a level an always-prepared spell already covers, then fills the rest from the front. Every name must exist in `spells`, either built-in or in your file.
 - `subclass_level` (default 3) is when the subclass (called "Path" in the builder) kicks in. `asi_levels` (default `[4]`) are the levels with a +2 ability boost. `speed_bonus` (default seven 0s) is extra speed at each of levels 1–7.
 - `look` sets the sheet's `accent` color as a hex color, and `tagline`, a one-line pitch shown under the name.
 - `gear` (default `[]`) is the inventory list. If an entry exactly matches the swappable weapon's name, it follows the swap.
@@ -210,6 +211,18 @@ Below, the value after each field is its default. Fields marked **required** hav
 - `str_req` is the Strength needed to wear it without moving 10 ft slower.
 - `default_level` is the lowest level at which the builder hands out this armor by default.
 
+### `feats` — optional picks that replace an ability boost
+```json
+{"id": "snack", "name": "Snack Time",
+ "card": {"tag": "A", "desc": "You eat a snack and feel brave. Maximum HP goes up by 1 per level."},
+ "hp_per_level": 1}
+```
+- `id` and `name` are **required**. `card.desc` is the sheet text. `card.tag` is `A`, `B`, `R`, or `ON`.
+- A feat replaces one ability boost. On a ready-made hero, `feat` fills the first boost of the first class. `feats` is a list of `{"cls": "fighter", "at": 4, "id": "alert"}` so any boost, on either class, can be a feat instead. `at` is that class's level. The player turns feats on.
+- Optional numbers: `asi_pick` (abilities that can take +1), `hp_per_level`, `speed`, `init`, `notice`, `skill_picks`, `save_pick`, `armor_prof`, `shield`, `medium_dex`, `weapon_picks`, `languages`.
+- Optional gates, still selectable off book: `need_scores`, `need_any`, `need_armor`, `need_caster`.
+- `choose` is a list of class ids or short words. `{PICK}` prints the choice. `grant` is `{"cantrips": 2, "spells": 1}` for a little magic. `uses` and `rest` add tick boxes.
+
 ### `heroes` — ready-made characters (optional)
 These show up as "Start as ..." buttons, with every pick already made.
 ```json
@@ -219,7 +232,8 @@ These show up as "Start as ..." buttons, with every pick already made.
  "notes": "Never leaves a friend behind."}
 ```
 - `name`, `race` and `cls` are **required**. Everything else is optional and falls back to the builder's usual picks.
-- Other fields you can use: `subrace`, `subclass`, `level`, `choices` (choice group → list of picks), `cantrips`, `spells`, `path_spells`, `items`, `armor`, `shield` (true/false), `weapon`, `base_scores` (before race bonus), `race_asi` (race bonus, 0–3 each), `inventory` (list of lines), `notes`, `portrait` (an image `data:` URL), `portrait_credit`.
+- Other fields you can use: `subrace`, `subclass`, `level`, `choices` (choice group → list of picks), `cantrips`, `spells`, `path_spells`, `items`, `armor`, `shield` (true/false), `weapon`, `weapon_plus` and `armor_plus` (0, 1, 2, or 3), `base_scores` (before race bonus), `race_asi` (race bonus, 0–3 each), `inventory` (list of lines), `notes`, `portrait` (an image `data:` URL), `portrait_credit`, `use_feats` (true/false), `feat` (a feat id), `feat_asi`, `feat_skills`, `feat_pick`, `feat_extra`.
+- Built-in rules go to level 20. The usual sheet stops at level 7. A hero above that still loads.
 
 ## Skill names (use exactly)
 

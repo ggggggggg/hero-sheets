@@ -12,6 +12,7 @@ export interface Tip {
   title: string;
   lines: [string | null, string][];
   picks?: TipPick[];
+  from?: string;
 }
 
 type TipFn = () => Tip | null;
@@ -31,8 +32,10 @@ export function tipChrome(): void {
   const buttons: [string, () => Tip][] = [
     ["#surprise", HELP.surprise],
     ["#heroes-btn", HELP.heroes],
+    ["#premades", HELP.premades],
     ["#open-pdf", HELP.openPdf],
     ["#pdf", HELP.downloadPdf],
+    ["#simple", HELP.simple],
     ["#tab-build", HELP.build],
     ["#tab-sheet", HELP.sheet],
   ];
@@ -40,13 +43,14 @@ export function tipChrome(): void {
     const node = document.querySelector(sel);
     if (node instanceof HTMLElement) tipNode(node, fn);
   }
-  const link = document.querySelector("header a.switch");
+  const link = document.querySelector("a.switch");
   if (link instanceof HTMLElement) tipNode(link, link.getAttribute("href")?.includes("paf") ? HELP.toPaf : HELP.toDnd);
 }
 
 export const HELP = {
   surprise: help("Surprise me", "Makes a new hero with random choices and draws a face."),
   heroes: help("My heroes", "Heroes saved in this browser. Pick one to bring it back."),
+  premades: help("Hero gallery", "Finished heroes. The whole sheet fits on the right."),
   savedHero: help("Saved hero", "Brings this hero back."),
   deleteHero: help("Delete", "Asks once, then forgets this hero. It is only stored in this browser."),
   newHero: help("New random hero", "Starts another hero and keeps this one in the list."),
@@ -59,6 +63,7 @@ export const HELP = {
     "Download PDF",
     "Saves this hero as a PDF. Open that file later on this page to get the same hero back.",
   ),
+  simple: help("Turn off optional rules", "Turns every optional rule off and rolls a new hero, like a first visit."),
   build: help("Build", "The choices. The sheet updates as you pick."),
   sheet: help("See the sheet", "The printed pages, big enough to read before you download."),
   toPaf: help("PAF", "The other builder. A simpler hero for post-apocalyptic fantasy."),
@@ -181,6 +186,7 @@ export function createTips(): {
       : null;
     card.replaceChildren(
       el("b", { class: "tt" }, tip.title),
+      ...(tip.from ? [el("p", { class: "tfrom" }, `From ${tip.from}`)] : []),
       ...(picks ? [picks] : []),
       ...tip.lines
         .filter((line) => line[1])

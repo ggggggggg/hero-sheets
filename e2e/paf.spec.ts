@@ -93,13 +93,19 @@ test("matches the D&D dice, face maker, and content packs", async ({ page }) => 
   await expect(page.locator("#content-packs")).toContainText("Lamp-saint");
   await expect(page.locator("#clear-saved")).toHaveText("Clear saved data");
   await page.locator("#content-packs").getByText("Lamp-saint", { exact: true }).click();
-  await expect(field(page, "First origin").getByRole("button", { name: "Lamp-saint 💡", exact: true })).toBeVisible();
+  const lamp = field(page, "First origin").getByRole("button", { name: "Lamp-saint 💡", exact: true });
+  await expect(lamp).toBeVisible();
+  await hoverTip(page, lamp);
+  await expect(page.locator("#tip")).toContainText("From Lamp-saint");
+  await hoverTip(page, field(page, "First origin").getByRole("button", { name: "Whisk", exact: true }));
+  await expect(page.locator("#tip")).not.toContainText("From Lamp-saint");
 });
 
 test("the two pages point at each other", async ({ page }) => {
   await page.goto("/");
   await page.waitForSelector("html[data-booted='1']");
-  await expect(page.locator("header a.switch")).toHaveAttribute("href", "paf.html");
+  await expect(page.locator("header a.switch")).toHaveCount(0);
+  await expect(page.locator("footer a.switch")).toHaveAttribute("href", "paf.html");
   await page.goto("/paf.html");
   await page.waitForSelector("html[data-booted='1']");
   await expect(page.locator("header a.switch")).toHaveAttribute("href", "index.html");

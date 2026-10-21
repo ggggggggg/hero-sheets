@@ -35,7 +35,7 @@ npm run build        # dist/index.html and dist/paf.html, each self-contained
 - `tools/webkit_check.py` is the old fit checker. The fit check that matters is `npm run e2e`.
 
 ## Rules of the house
-- Built-in content covers levels 1–7 and every hero has to fit on 2 printed pages. New stuff goes in packs.
+- Built-in rules go through level 20. A hero with no optional rules is a single class at level 7 or below and fits on 2 printed pages. Optional rules can run onto extra pages. New kinds of content go in packs.
 - Card text is kid-friendly, short and fun. No spell components or other boring rules details.
 - Never say a choice is "best". Defaults are "usually fine", and anything off the usual rules says "talk to your DM".
 - A written `any` is a lint error. Pack loading and cartoon-portrait fetches are the places that handle outside data. A throw while building the built-in rules is a bug in the repo.

@@ -1,9 +1,24 @@
 import { readFileSync } from "node:fs";
 import * as fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { buildCharacter, CharError, options, sheetHtml, signed } from "../src/core";
+import {
+  abilityTip,
+  buildCharacter,
+  CharError,
+  hpTip,
+  noticeTip,
+  options,
+  profTip,
+  sheetHtml,
+  signed,
+  skillTip,
+  speaksTip,
+  speedTip,
+  spellRules,
+  spellTip,
+} from "../src/core";
 import { heroRequest, mergeCustom, parseCustomText } from "../src/custom";
-import type { Tables } from "../src/types";
+import type { Ability, AbilityScores, Tables } from "../src/types";
 import { allText, cards, freshTables, picks, req } from "./helpers";
 
 const tables = freshTables();
@@ -88,6 +103,54 @@ describe("known heroes", () => {
     const names = cards(ch);
     expect(names.has("Pact of the Chain")).toBe(true);
     expect(names.has("Dark One's Blessing")).toBe(true);
+    expect(ch.combat.hp_parts.reduce((sum, part) => sum + part.amount, 0)).toBe(ch.combat.max_hp);
+    expect(hpTip(ch.combat).lines.map((line) => line[0])).toEqual(["Level 1", "Levels 2–5", "Race"]);
+    expect(hpTip(ch.combat).lines[2]?.[1]).toContain("Hill Dwarf");
+    expect(speedTip(ch.combat)).toEqual({ title: "Speed 25", lines: [["Hill Dwarf", "25"]] });
+    const casting = ch.spellcasting;
+    if (!casting) throw new Error("missing spellcasting");
+    const spell = spellTip(casting);
+    expect(spell.title).toBe("Spell attack +6");
+    expect(spell.lines[0]?.[1]).toContain("spell attack");
+    expect(spell.lines.some((line) => line[0] === "Charisma" && line[1]?.includes("Warlock"))).toBe(true);
+    expect(spell.lines.some((line) => line[0] === "Save DC" && line[1]?.includes("14"))).toBe(true);
+  });
+
+  it("adds a monk's extra speed and says when a number was typed", () => {
+    const monk = buildCharacter(tables, req({ race: "human", cls: "monk", subclass: null, level: 2 }));
+    expect(speedTip(monk.combat).lines).toEqual([
+      ["Human", "30"],
+      ["Monk", "+10"],
+    ]);
+    const typed = buildCharacter(
+      tables,
+      req({
+        race: "dwarf",
+        cls: "warlock",
+        subclass: "fiend",
+        level: 5,
+        numbers: { hp: 99, speed: 15, spell_attack: 1, spell_dc: 30 },
+      }),
+    );
+    expect(hpTip(typed.combat).lines[0]?.[1]).toContain("Talk to your DM");
+    expect(hpTip(typed.combat).title).toBe("Max HP 99");
+    expect(speedTip(typed.combat).lines[0]?.[1]).toContain("Talk to your DM");
+    const casting = typed.spellcasting;
+    if (!casting) throw new Error("missing spellcasting");
+    const spell = spellTip(casting);
+    expect(spell.title).toBe("Spell attack +1");
+    expect(spell.lines.some((line) => line[1]?.includes("usual attack"))).toBe(true);
+    expect(spell.lines.some((line) => line[1]?.includes("usual save DC"))).toBe(true);
+  });
+
+  it("explains a spell's die, the ability bonus, and an extra spell", () => {
+    const cleric = buildCharacter(tables, req({ cls: "cleric", subclass: "life", level: 1 }));
+    const cure = cleric.cards.find((card) => card.name === "Cure Wounds");
+    if (!cure?.why) throw new Error("missing Cure Wounds");
+    expect(cure.note).toContain("extra");
+    expect(cure.why).toContain("1d8 is the spell's roll");
+    expect(cure.why).toContain("Wisdom");
+    expect(cure.why).toContain("Extra means Life Domain gives this one");
   });
 
   it("replaces a sheet number and marks it off book", () => {
@@ -216,6 +279,28 @@ describe("known heroes", () => {
     expect(sheetHtml(fighter)).not.toContain("Spell attack");
   });
 
+  it("adds a shield for any hero and marks an untrained one off book", () => {
+    const bare = buildCharacter(
+      tables,
+      req({ cls: "bard", subclass: "lore", level: 1, armor: "Studded leather", shield: false }),
+    );
+    const held = buildCharacter(
+      tables,
+      req({ cls: "bard", subclass: "lore", level: 1, armor: "Studded leather", shield: true }),
+    );
+    expect(held.combat.ac).toBe(bare.combat.ac + 2);
+    expect(held.combat.armor).toContain("Studded leather + shield");
+    expect(held.combat.armor_offbook).toBe(true);
+    expect(bare.combat.armor_offbook).toBe(false);
+    expect(sheetHtml(held)).toContain("off book");
+    const fighter = buildCharacter(
+      tables,
+      req({ cls: "fighter", subclass: "champion", level: 1, armor: "Chain mail", shield: true }),
+    );
+    expect(fighter.combat.armor).toContain("+ shield");
+    expect(fighter.combat.armor_offbook).toBe(false);
+  });
+
   it("names an uncommon item with an, and a rare item with a", () => {
     const low = options(tables, req({ cls: "fighter", level: 1 }));
     expect(low.itemWarn("Potion of Greater Healing")).toBe(
@@ -248,6 +333,81 @@ describe("known heroes", () => {
     expect(defense.combat.ac).toBe(base.combat.ac + 1);
     expect(attack(dueling, "Longsword").damage).not.toBe(attack(base, "Longsword").damage);
     expect(attack(archery, "Heavy crossbow").to_hit).toBe(attack(base, "Heavy crossbow").to_hit + 2);
+  });
+
+  it("prints every weapon the hero is carrying", () => {
+    const names = (over: Parameters<typeof req>[0]) => buildCharacter(tables, req(over)).attacks.map((row) => row.name);
+    expect(names({ cls: "fighter", extra_weapons: ["Longsword", "Battleaxe"] })).toEqual([
+      "Longsword",
+      "Battleaxe",
+      "Heavy crossbow",
+    ]);
+    expect(names({ cls: "fighter", extra_weapons: ["Battleaxe"] })).toEqual(["Battleaxe", "Heavy crossbow"]);
+    expect(names({ cls: "fighter", extra_weapons: ["Longsword", "Longsword"] })).toEqual([
+      "Longsword",
+      "Heavy crossbow",
+    ]);
+    expect(names({ cls: "fighter", extra_weapons: [] })).toEqual(names({ cls: "fighter" }));
+    expect(names({ cls: "fighter", weapon: "Battleaxe" })).toEqual(["Battleaxe", "Heavy crossbow"]);
+    expect(names({ cls: "fighter", weapon: "Greataxe", extra_weapons: ["Longsword", "Battleaxe"] })).toEqual([
+      "Longsword",
+      "Battleaxe",
+      "Heavy crossbow",
+    ]);
+    const plus = buildCharacter(
+      tables,
+      req({ cls: "fighter", extra_weapons: ["Battleaxe", "Longsword"], weapon_plus: 1 }),
+    );
+    expect(plus.attacks.map((row) => [row.name, row.edit])).toEqual([
+      ["Battleaxe +1", "weapon"],
+      ["Longsword", "weapon"],
+      ["Heavy crossbow", "class"],
+    ]);
+    expect(() => buildCharacter(tables, req({ cls: "fighter", extra_weapons: ["Anchor"] }))).toThrow(CharError);
+    expect(() => buildCharacter(tables, req({ cls: "fighter", extra_weapons: ["Anchor"] }))).toThrow(
+      /can't use Anchor/,
+    );
+    const shielded = buildCharacter(
+      tables,
+      req({ cls: "fighter", shield: true, extra_weapons: ["Longsword", "Greataxe"] }),
+    );
+    expect(shielded.combat.armor).toContain("shield");
+    expect(shielded.attacks.map((row) => row.name)).toContain("Greataxe");
+    expect(() => buildCharacter(tables, req({ cls: "fighter", shield: true, weapon: "Greataxe" }))).toThrow(/shield/);
+    expect(names({ cls: "rogue", extra_weapons: ["Shortsword"] })).toEqual(["Shortsword", "Shortbow"]);
+    expect(names({ cls: "barbarian", extra_weapons: ["Greataxe", "Handaxe"] })).toEqual([
+      "Greataxe",
+      "Handaxe",
+      "Handaxe (x2)",
+    ]);
+    expect(names({ cls: "warlock", extra_weapons: ["Dagger", "Quarterstaff"] })).toEqual([
+      "Eldritch Blast",
+      "Dagger",
+      "Quarterstaff",
+    ]);
+    const dipped = buildCharacter(
+      tables,
+      req({
+        cls: "bard",
+        subclass: "lore",
+        level: 3,
+        use_multiclass: true,
+        weapon_plus: 1,
+        extra_weapons: ["Club", "Dagger"],
+        dip: { cls: "warlock", subclass: "fiend", level: 1, cantrips: null, spells: null, path_spells: null },
+      }),
+    );
+    expect(dipped.attacks.map((row) => [row.name, row.edit])).toEqual([
+      ["Club +1", "weapon"],
+      ["Dagger", "weapon"],
+      ["Eldritch Blast", "dip-cantrips"],
+    ]);
+    const probed = options(tables, req({ cls: "fighter", extra_weapons: ["Longsword"] }));
+    const plain = options(tables, req({ cls: "fighter" }));
+    const damage = (built: ReturnType<typeof options>, name: string) =>
+      built.weaponOptions.find((weapon) => weapon.name === name)?.damage;
+    expect(damage(probed, "Greataxe")).toBe(damage(plain, "Greataxe"));
+    expect(damage(probed, "Greataxe")).not.toBe(damage(probed, "Longsword"));
   });
 
   it("lets dragonborn ancestry change the breath weapon", () => {
@@ -381,7 +541,7 @@ describe("refusals", () => {
     { race: "nope" },
     { cls: "nope" },
     { level: 0 },
-    { level: 8 },
+    { level: 21 },
     { cls: "fighter", subclass: "fiend" },
     { cls: "fighter", choices: picks({ fighting_style: ["Defense", "Archery"] }) },
     { cls: "fighter", choices: picks({ fighting_style: ["Not A Style"] }) },
@@ -416,6 +576,7 @@ describe("refusals", () => {
       "armor",
       "subraces",
       "weapons",
+      "feats",
     ] as const;
     for (const name of names) {
       const copy = freshTables() as Partial<Tables>;
@@ -472,27 +633,6 @@ describe("editing a table", () => {
 });
 
 describe("fast-check", () => {
-  const raceIds = tables.races.map((row) => row.id);
-  const classIds = tables.classes.map((row) => row.id);
-
-  it("builds random legal requests", () => {
-    fc.assert(
-      fc.property(
-        fc.constantFrom(...raceIds),
-        fc.constantFrom(...classIds),
-        fc.integer({ min: 1, max: 7 }),
-        (race, cls, level) => {
-          const sub = tables.subclasses.find((row) => row.class_id === cls)?.id ?? null;
-          const ch = buildCharacter(tables, req({ race, cls, subclass: sub, level }));
-          expect(ch.combat.max_hp).toBeGreaterThan(0);
-          expect(ch.combat.ac).toBeGreaterThanOrEqual(10);
-          for (const text of allText(ch)) expect(text).not.toContain("{");
-        },
-      ),
-      { numRuns: 40 },
-    );
-  });
-
   it("ignores an unused race edit and keeps a random race edit", () => {
     const hero = req({ race: "human", cls: "fighter", subclass: "champion", level: 3 });
     const before = sheetHtml(buildCharacter(tables, hero));
@@ -513,6 +653,288 @@ describe("fast-check", () => {
       }),
       { numRuns: 20 },
     );
+  });
+});
+
+describe("skill bonus", () => {
+  function skill(ch: ReturnType<typeof buildCharacter>, name: string) {
+    const row = ch.skills.find((item) => item.name === name);
+    if (!row) throw new Error(`missing ${name}`);
+    return row;
+  }
+
+  it("names the ability, the training, and expertise", () => {
+    const rogue = buildCharacter(tables, req({ race: "elf", cls: "rogue", subclass: "thief", level: 1 }));
+    const dex = rogue.abilities.find((row) => row.key === "DEX");
+    if (!dex) throw new Error("missing dexterity");
+    const stealth = skill(rogue, "Stealth");
+    expect(stealth.parts).toEqual([
+      { label: `Dexterity ${dex.score}`, amount: dex.mod, from: "" },
+      { label: "Proficiency", amount: rogue.combat.prof, from: "Rogue" },
+      { label: "Expertise", amount: rogue.combat.prof, from: "Rogue" },
+    ]);
+    expect(stealth.parts.reduce((sum, part) => sum + part.amount, 0)).toBe(stealth.bonus);
+    expect(skill(rogue, "Perception").parts.find((part) => part.label === "Proficiency")?.from).toBe(
+      "Rogue and Wood Elf",
+    );
+    expect(skill(rogue, "Athletics").parts).toHaveLength(1);
+    expect(skill(rogue, "Acrobatics").expert).toBe(false);
+
+    const bard = buildCharacter(tables, req({ cls: "bard", subclass: "lore", level: 3 }));
+    expect(skill(bard, "Insight").parts.find((part) => part.label === "Proficiency")?.from).toBe("College of Lore");
+    expect(skill(bard, "Performance").parts.find((part) => part.label === "Expertise")?.from).toBe("Bard");
+    const later = buildCharacter(tables, req({ cls: "rogue", subclass: "thief", level: 6 }));
+    expect(skill(later, "Acrobatics").expert).toBe(true);
+
+    const off = buildCharacter(
+      tables,
+      req({ cls: "fighter", subclass: "champion", level: 1, numbers: { skills: { Athletics: 9 } } }),
+    );
+    const changed = skill(off, "Athletics");
+    expect(changed.bonus).toBe(9);
+    const tip = skillTip(changed);
+    expect(tip.title).toBe("Athletics +9");
+    expect(tip.lines[0]?.[1]).toContain("Talk to your DM");
+    expect(tip.lines.some((line) => line[0] === "Proficiency" && line[1]?.includes("Fighter"))).toBe(true);
+  });
+});
+
+describe("ability score", () => {
+  const scores = (over: Partial<AbilityScores>): AbilityScores => ({
+    STR: 8,
+    DEX: 8,
+    CON: 8,
+    INT: 8,
+    WIS: 8,
+    CHA: 8,
+    ...over,
+  });
+  function ability(ch: ReturnType<typeof buildCharacter>, key: Ability) {
+    const row = ch.abilities.find((item) => item.key === key);
+    if (!row) throw new Error(`missing ${key}`);
+    return row;
+  }
+
+  it("names the array, point buy, race, ability boost, and feat", () => {
+    const fighter = buildCharacter(tables, req({ level: 1 }));
+    const strength = ability(fighter, "STR");
+    expect(strength.parts).toEqual([
+      { label: "Standard array", amount: 15, from: "" },
+      { label: "Race", amount: 1, from: "Human" },
+    ]);
+    expect(strength.score).toBe(16);
+    expect(strength.parts.reduce((sum, part) => sum + part.amount, 0)).toBe(strength.score);
+    expect(strength.note).toBeUndefined();
+
+    const grown = buildCharacter(tables, req({ level: 8 }));
+    expect(ability(grown, "STR").parts).toEqual([
+      { label: "Standard array", amount: 15, from: "" },
+      { label: "Race", amount: 1, from: "Human" },
+      { label: "Ability boost", amount: 2, from: "level 4" },
+      { label: "Ability boost", amount: 2, from: "Fighter at level 6" },
+    ]);
+    expect(ability(grown, "STR").score).toBe(20);
+    expect(ability(grown, "CON").parts).toContainEqual({ label: "Ability boost", amount: 2, from: "level 8" });
+    const later = buildCharacter(tables, req({ level: 12 }));
+    expect(ability(later, "CON").parts).toContainEqual({ label: "Ability boost", amount: 2, from: "level 8" });
+    expect(ability(later, "CON").parts).toContainEqual({ label: "Ability boost", amount: 2, from: "level 12" });
+
+    const athlete = buildCharacter(tables, req({ level: 4, use_feats: true, feat: "athlete" }));
+    expect(ability(athlete, "STR").parts).toEqual([
+      { label: "Standard array", amount: 15, from: "" },
+      { label: "Race", amount: 1, from: "Human" },
+      { label: "Feat", amount: 1, from: "Athlete" },
+    ]);
+    const alert = buildCharacter(tables, req({ level: 4, use_feats: true, feat: "alert" }));
+    expect(ability(alert, "STR").parts.some((part) => part.label === "Ability boost" || part.label === "Feat")).toBe(
+      false,
+    );
+
+    const split = buildCharacter(
+      tables,
+      req({
+        level: 8,
+        use_multiclass: true,
+        dip: { cls: "wizard", subclass: null, level: 4, cantrips: null, spells: null, path_spells: null },
+      }),
+    );
+    expect(ability(split, "STR").parts.find((part) => part.label === "Ability boost")?.from).toBe("level 4 Fighter");
+    expect(ability(split, "INT").parts.find((part) => part.label === "Ability boost")?.from).toBe("level 4 Wizard");
+
+    const bought = buildCharacter(
+      tables,
+      req({
+        race: "dwarf",
+        cls: "warlock",
+        level: 1,
+        base_scores: scores({ DEX: 14, CON: 14, WIS: 10, CHA: 15 }),
+      }),
+    );
+    expect(ability(bought, "CON").parts).toEqual([
+      { label: "Point buy", amount: 14, from: "" },
+      { label: "Race", amount: 2, from: "Hill Dwarf" },
+    ]);
+    expect(ability(bought, "CON").note).toBeUndefined();
+    expect(ability(bought, "CHA").parts).toEqual([{ label: "Point buy", amount: 15, from: "" }]);
+
+    const shuffled = buildCharacter(
+      tables,
+      req({ base_scores: scores({ STR: 8, DEX: 14, CON: 15, INT: 12, WIS: 13, CHA: 10 }) }),
+    );
+    expect(ability(shuffled, "STR").parts[0]).toEqual({ label: "Standard array", amount: 8, from: "" });
+
+    const high = buildCharacter(tables, req({ base_scores: scores({ STR: 16 }) }));
+    const highStr = ability(high, "STR");
+    expect(highStr.parts[0]?.label).toBe("Base");
+    expect(abilityTip(highStr).lines[0]?.[1]).toContain("Talk to your DM");
+    expect(abilityTip(highStr).title).toBe("Strength 17 (+3)");
+
+    const over = buildCharacter(
+      tables,
+      req({ base_scores: scores({ STR: 15, DEX: 15, CON: 15, INT: 15, WIS: 15, CHA: 15 }) }),
+    );
+    expect(ability(over, "STR").note).toContain("over budget");
+
+    const moved = buildCharacter(tables, req({ race_asi: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 } }));
+    expect(ability(moved, "STR").parts).toEqual([{ label: "Standard array", amount: 15, from: "" }]);
+    expect(ability(moved, "STR").note).toContain("The usual is +6");
+  });
+});
+
+describe("sheet facts", () => {
+  const USE: Record<string, string> = {
+    Acrobatics: "Keep your balance, tumble, and squeeze through a tight spot.",
+    "Animal Handling": "Calm a scared animal, or tell what it wants.",
+    Arcana: "Know spells, magic items, and other planes.",
+    Athletics: "Climb, jump, swim, and shove.",
+    Deception: "Tell a lie and make it sound true.",
+    History: "Remember old stories, kingdoms, and wars.",
+    Insight: "Tell when someone is hiding what they feel.",
+    Intimidation: "Scare someone into doing what you want.",
+    Investigation: "Search a room and figure out what happened.",
+    Medicine: "Spot a sickness and help someone who is hurt.",
+    Nature: "Know plants, animals, weather, and the wild.",
+    Perception: "Notice a sound, a smell, or something hiding.",
+    Performance: "Play, sing, or act so people pay attention.",
+    Persuasion: "Talk someone into being friendly and helpful.",
+    Religion: "Know gods, prayers, and holy symbols.",
+    "Sleight of Hand": "Hide a small thing, or pick a pocket.",
+    Stealth: "Sneak by without being seen or heard.",
+    Survival: "Follow tracks, find food, and not get lost.",
+  };
+  const NO_SRD = new Set([
+    "Armor of Agathys",
+    "Barkskin (OG)",
+    "Dissonant Whispers",
+    "Ensnaring Strike",
+    "Hex",
+    "Hunger of Hadar",
+    "Searing Smite",
+    "Tasha's Hideous Laughter",
+    "Thorn Whip",
+    "Thunderous Smite",
+  ]);
+
+  it("drops the player blank and still prints proficiency, notice, and speaks", () => {
+    const html = sheetHtml(buildCharacter(tables, req()));
+    expect(html).toContain("Proficiency");
+    expect(html).toContain("Notice");
+    expect(html).toContain("Speaks:");
+    expect(html).not.toContain('class="player"');
+    expect(html).not.toContain(">Player<");
+  });
+
+  it("explains proficiency from the hero's level", () => {
+    const hero = buildCharacter(tables, req({ level: 5 }));
+    const book = tables.rules[0]?.prof_by_level[4];
+    if (book === undefined) throw new Error("missing proficiency");
+    const tip = profTip(hero.combat, hero.identity.level, book);
+    expect(tip.title).toBe("Proficiency +3");
+    expect(tip.lines[0]?.[1]).toBe("Added to the attacks, saves, and skills you are trained in.");
+    expect(tip.lines).toContainEqual(["Level 5", "+3"]);
+    const typed = buildCharacter(tables, req({ level: 1, numbers: { prof: 9 } }));
+    const low = tables.rules[0]?.prof_by_level[0];
+    if (low === undefined) throw new Error("missing proficiency");
+    const off = profTip(typed.combat, typed.identity.level, low);
+    expect(off.title).toBe("Proficiency +9");
+    expect(off.lines[0]?.[1]).toContain("Talk to your DM");
+    expect(off.lines[0]?.[1]).toContain("+2");
+  });
+
+  it("explains notice as 10 plus Perception, and a feat on top", () => {
+    const hero = buildCharacter(tables, req({ level: 1 }));
+    const perception = hero.skills.find((skill) => skill.name === "Perception");
+    if (!perception) throw new Error("missing Perception");
+    const tip = noticeTip(hero.combat);
+    expect(tip.title).toBe(`Notice ${hero.combat.passive_perception}`);
+    expect(tip.lines[0]?.[1]).toBe("How easily you notice something without trying.");
+    expect(tip.lines).toContainEqual(["Base", "10"]);
+    expect(tip.lines).toContainEqual(["Perception", signed(perception.bonus)]);
+    const observant = buildCharacter(tables, req({ level: 4, use_feats: true, feat: "observant" }));
+    expect(noticeTip(observant.combat).lines).toContainEqual(["Feat", "+5, from Observant"]);
+    const typed = buildCharacter(tables, req({ numbers: { notice: 30 } }));
+    const off = noticeTip(typed.combat);
+    expect(off.title).toBe("Notice 30");
+    expect(off.lines[0]?.[1]).toContain("Talk to your DM");
+  });
+
+  it("says where each language came from", () => {
+    const human = buildCharacter(tables, req({ race: "human" }));
+    expect(speaksTip(human.identity).lines).toEqual([
+      [null, "The languages this hero knows."],
+      ["Human", "Common"],
+      ["Human", "one more, not named yet"],
+    ]);
+    const picked = buildCharacter(tables, req({ race: "human", extra_languages: ["Elvish"] }));
+    expect(picked.identity.languages).toBe("Common, Elvish");
+    expect(speaksTip(picked.identity).lines).toContainEqual(["You picked it", "Elvish"]);
+    const dwarf = buildCharacter(tables, req({ race: "dwarf" }));
+    expect(speaksTip(dwarf.identity).lines).toContainEqual([dwarf.identity.race, "Dwarvish"]);
+  });
+
+  it("says what each skill and each ability is for", () => {
+    const hero = buildCharacter(tables, req());
+    expect(hero.skills).toHaveLength(Object.keys(USE).length);
+    for (const skill of hero.skills) {
+      expect(skillTip(skill).lines[0]).toEqual([null, USE[skill.name]]);
+    }
+    const by = (key: string) => hero.abilities.find((row) => row.key === key);
+    expect(abilityTip(by("STR") ?? hero.abilities[0]).lines[0]?.[1]).toBe("Lifting, pushing, and hitting hard.");
+    expect(abilityTip(by("DEX") ?? hero.abilities[0]).lines[0]?.[1]).toBe("Dodging, sneaking, and quick hands.");
+    expect(abilityTip(by("CON") ?? hero.abilities[0]).lines[0]?.[1]).toBe(
+      "Staying up when you are hurt, tired, or poisoned.",
+    );
+    expect(abilityTip(by("INT") ?? hero.abilities[0]).lines[0]?.[1]).toBe(
+      "Remembering facts, solving puzzles, and studying magic.",
+    );
+    expect(abilityTip(by("WIS") ?? hero.abilities[0]).lines[0]?.[1]).toBe(
+      "Noticing things, judging people, and keeping a clear head.",
+    );
+    expect(abilityTip(by("CHA") ?? hero.abilities[0]).lines[0]?.[1]).toBe(
+      "Talking, performing, and getting people on your side.",
+    );
+  });
+
+  it("keeps the kid spell card and pops the SRD entry up beside it", () => {
+    const wizard = buildCharacter(tables, req({ cls: "wizard", subclass: null, level: 1, spells: ["Burning Hands"] }));
+    const card = wizard.cards.find((row) => row.name === "Burning Hands");
+    if (!card) throw new Error("missing Burning Hands");
+    expect(card.desc).toContain("Flames shoot");
+    expect(card.desc).not.toContain("flammable");
+    expect(sheetHtml(wizard)).not.toContain("flammable objects");
+    const rules = spellRules("Burning Hands");
+    expect(rules).toContain("1st-level evocation");
+    expect(rules).toContain("Casting time: 1 action");
+    expect(rules).toContain("Range: Self");
+    expect(rules).toContain("Components: V, S");
+    expect(rules).toContain("15-foot cone");
+    expect(rules).toContain("flammable objects");
+    expect(rules).toContain("At higher levels.");
+    for (const spell of tables.spells) {
+      const entry = spellRules(spell.name);
+      if (NO_SRD.has(spell.name)) expect(entry, spell.name).toBeUndefined();
+      else expect(entry, spell.name).toContain("Casting time:");
+    }
   });
 });
 

@@ -1,5 +1,5 @@
 import { buildCharacter, CharError, options } from "./core";
-import { ABILITIES, type AbilityScores, type HeroRequest, type Tables } from "./types";
+import { ABILITIES, type Ability, type AbilityScores, type HeroRequest, type Tables } from "./types";
 
 export class CustomError extends Error {}
 
@@ -15,6 +15,7 @@ export const TABLE_NAMES = [
   "items",
   "armor",
   "weapons",
+  "feats",
 ] as const;
 
 export type TableName = (typeof TABLE_NAMES)[number];
@@ -58,6 +59,7 @@ export const TEMPLATES: Record<TableName, object> = {
     melee_slot: -1,
     look: { accent: "#555555", tagline: "" },
     gear: [],
+    multiclass: null,
   },
   subclasses: {
     id: null,
@@ -100,6 +102,32 @@ export const TEMPLATES: Record<TableName, object> = {
   },
   armor: { name: null, kind: "light", base: 11, dex_cap: 99, str_req: 0, default_level: 1 },
   weapons: { name: null, cat: "simple", die: "1d6", ability: "STR", hands: "one", note: "" },
+  feats: {
+    id: null,
+    name: null,
+    card: CARD,
+    asi_pick: [],
+    hp_per_level: 0,
+    speed: 0,
+    init: 0,
+    notice: 0,
+    skills: [],
+    skill_picks: 0,
+    save_pick: false,
+    armor_prof: [],
+    shield: false,
+    medium_dex: 0,
+    weapon_picks: 0,
+    languages: 0,
+    need_scores: ZERO,
+    need_any: ZERO,
+    need_armor: [],
+    need_caster: false,
+    choose: [],
+    grant: { cantrips: 0, spells: 0 },
+    uses: "",
+    rest: "",
+  },
 };
 
 const REQUIRED: Record<TableName, string[]> = {
@@ -114,6 +142,7 @@ const REQUIRED: Record<TableName, string[]> = {
   items: ["name"],
   armor: ["name"],
   weapons: ["name"],
+  feats: ["id", "name"],
 };
 
 const KEYS: Record<TableName, string[]> = {
@@ -125,6 +154,7 @@ const KEYS: Record<TableName, string[]> = {
   items: ["name"],
   armor: ["name"],
   weapons: ["name"],
+  feats: ["id"],
   features: ["owner_kind", "owner_id", "card.name"],
   choices: ["owner_kind", "owner_id", "group"],
   scaling: ["owner_kind", "owner_id", "key"],
@@ -155,6 +185,14 @@ const HERO_FIELDS = [
   "portrait",
   "portrait_credit",
   "avatar",
+  "use_feats",
+  "feat",
+  "feat_asi",
+  "feat_skills",
+  "feat_pick",
+  "feat_extra",
+  "weapon_plus",
+  "armor_plus",
 ];
 
 export type PackRow = Record<string, unknown>;
@@ -174,6 +212,7 @@ export interface PackInput {
   items?: unknown;
   armor?: unknown;
   weapons?: unknown;
+  feats?: unknown;
 }
 
 function isObj(value: unknown): value is PackRow {
@@ -341,6 +380,9 @@ function writeTable(out: Tables, name: TableName, rows: PackRow[]): void {
     case "weapons":
       out.weapons = filled as Tables["weapons"];
       break;
+    case "feats":
+      out.feats = filled as Tables["feats"];
+      break;
   }
 }
 
@@ -360,6 +402,12 @@ export function heroList(custom: PackRow): PackRow[] {
     }
     return hero;
   });
+}
+
+function abilityOf(value: unknown): Ability | null {
+  if (typeof value !== "string") return null;
+  for (const ability of ABILITIES) if (ability === value) return ability;
+  return null;
 }
 
 function strList(value: unknown): string[] | null {
@@ -400,6 +448,8 @@ export function heroRequest(hero: PackRow): HeroRequest {
     armor: hero.armor ? String(hero.armor) : null,
     shield: hero.shield == null ? null : Boolean(hero.shield),
     weapon: hero.weapon ? String(hero.weapon) : null,
+    extra_weapons: strList(hero.extra_weapons),
+    extra_languages: strList(hero.extra_languages),
     base_scores: scoresOf(hero.base_scores),
     race_asi: scoresOf(hero.race_asi),
     inventory: strList(hero.inventory),
@@ -407,6 +457,14 @@ export function heroRequest(hero: PackRow): HeroRequest {
     portrait: hero.portrait ? String(hero.portrait) : null,
     portrait_credit: hero.portrait ? (hero.portrait_credit ? String(hero.portrait_credit) : null) : null,
     numbers: null,
+    use_feats: hero.use_feats === true,
+    feat: hero.feat ? String(hero.feat) : null,
+    feat_asi: abilityOf(hero.feat_asi),
+    feat_skills: strList(hero.feat_skills),
+    feat_pick: hero.feat_pick ? String(hero.feat_pick) : null,
+    feat_extra: strList(hero.feat_extra),
+    weapon_plus: typeof hero.weapon_plus === "number" ? hero.weapon_plus : 0,
+    armor_plus: typeof hero.armor_plus === "number" ? hero.armor_plus : 0,
   };
 }
 

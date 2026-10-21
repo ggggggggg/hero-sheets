@@ -7,6 +7,9 @@ import {
   FIT_START_PX,
   type FontBox,
   fitCardFont,
+  PAGE_H,
+  PAGE_W,
+  premadeLayout,
   previewLayout,
 } from "../src/fit";
 
@@ -74,5 +77,24 @@ describe("card fit", () => {
     expect(wide.side).toBe(true);
     expect(wide.scale).toBeCloseTo(1400 / (816 * 2 + 24));
     expect(wide.height).toBeCloseTo(1056 * (1400 / (816 * 2 + 24)));
+  });
+
+  it("fits every premade page inside the pane, in a row when that is larger", () => {
+    const gap = 24;
+    const expectLayout = (width: number, height: number, pages: number, side: boolean) => {
+      const got = premadeLayout(width, height, pages);
+      const row = Math.min(width / (pages * PAGE_W + (pages - 1) * gap), height / PAGE_H);
+      const col = Math.min(width / PAGE_W, height / (pages * PAGE_H + (pages - 1) * gap));
+      expect(got.side).toBe(side);
+      expect(got.scale).toBeCloseTo(Math.min(1, side ? row : col));
+    };
+    expect(premadeLayout(0, 800, 2)).toEqual({ side: false, scale: 1 });
+    expect(premadeLayout(800, 0, 2)).toEqual({ side: false, scale: 1 });
+    expectLayout(5000, 5000, 1, false);
+    expect(premadeLayout(5000, 5000, 1).scale).toBe(1);
+    expectLayout(992, 821, 2, true);
+    expectLayout(400, 1600, 2, false);
+    expectLayout(992, 821, 3, true);
+    expect(premadeLayout(992, 821, 3).scale).toBeLessThan(premadeLayout(992, 821, 2).scale);
   });
 });
