@@ -5,7 +5,7 @@ import { contentPackPanel } from "../pack-ui";
 import { clearSavedKeys, PAF_SAVE_KEYS, refreshBundledPacks } from "../packs";
 import { ABILITY_NAME } from "../tags";
 import { escapeHtml, fileStem } from "../text";
-import { createTips, HELP, help, type Tip, tipChrome, tipNode } from "../tips";
+import { createTips, HELP, type Tip, tipChrome, tipNode } from "../tips";
 import { ABILITIES, type Ability, type AbilityScores } from "../types";
 import {
   buildCharacter,
@@ -412,6 +412,7 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
     }
     packProblems = problems;
     const nextMarks: Record<string, string> = {};
+    const nextNames: Record<string, string> = {};
     for (const pack of loadPacks()) {
       let parsed: Record<string, unknown>;
       try {
@@ -420,7 +421,7 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
         continue;
       }
       const emoji = typeof parsed.emoji === "string" ? parsed.emoji.trim() : "";
-      if (!emoji) continue;
+      const title = typeof parsed.title === "string" && parsed.title ? parsed.title : pack.title;
       for (const table of ["origins", "skills", "armor", "weapons", "flux", "relics", "capstones", "heroes"] as const) {
         const rows = parsed[table];
         if (!Array.isArray(rows)) continue;
@@ -428,18 +429,26 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
           if (typeof row !== "object" || row === null) continue;
           const record = row as Record<string, unknown>;
           const key = table === "origins" || table === "capstones" ? record.id : record.name;
-          if (typeof key === "string" && key) nextMarks[`${table}:${key}`] = emoji;
+          if (typeof key !== "string" || !key) continue;
+          nextNames[`${table}:${key}`] = title;
+          if (emoji) nextMarks[`${table}:${key}`] = emoji;
         }
       }
     }
     marks = nextMarks;
+    packNames = nextNames;
     return current;
   }
   let marks: Record<string, string> = {};
+  let packNames: Record<string, string> = {};
   let tables = withPacks();
   function marked(table: string, key: string, label: string): string {
     const emoji = marks[`${table}:${key}`];
     return emoji ? `${label} ${emoji}` : label;
+  }
+  function withPack(tip: Tip, table: string, key: string): Tip {
+    const from = packNames[`${table}:${key}`];
+    return from ? { ...tip, from } : tip;
   }
   const faces = createFaceKit({
     read: () => state,
@@ -514,7 +523,7 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
       const when = now >= level ? label : `level ${level}`;
       lines.push([`${name} (${when})`, desc]);
     }
-    return { title: origin.name, lines };
+    return withPack({ title: origin.name, lines }, "origins", id);
   }
 
   function levelTip(n: number): Tip | null {
@@ -536,10 +545,14 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
   function skillTip(name: string): Tip | null {
     const skill = tables.skills.find((row) => row.name === name);
     if (!skill) return null;
-    return {
-      title: skill.name,
-      lines: [[null, `${ABILITY_NAME[skill.ability]}. +4, and it stacks with an origin.`]],
-    };
+    return withPack(
+      {
+        title: skill.name,
+        lines: [[null, `${ABILITY_NAME[skill.ability]}. +4, and it stacks with an origin.`]],
+      },
+      "skills",
+      name,
+    );
   }
 
   function armorTip(name: string): Tip | null {
@@ -557,17 +570,23 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
       row.kind === "light"
         ? `Light, +${row.bonus}, and the better of Dexterity and Intelligence.`
         : `Heavy, +${row.bonus}. Dexterity and Intelligence do not add.`;
-    return { title: name, lines: [[null, `Armor ${ch.combat.ac}. ${how}`]] };
+    return withPack({ title: name, lines: [[null, `Armor ${ch.combat.ac}. ${how}`]] }, "armor", name);
   }
 
   function weaponTip(name: string): Tip | null {
     const row = tables.weapons.find((weapon) => weapon.name === name);
     const attack = preview({ weapon: name })?.attacks[0];
     if (!row || !attack) return null;
-    return {
-      title: row.name,
-      lines: [[null, `${attack.damage}, ${ABILITY_NAME[row.ability]}. ${row.note}. To hit ${signed(attack.to_hit)}.`]],
-    };
+    return withPack(
+      {
+        title: row.name,
+        lines: [
+          [null, `${attack.damage}, ${ABILITY_NAME[row.ability]}. ${row.note}. To hit ${signed(attack.to_hit)}.`],
+        ],
+      },
+      "weapons",
+      name,
+    );
   }
 
   function slotTip(kind: "crit" | "utility" | "expert", id: string): Tip | null {
@@ -576,7 +595,7 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
     const power = kind === "crit" ? origin.crit : kind === "utility" ? origin.utility : origin.expert;
     const level = kind === "crit" ? 2 : kind === "utility" ? 3 : 5;
     const desc = cardDesc(originSheet(id, Math.max(state.level, level)), power.name);
-    return { title: power.name, lines: [[origin.name, desc]] };
+    return withPack({ title: power.name, lines: [[origin.name, desc]] }, "origins", id);
   }
 
   function resolve(): void {
@@ -1166,7 +1185,7 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
             tables.capstones.map((item) => ({
               id: item.id,
               label: marked("capstones", item.id, item.name),
-              tip: () => ({ title: item.name, lines: [[null, item.desc]] }),
+              tip: () => withPack({ title: item.name, lines: [[null, item.desc]] }, "capstones", item.id),
             })),
             cap,
             (id) => {
@@ -1241,10 +1260,15 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
           tables.heroes.map((hero) => ({
             id: hero.name,
             label: marked("heroes", hero.name, `Start as ${hero.name}`),
-            tip: () => ({
-              title: hero.name,
-              lines: [[null, `${originName(hero.origin1)} and ${originName(hero.origin2)}, level ${hero.level}.`]],
-            }),
+            tip: () =>
+              withPack(
+                {
+                  title: hero.name,
+                  lines: [[null, `${originName(hero.origin1)} and ${originName(hero.origin2)}, level ${hero.level}.`]],
+                },
+                "heroes",
+                hero.name,
+              ),
           })),
           "",
           (name) => {
@@ -1337,7 +1361,9 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
           el(
             "p",
             { class: "pdesc" },
-            tipNode(el("b", {}, marked("flux", item.name, item.name)), help(item.name, item.desc)),
+            tipNode(el("b", {}, marked("flux", item.name, item.name)), () =>
+              withPack({ title: item.name, lines: [[null, item.desc]] }, "flux", item.name),
+            ),
             ` — ${item.desc}`,
           ),
         ),
@@ -1346,7 +1372,9 @@ export function startPaf(input: { tables: PafTables; sitePacks: PafSitePack[] })
           el(
             "p",
             { class: "pdesc" },
-            tipNode(el("b", {}, marked("relics", item.name, item.name)), help(item.name, item.desc)),
+            tipNode(el("b", {}, marked("relics", item.name, item.name)), () =>
+              withPack({ title: item.name, lines: [[null, item.desc]] }, "relics", item.name),
+            ),
             ` — ${item.desc}`,
           ),
         ),

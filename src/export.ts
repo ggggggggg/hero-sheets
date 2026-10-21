@@ -1,4 +1,4 @@
-import { fitCardFont, PAGE_H, PAGE_W } from "./fit";
+import { fitCardFont, PAGE_H, PAGE_W, spillBack } from "./fit";
 
 const PT_W = 612;
 const PT_H = 792;
@@ -122,7 +122,7 @@ function fitCards(page: Element): void {
   fitCardFont(cards);
 }
 
-function layOut(html: string): { host: HTMLDivElement; sheet: HTMLElement; pages: HTMLElement[] } {
+function layOut(html: string, spill = false): { host: HTMLDivElement; sheet: HTMLElement; pages: HTMLElement[] } {
   const host = document.createElement("div");
   host.setAttribute("aria-hidden", "true");
   host.style.cssText = `position:fixed;left:-20000px;top:0;width:${PAGE_W}px;pointer-events:none;`;
@@ -133,8 +133,12 @@ function layOut(html: string): { host: HTMLDivElement; sheet: HTMLElement; pages
     host.remove();
     throw new Error("sheet markup has no .sheet");
   }
+  if (spill) {
+    const back = host.querySelector(".page.back");
+    if (back instanceof HTMLElement) spillBack(back);
+  }
   const pages = [...host.querySelectorAll(".page")].filter((page): page is HTMLElement => page instanceof HTMLElement);
-  for (const page of pages) fitCards(page);
+  if (!spill) for (const page of pages) fitCards(page);
   return { host, sheet, pages };
 }
 
@@ -273,10 +277,10 @@ export function jpegsToPdf(images: JpegPage[], title: string, hero?: HeroFile): 
   return out;
 }
 
-export async function makePdf(html: string, title: string, hero?: HeroFile): Promise<Blob> {
+export async function makePdf(html: string, title: string, hero?: HeroFile, spill = false): Promise<Blob> {
   const css = sheetCss();
   if (document.fonts) await document.fonts.ready;
-  const { host, sheet, pages } = layOut(html);
+  const { host, sheet, pages } = layOut(html, spill);
   try {
     const images: JpegPage[] = [];
     for (const page of pages) images.push(await pageJpeg(pageSvg(sheet, page, css)));
@@ -289,9 +293,9 @@ export async function makePdf(html: string, title: string, hero?: HeroFile): Pro
   }
 }
 
-export function makeHtml(html: string, title: string): string {
+export function makeHtml(html: string, title: string, spill = false): string {
   const css = sheetCss();
-  const { host } = layOut(html);
+  const { host } = layOut(html, spill);
   const fitted = host.innerHTML;
   host.remove();
   const esc = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;");

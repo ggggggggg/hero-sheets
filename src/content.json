@@ -16,7 +16,20 @@
     2,
     3,
     3,
-    3
+    3,
+    3,
+    4,
+    4,
+    4,
+    4,
+    5,
+    5,
+    5,
+    5,
+    6,
+    6,
+    6,
+    6
    ],
    "cantrip_dice": [
     1,
@@ -25,14 +38,27 @@
     1,
     2,
     2,
-    2
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    4,
+    4,
+    4,
+    4
    ],
    "asi": {
     "amount": 2,
     "cap": 20
    },
    "dc_base": 8,
-   "max_level": 7,
+   "max_level": 20,
    "item_slots": [
     1,
     1,
@@ -40,6 +66,19 @@
     2,
     3,
     3,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
     4
    ],
    "option_floor": [
@@ -49,6 +88,19 @@
     5,
     6,
     6,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
     7
    ],
    "point_buy": {
@@ -70,74 +122,92 @@
  "skills": [
   {
    "name": "Acrobatics",
+   "use": "Keep your balance, tumble, and squeeze through a tight spot.",
    "ability": "DEX"
   },
   {
    "name": "Animal Handling",
+   "use": "Calm a scared animal, or tell what it wants.",
    "ability": "WIS"
   },
   {
    "name": "Arcana",
+   "use": "Know spells, magic items, and other planes.",
    "ability": "INT"
   },
   {
    "name": "Athletics",
+   "use": "Climb, jump, swim, and shove.",
    "ability": "STR"
   },
   {
    "name": "Deception",
+   "use": "Tell a lie and make it sound true.",
    "ability": "CHA"
   },
   {
    "name": "History",
+   "use": "Remember old stories, kingdoms, and wars.",
    "ability": "INT"
   },
   {
    "name": "Insight",
+   "use": "Tell when someone is hiding what they feel.",
    "ability": "WIS"
   },
   {
    "name": "Intimidation",
+   "use": "Scare someone into doing what you want.",
    "ability": "CHA"
   },
   {
    "name": "Investigation",
+   "use": "Search a room and figure out what happened.",
    "ability": "INT"
   },
   {
    "name": "Medicine",
+   "use": "Spot a sickness and help someone who is hurt.",
    "ability": "WIS"
   },
   {
    "name": "Nature",
+   "use": "Know plants, animals, weather, and the wild.",
    "ability": "INT"
   },
   {
    "name": "Perception",
+   "use": "Notice a sound, a smell, or something hiding.",
    "ability": "WIS"
   },
   {
    "name": "Performance",
+   "use": "Play, sing, or act so people pay attention.",
    "ability": "CHA"
   },
   {
    "name": "Persuasion",
+   "use": "Talk someone into being friendly and helpful.",
    "ability": "CHA"
   },
   {
    "name": "Religion",
+   "use": "Know gods, prayers, and holy symbols.",
    "ability": "INT"
   },
   {
    "name": "Sleight of Hand",
+   "use": "Hide a small thing, or pick a pocket.",
    "ability": "DEX"
   },
   {
    "name": "Stealth",
+   "use": "Sneak by without being seen or heard.",
    "ability": "DEX"
   },
   {
    "name": "Survival",
+   "use": "Follow tracks, find food, and not get lost.",
    "ability": "WIS"
   }
  ],
@@ -330,6 +400,485 @@
    "rest": "short"
   },
   {
+   "kind": "full",
+   "level": 8,
+   "slots": [
+    4,
+    3,
+    3,
+    2
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "full",
+   "level": 9,
+   "slots": [
+    4,
+    3,
+    3,
+    3,
+    1
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "full",
+   "level": 10,
+   "slots": [
+    4,
+    3,
+    3,
+    3,
+    2
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "full",
+   "level": 11,
+   "slots": [
+    4,
+    3,
+    3,
+    3,
+    2,
+    1
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "full",
+   "level": 12,
+   "slots": [
+    4,
+    3,
+    3,
+    3,
+    2,
+    1
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "full",
+   "level": 13,
+   "slots": [
+    4,
+    3,
+    3,
+    3,
+    2,
+    1,
+    1
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "full",
+   "level": 14,
+   "slots": [
+    4,
+    3,
+    3,
+    3,
+    2,
+    1,
+    1
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "full",
+   "level": 15,
+   "slots": [
+    4,
+    3,
+    3,
+    3,
+    2,
+    1,
+    1,
+    1
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "full",
+   "level": 16,
+   "slots": [
+    4,
+    3,
+    3,
+    3,
+    2,
+    1,
+    1,
+    1
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "full",
+   "level": 17,
+   "slots": [
+    4,
+    3,
+    3,
+    3,
+    2,
+    1,
+    1,
+    1,
+    1
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "full",
+   "level": 18,
+   "slots": [
+    4,
+    3,
+    3,
+    3,
+    3,
+    1,
+    1,
+    1,
+    1
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "full",
+   "level": 19,
+   "slots": [
+    4,
+    3,
+    3,
+    3,
+    3,
+    2,
+    1,
+    1,
+    1
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "full",
+   "level": 20,
+   "slots": [
+    4,
+    3,
+    3,
+    3,
+    3,
+    2,
+    2,
+    1,
+    1
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "half",
+   "level": 8,
+   "slots": [
+    4,
+    3
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "half",
+   "level": 9,
+   "slots": [
+    4,
+    3,
+    2
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "half",
+   "level": 10,
+   "slots": [
+    4,
+    3,
+    2
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "half",
+   "level": 11,
+   "slots": [
+    4,
+    3,
+    3
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "half",
+   "level": 12,
+   "slots": [
+    4,
+    3,
+    3
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "half",
+   "level": 13,
+   "slots": [
+    4,
+    3,
+    3,
+    1
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "half",
+   "level": 14,
+   "slots": [
+    4,
+    3,
+    3,
+    1
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "half",
+   "level": 15,
+   "slots": [
+    4,
+    3,
+    3,
+    2
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "half",
+   "level": 16,
+   "slots": [
+    4,
+    3,
+    3,
+    2
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "half",
+   "level": 17,
+   "slots": [
+    4,
+    3,
+    3,
+    3,
+    1
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "half",
+   "level": 18,
+   "slots": [
+    4,
+    3,
+    3,
+    3,
+    1
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "half",
+   "level": 19,
+   "slots": [
+    4,
+    3,
+    3,
+    3,
+    2
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "half",
+   "level": 20,
+   "slots": [
+    4,
+    3,
+    3,
+    3,
+    2
+   ],
+   "rest": "long"
+  },
+  {
+   "kind": "pact",
+   "level": 8,
+   "slots": [
+    0,
+    0,
+    0,
+    2
+   ],
+   "rest": "short"
+  },
+  {
+   "kind": "pact",
+   "level": 9,
+   "slots": [
+    0,
+    0,
+    0,
+    0,
+    2
+   ],
+   "rest": "short"
+  },
+  {
+   "kind": "pact",
+   "level": 10,
+   "slots": [
+    0,
+    0,
+    0,
+    0,
+    2
+   ],
+   "rest": "short"
+  },
+  {
+   "kind": "pact",
+   "level": 11,
+   "slots": [
+    0,
+    0,
+    0,
+    0,
+    3
+   ],
+   "rest": "short"
+  },
+  {
+   "kind": "pact",
+   "level": 12,
+   "slots": [
+    0,
+    0,
+    0,
+    0,
+    3
+   ],
+   "rest": "short"
+  },
+  {
+   "kind": "pact",
+   "level": 13,
+   "slots": [
+    0,
+    0,
+    0,
+    0,
+    3
+   ],
+   "rest": "short"
+  },
+  {
+   "kind": "pact",
+   "level": 14,
+   "slots": [
+    0,
+    0,
+    0,
+    0,
+    3
+   ],
+   "rest": "short"
+  },
+  {
+   "kind": "pact",
+   "level": 15,
+   "slots": [
+    0,
+    0,
+    0,
+    0,
+    3
+   ],
+   "rest": "short"
+  },
+  {
+   "kind": "pact",
+   "level": 16,
+   "slots": [
+    0,
+    0,
+    0,
+    0,
+    3
+   ],
+   "rest": "short"
+  },
+  {
+   "kind": "pact",
+   "level": 17,
+   "slots": [
+    0,
+    0,
+    0,
+    0,
+    4
+   ],
+   "rest": "short"
+  },
+  {
+   "kind": "pact",
+   "level": 18,
+   "slots": [
+    0,
+    0,
+    0,
+    0,
+    4
+   ],
+   "rest": "short"
+  },
+  {
+   "kind": "pact",
+   "level": 19,
+   "slots": [
+    0,
+    0,
+    0,
+    0,
+    4
+   ],
+   "rest": "short"
+  },
+  {
+   "kind": "pact",
+   "level": 20,
+   "slots": [
+    0,
+    0,
+    0,
+    0,
+    4
+   ],
+   "rest": "short"
+  },
+  {
    "kind": "none",
    "level": 1,
    "slots": [],
@@ -368,6 +917,84 @@
   {
    "kind": "none",
    "level": 7,
+   "slots": [],
+   "rest": "long"
+  },
+  {
+   "kind": "none",
+   "level": 8,
+   "slots": [],
+   "rest": "long"
+  },
+  {
+   "kind": "none",
+   "level": 9,
+   "slots": [],
+   "rest": "long"
+  },
+  {
+   "kind": "none",
+   "level": 10,
+   "slots": [],
+   "rest": "long"
+  },
+  {
+   "kind": "none",
+   "level": 11,
+   "slots": [],
+   "rest": "long"
+  },
+  {
+   "kind": "none",
+   "level": 12,
+   "slots": [],
+   "rest": "long"
+  },
+  {
+   "kind": "none",
+   "level": 13,
+   "slots": [],
+   "rest": "long"
+  },
+  {
+   "kind": "none",
+   "level": 14,
+   "slots": [],
+   "rest": "long"
+  },
+  {
+   "kind": "none",
+   "level": 15,
+   "slots": [],
+   "rest": "long"
+  },
+  {
+   "kind": "none",
+   "level": 16,
+   "slots": [],
+   "rest": "long"
+  },
+  {
+   "kind": "none",
+   "level": 17,
+   "slots": [],
+   "rest": "long"
+  },
+  {
+   "kind": "none",
+   "level": 18,
+   "slots": [],
+   "rest": "long"
+  },
+  {
+   "kind": "none",
+   "level": 19,
+   "slots": [],
+   "rest": "long"
+  },
+  {
+   "kind": "none",
+   "level": 20,
    "slots": [],
    "rest": "long"
   }
@@ -650,6 +1277,7 @@
  "classes": [
   {
    "id": "barbarian",
+   "multiclass": {"all": ["STR"], "any": []},
    "name": "Barbarian",
    "hit_die": 12,
    "primary": [
@@ -712,10 +1340,36 @@
      0,
      0,
      0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
      0
     ],
     "mode": "none",
     "known": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
      0,
      0,
      0,
@@ -731,13 +1385,30 @@
    "cantrip_order": [],
    "subclass_level": 3,
    "asi_levels": [
-    4
+    4,
+    8,
+    12,
+    16,
+    19
    ],
    "speed_bonus": [
     0,
     0,
     0,
     0,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
     10,
     10,
     10
@@ -760,6 +1431,7 @@
   },
   {
    "id": "bard",
+   "multiclass": {"all": ["CHA"], "any": []},
    "name": "Bard",
    "hit_die": 8,
    "primary": [
@@ -820,7 +1492,20 @@
      3,
      3,
      3,
-     3
+     3,
+     3,
+     3,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4
     ],
     "mode": "known",
     "known": [
@@ -830,7 +1515,20 @@
      7,
      8,
      9,
-     10
+     10,
+     11,
+     12,
+     14,
+     15,
+     15,
+     16,
+     18,
+     19,
+     19,
+     20,
+     22,
+     22,
+     22
     ],
     "level_mult": 0.0,
     "cap": 0
@@ -858,7 +1556,18 @@
     "Charm Person",
     "Feather Fall",
     "Speak with Animals",
-    "Lesser Restoration"
+    "Lesser Restoration",
+    "Greater Restoration",
+    "Mass Cure Wounds",
+    "Hold Monster",
+    "Teleport",
+    "Resurrection",
+    "Regenerate",
+    "Power Word Stun",
+    "Dominate Monster",
+    "Feeblemind",
+    "Power Word Kill",
+    "Foresight"
    ],
    "cantrip_order": [
     "Vicious Mockery",
@@ -869,9 +1578,26 @@
    ],
    "subclass_level": 3,
    "asi_levels": [
-    4
+    4,
+    8,
+    12,
+    16,
+    19
    ],
    "speed_bonus": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0,
@@ -900,6 +1626,7 @@
   },
   {
    "id": "cleric",
+   "multiclass": {"all": ["WIS"], "any": []},
    "name": "Cleric",
    "hit_die": 8,
    "primary": [
@@ -952,10 +1679,36 @@
      4,
      4,
      4,
-     4
+     4,
+     4,
+     4,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5
     ],
     "mode": "prepared",
     "known": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
      0,
      0,
      0,
@@ -986,7 +1739,24 @@
     "Lesser Restoration",
     "Silence",
     "Detect Magic",
-    "Guardian of Faith"
+    "Guardian of Faith",
+    "Flame Strike",
+    "Greater Restoration",
+    "Mass Cure Wounds",
+    "Insect Plague",
+    "Heal",
+    "Heroes' Feast",
+    "Harm",
+    "Fire Storm",
+    "Resurrection",
+    "Plane Shift",
+    "Regenerate",
+    "Earthquake",
+    "Holy Aura",
+    "Antimagic Field",
+    "True Resurrection",
+    "Gate",
+    "Mass Heal"
    ],
    "cantrip_order": [
     "Sacred Flame",
@@ -997,9 +1767,26 @@
    ],
    "subclass_level": 1,
    "asi_levels": [
-    4
+    4,
+    8,
+    12,
+    16,
+    19
    ],
    "speed_bonus": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0,
@@ -1024,6 +1811,7 @@
   },
   {
    "id": "druid",
+   "multiclass": {"all": ["WIS"], "any": []},
    "name": "Druid",
    "hit_die": 8,
    "primary": [
@@ -1076,10 +1864,36 @@
      3,
      3,
      3,
-     3
+     3,
+     3,
+     3,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4
     ],
     "mode": "prepared",
     "known": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
      0,
      0,
      0,
@@ -1112,7 +1926,22 @@
     "Lesser Restoration",
     "Dispel Magic",
     "Wall of Fire",
-    "Hold Person"
+    "Hold Person",
+    "Greater Restoration",
+    "Mass Cure Wounds",
+    "Insect Plague",
+    "Heal",
+    "Sunbeam",
+    "Heroes' Feast",
+    "Fire Storm",
+    "Plane Shift",
+    "Regenerate",
+    "Earthquake",
+    "Sunburst",
+    "Feeblemind",
+    "True Resurrection",
+    "Foresight",
+    "Storm of Vengeance"
    ],
    "cantrip_order": [
     "Produce Flame",
@@ -1123,9 +1952,26 @@
    ],
    "subclass_level": 2,
    "asi_levels": [
-    4
+    4,
+    8,
+    12,
+    16,
+    19
    ],
    "speed_bonus": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0,
@@ -1157,6 +2003,7 @@
   },
   {
    "id": "fighter",
+   "multiclass": {"all": [], "any": ["STR", "DEX"]},
    "name": "Fighter",
    "hit_die": 10,
    "primary": [
@@ -1218,10 +2065,36 @@
      0,
      0,
      0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
      0
     ],
     "mode": "none",
     "known": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
      0,
      0,
      0,
@@ -1238,9 +2111,27 @@
    "subclass_level": 3,
    "asi_levels": [
     4,
-    6
+    6,
+    8,
+    12,
+    14,
+    16,
+    19
    ],
    "speed_bonus": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0,
@@ -1266,6 +2157,7 @@
   },
   {
    "id": "monk",
+   "multiclass": {"all": ["DEX", "WIS"], "any": []},
    "name": "Monk",
    "hit_die": 8,
    "primary": [
@@ -1333,10 +2225,36 @@
      0,
      0,
      0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
      0
     ],
     "mode": "none",
     "known": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
      0,
      0,
      0,
@@ -1352,7 +2270,11 @@
    "cantrip_order": [],
    "subclass_level": 3,
    "asi_levels": [
-    4
+    4,
+    8,
+    12,
+    16,
+    19
    ],
    "speed_bonus": [
     0,
@@ -1361,7 +2283,20 @@
     10,
     10,
     15,
-    15
+    15,
+    15,
+    15,
+    20,
+    20,
+    20,
+    20,
+    25,
+    25,
+    25,
+    25,
+    30,
+    30,
+    30
    ],
    "weapon_prof": [
     "simple",
@@ -1380,6 +2315,7 @@
   },
   {
    "id": "paladin",
+   "multiclass": {"all": ["STR", "CHA"], "any": []},
    "name": "Paladin",
    "hit_die": 10,
    "primary": [
@@ -1441,10 +2377,36 @@
      0,
      0,
      0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
      0
     ],
     "mode": "prepared",
     "known": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
      0,
      0,
      0,
@@ -1473,9 +2435,26 @@
    "cantrip_order": [],
    "subclass_level": 3,
    "asi_levels": [
-    4
+    4,
+    8,
+    12,
+    16,
+    19
    ],
    "speed_bonus": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0,
@@ -1501,6 +2480,7 @@
   },
   {
    "id": "ranger",
+   "multiclass": {"all": ["DEX", "WIS"], "any": []},
    "name": "Ranger",
    "hit_die": 10,
    "primary": [
@@ -1562,6 +2542,19 @@
      0,
      0,
      0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
      0
     ],
     "mode": "known",
@@ -1572,7 +2565,20 @@
      3,
      4,
      4,
-     5
+     5,
+     5,
+     6,
+     6,
+     7,
+     7,
+     8,
+     8,
+     9,
+     9,
+     10,
+     10,
+     11,
+     11
     ],
     "level_mult": 0.0,
     "cap": 0
@@ -1594,9 +2600,26 @@
    "cantrip_order": [],
    "subclass_level": 3,
    "asi_levels": [
-    4
+    4,
+    8,
+    12,
+    16,
+    19
    ],
    "speed_bonus": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0,
@@ -1622,6 +2645,7 @@
   },
   {
    "id": "rogue",
+   "multiclass": {"all": ["DEX"], "any": []},
    "name": "Rogue",
    "hit_die": 8,
    "primary": [
@@ -1698,10 +2722,36 @@
      0,
      0,
      0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
      0
     ],
     "mode": "none",
     "known": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
      0,
      0,
      0,
@@ -1717,9 +2767,27 @@
    "cantrip_order": [],
    "subclass_level": 3,
    "asi_levels": [
-    4
+    4,
+    8,
+    10,
+    12,
+    16,
+    19
    ],
    "speed_bonus": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0,
@@ -1749,6 +2817,7 @@
   },
   {
    "id": "sorcerer",
+   "multiclass": {"all": ["CHA"], "any": []},
    "name": "Sorcerer",
    "hit_die": 6,
    "primary": [
@@ -1806,7 +2875,20 @@
      5,
      5,
      5,
-     5
+     5,
+     5,
+     5,
+     6,
+     6,
+     6,
+     6,
+     6,
+     6,
+     6,
+     6,
+     6,
+     6,
+     6
     ],
     "mode": "known",
     "known": [
@@ -1816,7 +2898,20 @@
      5,
      6,
      7,
-     8
+     8,
+     9,
+     10,
+     11,
+     12,
+     12,
+     13,
+     13,
+     14,
+     14,
+     15,
+     15,
+     15,
+     15
     ],
     "level_mult": 0.0,
     "cap": 0
@@ -1842,7 +2937,30 @@
     "Dimension Door",
     "Banishment",
     "Ice Storm",
-    "Wall of Fire"
+    "Wall of Fire",
+    "Cone of Cold",
+    "Hold Monster",
+    "Insect Plague",
+    "Cloudkill",
+    "Chain Lightning",
+    "Disintegrate",
+    "Sunbeam",
+    "Circle of Death",
+    "Fire Storm",
+    "Teleport",
+    "Finger of Death",
+    "Prismatic Spray",
+    "Plane Shift",
+    "Earthquake",
+    "Sunburst",
+    "Incendiary Cloud",
+    "Power Word Stun",
+    "Dominate Monster",
+    "Wish",
+    "Meteor Swarm",
+    "Power Word Kill",
+    "Gate",
+    "Time Stop"
    ],
    "cantrip_order": [
     "Fire Bolt",
@@ -1856,9 +2974,26 @@
    ],
    "subclass_level": 1,
    "asi_levels": [
-    4
+    4,
+    8,
+    12,
+    16,
+    19
    ],
    "speed_bonus": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0,
@@ -1884,6 +3019,7 @@
   },
   {
    "id": "warlock",
+   "multiclass": {"all": ["CHA"], "any": []},
    "name": "Warlock",
    "hit_die": 8,
    "primary": [
@@ -1943,7 +3079,20 @@
      3,
      3,
      3,
-     3
+     3,
+     3,
+     3,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4
     ],
     "mode": "known",
     "known": [
@@ -1953,7 +3102,20 @@
      5,
      6,
      7,
-     8
+     8,
+     9,
+     10,
+     10,
+     11,
+     11,
+     12,
+     12,
+     13,
+     13,
+     14,
+     14,
+     15,
+     15
     ],
     "level_mult": 0.0,
     "cap": 0
@@ -1975,7 +3137,16 @@
     "Darkness",
     "Suggestion",
     "Charm Person",
-    "Hypnotic Pattern"
+    "Hypnotic Pattern",
+    "Hold Monster",
+    "Circle of Death",
+    "Finger of Death",
+    "Plane Shift",
+    "Power Word Stun",
+    "Dominate Monster",
+    "Feeblemind",
+    "Power Word Kill",
+    "Foresight"
    ],
    "cantrip_order": [
     "Eldritch Blast",
@@ -1986,9 +3157,26 @@
    ],
    "subclass_level": 1,
    "asi_levels": [
-    4
+    4,
+    8,
+    12,
+    16,
+    19
    ],
    "speed_bonus": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0,
@@ -2013,6 +3201,7 @@
   },
   {
    "id": "wizard",
+   "multiclass": {"all": ["INT"], "any": []},
    "name": "Wizard",
    "hit_die": 6,
    "primary": [
@@ -2070,10 +3259,36 @@
      4,
      4,
      4,
-     4
+     4,
+     4,
+     4,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5
     ],
     "mode": "prepared",
     "known": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
      0,
      0,
      0,
@@ -2109,7 +3324,31 @@
     "Ice Storm",
     "Wall of Fire",
     "Feather Fall",
-    "Tasha's Hideous Laughter"
+    "Tasha's Hideous Laughter",
+    "Cone of Cold",
+    "Wall of Force",
+    "Hold Monster",
+    "Cloudkill",
+    "Chain Lightning",
+    "Disintegrate",
+    "Sunbeam",
+    "Circle of Death",
+    "Teleport",
+    "Finger of Death",
+    "Prismatic Spray",
+    "Plane Shift",
+    "Sunburst",
+    "Incendiary Cloud",
+    "Power Word Stun",
+    "Dominate Monster",
+    "Feeblemind",
+    "Antimagic Field",
+    "Wish",
+    "Meteor Swarm",
+    "Power Word Kill",
+    "Foresight",
+    "Gate",
+    "Time Stop"
    ],
    "cantrip_order": [
     "Fire Bolt",
@@ -2123,9 +3362,26 @@
    ],
    "subclass_level": 2,
    "asi_levels": [
-    4
+    4,
+    8,
+    12,
+    16,
+    19
    ],
    "speed_bonus": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0,
@@ -2577,7 +3833,20 @@
     "3",
     "3",
     "4",
-    "4"
+    "4",
+    "4",
+    "4",
+    "4",
+    "4",
+    "5",
+    "5",
+    "5",
+    "5",
+    "5",
+    "6",
+    "6",
+    "6",
+    "unlimited"
    ]
   },
   {
@@ -2591,7 +3860,20 @@
     "2",
     "2",
     "2",
-    "2"
+    "2",
+    "2",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "4",
+    "4",
+    "4",
+    "4",
+    "4"
    ]
   },
   {
@@ -2605,7 +3887,20 @@
     "d6",
     "d8",
     "d8",
-    "d8"
+    "d8",
+    "d8",
+    "d8",
+    "d10",
+    "d10",
+    "d10",
+    "d10",
+    "d10",
+    "d12",
+    "d12",
+    "d12",
+    "d12",
+    "d12",
+    "d12"
    ]
   },
   {
@@ -2617,6 +3912,19 @@
     "long",
     "long",
     "long",
+    "short",
+    "short",
+    "short",
+    "short",
+    "short",
+    "short",
+    "short",
+    "short",
+    "short",
+    "short",
+    "short",
+    "short",
+    "short",
     "short",
     "short",
     "short"
@@ -2633,7 +3941,20 @@
     "1",
     "1",
     "2",
-    "2"
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "3",
+    "3",
+    "3"
    ]
   },
   {
@@ -2647,7 +3968,20 @@
     "20",
     "25",
     "30",
-    "35"
+    "35",
+    "40",
+    "45",
+    "50",
+    "55",
+    "60",
+    "65",
+    "70",
+    "75",
+    "80",
+    "85",
+    "90",
+    "95",
+    "100"
    ]
   },
   {
@@ -2661,7 +3995,20 @@
     "1/2 (no flying)",
     "1/2 (no flying)",
     "1/2 (no flying)",
-    "1/2 (no flying)"
+    "1/2 (no flying)",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1"
    ]
   },
   {
@@ -2675,7 +4022,20 @@
     "2",
     "2",
     "3",
-    "3"
+    "3",
+    "4",
+    "4",
+    "5",
+    "5",
+    "6",
+    "6",
+    "7",
+    "7",
+    "8",
+    "8",
+    "9",
+    "9",
+    "10"
    ]
   },
   {
@@ -2689,7 +4049,20 @@
     "4",
     "4",
     "4",
-    "5"
+    "5",
+    "5",
+    "5",
+    "5",
+    "5",
+    "5",
+    "5",
+    "5",
+    "6",
+    "6",
+    "6",
+    "6",
+    "6",
+    "6"
    ]
   },
   {
@@ -2703,7 +4076,20 @@
     "1d4",
     "1d6",
     "1d6",
-    "1d6"
+    "1d6",
+    "1d6",
+    "1d6",
+    "1d6",
+    "1d8",
+    "1d8",
+    "1d8",
+    "1d8",
+    "1d8",
+    "1d8",
+    "1d10",
+    "1d10",
+    "1d10",
+    "1d10"
    ]
   },
   {
@@ -2717,7 +4103,20 @@
     "4",
     "5",
     "6",
-    "7"
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20"
    ]
   },
   {
@@ -2731,7 +4130,20 @@
     "20",
     "25",
     "30",
-    "35"
+    "35",
+    "40",
+    "45",
+    "50",
+    "55",
+    "60",
+    "65",
+    "70",
+    "75",
+    "80",
+    "85",
+    "90",
+    "95",
+    "100"
    ]
   },
   {
@@ -2745,7 +4157,20 @@
     "12",
     "15",
     "18",
-    "21"
+    "21",
+    "24",
+    "27",
+    "30",
+    "33",
+    "36",
+    "39",
+    "42",
+    "45",
+    "48",
+    "51",
+    "54",
+    "57",
+    "60"
    ]
   },
   {
@@ -2759,7 +4184,20 @@
     "20",
     "25",
     "30",
-    "35"
+    "35",
+    "40",
+    "45",
+    "50",
+    "55",
+    "60",
+    "65",
+    "70",
+    "75",
+    "80",
+    "85",
+    "90",
+    "95",
+    "100"
    ]
   },
   {
@@ -2773,7 +4211,20 @@
     "2",
     "3",
     "3",
-    "4"
+    "4",
+    "4",
+    "5",
+    "5",
+    "6",
+    "6",
+    "7",
+    "7",
+    "8",
+    "8",
+    "9",
+    "9",
+    "10",
+    "10"
    ]
   },
   {
@@ -2787,7 +4238,20 @@
     "4",
     "5",
     "6",
-    "7"
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20"
    ]
   },
   {
@@ -2801,7 +4265,20 @@
     "1 beam",
     "2 beams",
     "2 beams",
-    "2 beams"
+    "2 beams",
+    "2 beams",
+    "2 beams",
+    "2 beams",
+    "3 beams",
+    "3 beams",
+    "3 beams",
+    "3 beams",
+    "3 beams",
+    "3 beams",
+    "4 beams",
+    "4 beams",
+    "4 beams",
+    "4 beams"
    ]
   },
   {
@@ -2809,6 +4286,19 @@
    "owner_id": "warlock",
    "key": "EBADD",
    "values": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
     "",
     "",
     "",
@@ -2829,7 +4319,20 @@
     "2",
     "3",
     "3",
-    "4"
+    "4",
+    "4",
+    "5",
+    "5",
+    "6",
+    "6",
+    "7",
+    "7",
+    "8",
+    "8",
+    "9",
+    "9",
+    "10",
+    "10"
    ]
   },
   {
@@ -2843,7 +4346,20 @@
     "2",
     "3",
     "3",
-    "4"
+    "4",
+    "4",
+    "5",
+    "5",
+    "6",
+    "6",
+    "7",
+    "7",
+    "8",
+    "8",
+    "9",
+    "9",
+    "10",
+    "10"
    ]
   },
   {
@@ -2857,7 +4373,20 @@
     "1",
     "1",
     "2",
-    "2"
+    "2",
+    "2",
+    "3",
+    "3",
+    "3",
+    "4",
+    "4",
+    "4",
+    "5",
+    "5",
+    "5",
+    "6",
+    "6",
+    "6"
    ]
   },
   {
@@ -2871,7 +4400,20 @@
     "2",
     "2",
     "3",
-    "3"
+    "3",
+    "3",
+    "3",
+    "3",
+    "4",
+    "4",
+    "4",
+    "4",
+    "4",
+    "5",
+    "5",
+    "5",
+    "5",
+    "5"
    ]
   },
   {
@@ -2879,6 +4421,19 @@
    "owner_id": "dragonborn",
    "key": "DBTYPE",
    "values": [
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
     "fire",
     "fire",
     "fire",
@@ -2899,6 +4454,19 @@
     "15-ft cone",
     "15-ft cone",
     "15-ft cone",
+    "15-ft cone",
+    "15-ft cone",
+    "15-ft cone",
+    "15-ft cone",
+    "15-ft cone",
+    "15-ft cone",
+    "15-ft cone",
+    "15-ft cone",
+    "15-ft cone",
+    "15-ft cone",
+    "15-ft cone",
+    "15-ft cone",
+    "15-ft cone",
     "15-ft cone"
    ]
   },
@@ -2907,6 +4475,19 @@
    "owner_id": "dragonborn",
    "key": "DBSAVE",
    "values": [
+    "Dex",
+    "Dex",
+    "Dex",
+    "Dex",
+    "Dex",
+    "Dex",
+    "Dex",
+    "Dex",
+    "Dex",
+    "Dex",
+    "Dex",
+    "Dex",
+    "Dex",
     "Dex",
     "Dex",
     "Dex",
@@ -2927,7 +4508,317 @@
     "fire",
     "fire",
     "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
+    "fire",
     "fire"
+   ]
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "barbarian",
+   "key": "ATK",
+   "values": [
+    "1",
+    "1",
+    "1",
+    "1",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2"
+   ]
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "monk",
+   "key": "ATK",
+   "values": [
+    "1",
+    "1",
+    "1",
+    "1",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2"
+   ]
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "paladin",
+   "key": "ATK",
+   "values": [
+    "1",
+    "1",
+    "1",
+    "1",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2"
+   ]
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "ranger",
+   "key": "ATK",
+   "values": [
+    "1",
+    "1",
+    "1",
+    "1",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2"
+   ]
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "fighter",
+   "key": "ATK",
+   "values": [
+    "1",
+    "1",
+    "1",
+    "1",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "4"
+   ]
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "bard",
+   "key": "SONG",
+   "values": [
+    "1d6",
+    "1d6",
+    "1d6",
+    "1d6",
+    "1d6",
+    "1d6",
+    "1d6",
+    "1d6",
+    "1d8",
+    "1d8",
+    "1d8",
+    "1d8",
+    "1d10",
+    "1d10",
+    "1d10",
+    "1d10",
+    "1d12",
+    "1d12",
+    "1d12",
+    "1d12"
+   ]
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "paladin",
+   "key": "AURA",
+   "values": [
+    "10",
+    "10",
+    "10",
+    "10",
+    "10",
+    "10",
+    "10",
+    "10",
+    "10",
+    "10",
+    "10",
+    "10",
+    "10",
+    "10",
+    "10",
+    "10",
+    "10",
+    "30",
+    "30",
+    "30"
+   ]
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "fighter",
+   "key": "INDOM",
+   "values": [
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "1",
+    "1",
+    "1",
+    "1",
+    "2",
+    "2",
+    "2",
+    "2",
+    "3",
+    "3",
+    "3",
+    "3"
+   ]
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "fighter",
+   "key": "SURGE",
+   "values": [
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "2",
+    "2",
+    "2",
+    "2"
+   ]
+  },
+  {
+   "owner_kind": "subclass",
+   "owner_id": "battlemaster",
+   "key": "SUPDIE",
+   "values": [
+    "d8",
+    "d8",
+    "d8",
+    "d8",
+    "d8",
+    "d8",
+    "d8",
+    "d8",
+    "d8",
+    "d10",
+    "d10",
+    "d10",
+    "d10",
+    "d10",
+    "d10",
+    "d10",
+    "d10",
+    "d12",
+    "d12",
+    "d12"
+   ]
+  },
+  {
+   "owner_kind": "subclass",
+   "owner_id": "valor",
+   "key": "ATK",
+   "values": [
+    "1",
+    "1",
+    "1",
+    "1",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2"
    ]
   }
  ],
@@ -3420,7 +5311,7 @@
     "name": "Extra Attack",
     "tag": "ON",
     "note": "",
-    "desc": "When you take the Attack action, you attack 2 times!",
+    "desc": "When you take the Attack action, you attack {ATK} times!",
     "conc": false
    },
    "tracker": {
@@ -3436,7 +5327,7 @@
     "name": "Extra Attack",
     "tag": "ON",
     "note": "",
-    "desc": "When you take the Attack action, you attack 2 times!",
+    "desc": "When you take the Attack action, you attack {ATK} times!",
     "conc": false
    },
    "tracker": {
@@ -3452,7 +5343,7 @@
     "name": "Extra Attack",
     "tag": "ON",
     "note": "",
-    "desc": "When you take the Attack action, you attack 2 times!",
+    "desc": "When you take the Attack action, you attack {ATK} times!",
     "conc": false
    },
    "tracker": {
@@ -3468,7 +5359,7 @@
     "name": "Extra Attack",
     "tag": "ON",
     "note": "",
-    "desc": "When you take the Attack action, you attack 2 times!",
+    "desc": "When you take the Attack action, you attack {ATK} times!",
     "conc": false
    },
    "tracker": {
@@ -3484,7 +5375,7 @@
     "name": "Extra Attack",
     "tag": "ON",
     "note": "",
-    "desc": "When you take the Attack action, you attack 2 times!",
+    "desc": "When you take the Attack action, you attack {ATK} times!",
     "conc": false
    },
    "tracker": {
@@ -3660,7 +5551,7 @@
     "name": "Song of Rest",
     "tag": "ON",
     "note": "",
-    "desc": "Friends who heal during a short rest get +1d6 extra HP.",
+    "desc": "Friends who heal during a short rest get +{SONG} extra HP.",
     "conc": false
    },
    "tracker": {
@@ -3756,7 +5647,7 @@
     "name": "Extra Attack",
     "tag": "ON",
     "note": "",
-    "desc": "When you take the Attack action, you attack 2 times!",
+    "desc": "When you take the Attack action, you attack {ATK} times!",
     "conc": false
    },
    "tracker": {
@@ -4048,7 +5939,7 @@
     "conc": false
    },
    "tracker": {
-    "uses": "1",
+    "uses": "{SURGE}",
     "rest": "short"
    }
   },
@@ -4092,7 +5983,7 @@
     "name": "Superiority Dice",
     "tag": "F",
     "note": "",
-    "desc": "Spend a d8 to pull off a maneuver. Enemies save against DC {MANDC}.",
+    "desc": "Spend a {SUPDIE} to pull off a maneuver. Enemies save against DC {MANDC}.",
     "conc": false
    },
    "tracker": {
@@ -4444,7 +6335,7 @@
     "name": "Aura of Protection",
     "tag": "ON",
     "note": "",
-    "desc": "You and friends within 10 ft add {CHA} to every saving throw!",
+    "desc": "You and friends within {AURA} ft add {CHA} to every saving throw!",
     "conc": false
    },
    "tracker": {
@@ -5011,6 +6902,486 @@
     "uses": "",
     "rest": ""
    }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "barbarian",
+   "lvl": 9,
+   "card": {
+    "name": "Brutal Critical",
+    "tag": "ON",
+    "note": "",
+    "desc": "A critical hit with a melee weapon deals one extra damage die. Even more at higher levels.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "barbarian",
+   "lvl": 11,
+   "card": {
+    "name": "Relentless Rage",
+    "tag": "ON",
+    "note": "",
+    "desc": "If rage would drop you to 0 HP, make a Con save (DC 10) to stay at 1 HP. The DC goes up each time.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "barbarian",
+   "lvl": 15,
+   "card": {
+    "name": "Persistent Rage",
+    "tag": "ON",
+    "note": "",
+    "desc": "Your rage keeps going until time runs out, unless you stop it or fall unconscious.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "fighter",
+   "lvl": 9,
+   "card": {
+    "name": "Indomitable",
+    "tag": "R",
+    "note": "",
+    "desc": "Reroll a saving throw you failed. You must use the new roll.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "{INDOM}",
+    "rest": "long"
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "fighter",
+   "lvl": 17,
+   "card": {
+    "name": "Action Surge Twice",
+    "tag": "F",
+    "note": "",
+    "desc": "You can take that extra action twice between rests.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "monk",
+   "lvl": 10,
+   "card": {
+    "name": "Purity of Body",
+    "tag": "ON",
+    "note": "",
+    "desc": "You can't be poisoned or get sick.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "monk",
+   "lvl": 14,
+   "card": {
+    "name": "Diamond Soul",
+    "tag": "R",
+    "note": "",
+    "desc": "You are trained in every saving throw, and you can reroll a failed save by spending 1 ki.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "monk",
+   "lvl": 18,
+   "card": {
+    "name": "Empty Body",
+    "tag": "A",
+    "note": "",
+    "desc": "4 ki: turn invisible for 1 minute, and you resist all damage except force.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "paladin",
+   "lvl": 10,
+   "card": {
+    "name": "Aura of Courage",
+    "tag": "ON",
+    "note": "",
+    "desc": "You and friends within 10 ft can't be frightened.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "paladin",
+   "lvl": 14,
+   "card": {
+    "name": "Cleansing Touch",
+    "tag": "A",
+    "note": "",
+    "desc": "End a spell on yourself or a friend you touch.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "ranger",
+   "lvl": 8,
+   "card": {
+    "name": "Land's Stride",
+    "tag": "ON",
+    "note": "",
+    "desc": "Brush, plants, and magical plants don't slow you down.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "ranger",
+   "lvl": 10,
+   "card": {
+    "name": "Hide in Plain Sight",
+    "tag": "A",
+    "note": "",
+    "desc": "Spend a minute camouflaging yourself, then hide even while someone is watching.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "ranger",
+   "lvl": 14,
+   "card": {
+    "name": "Vanish",
+    "tag": "B",
+    "note": "",
+    "desc": "Hide as a bonus action, and you can't be tracked by nonmagical means.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "ranger",
+   "lvl": 18,
+   "card": {
+    "name": "Feral Senses",
+    "tag": "ON",
+    "note": "",
+    "desc": "You know where an invisible creature within 30 ft is, if it isn't behind total cover.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "ranger",
+   "lvl": 20,
+   "card": {
+    "name": "Foe Slayer",
+    "tag": "ON",
+    "note": "",
+    "desc": "Once on each of your turns, add Wisdom to the attack or damage of one weapon hit.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "rogue",
+   "lvl": 11,
+   "card": {
+    "name": "Reliable Talent",
+    "tag": "ON",
+    "note": "",
+    "desc": "When you are trained in a check, a roll of 9 or less counts as a 10.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "rogue",
+   "lvl": 14,
+   "card": {
+    "name": "Blindsense",
+    "tag": "ON",
+    "note": "",
+    "desc": "You know where a hidden or invisible creature within 10 ft is, if you can hear.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "rogue",
+   "lvl": 15,
+   "card": {
+    "name": "Slippery Mind",
+    "tag": "ON",
+    "note": "",
+    "desc": "You are trained in Wisdom saving throws.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "rogue",
+   "lvl": 18,
+   "card": {
+    "name": "Elusive",
+    "tag": "ON",
+    "note": "",
+    "desc": "No attack has advantage against you unless you are incapacitated.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "rogue",
+   "lvl": 20,
+   "card": {
+    "name": "Stroke of Luck",
+    "tag": "F",
+    "note": "",
+    "desc": "Turn a miss into a hit, or turn a failed ability check into a 20.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "1",
+    "rest": "short"
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "bard",
+   "lvl": 10,
+   "card": {
+    "name": "Magical Secrets",
+    "tag": "ON",
+    "note": "",
+    "desc": "Learn two spells from any class (and more at levels 14 and 18).",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "bard",
+   "lvl": 20,
+   "card": {
+    "name": "Superior Inspiration",
+    "tag": "ON",
+    "note": "",
+    "desc": "If you roll initiative with no Bardic Inspiration left, you get one back.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "cleric",
+   "lvl": 10,
+   "card": {
+    "name": "Divine Intervention",
+    "tag": "A",
+    "note": "",
+    "desc": "Ask your deity for help. The chance is your cleric level out of 100. It always works at level 20.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "1",
+    "rest": "long"
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "druid",
+   "lvl": 18,
+   "card": {
+    "name": "Beast Spells",
+    "tag": "ON",
+    "note": "",
+    "desc": "You can cast spells in beast shape, even ones that need words or hands.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "druid",
+   "lvl": 20,
+   "card": {
+    "name": "Archdruid",
+    "tag": "ON",
+    "note": "",
+    "desc": "Wild Shape uses no charges, and your spells ignore verbal, somatic, and free material needs.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "sorcerer",
+   "lvl": 20,
+   "card": {
+    "name": "Sorcerous Restoration",
+    "tag": "ON",
+    "note": "",
+    "desc": "When you finish a short rest, regain 4 sorcery points.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "warlock",
+   "lvl": 11,
+   "card": {
+    "name": "Mystic Arcanum",
+    "tag": "A",
+    "note": "",
+    "desc": "You learn a 6th-level spell and can cast it once per long rest. You add a 7th, 8th, and 9th at levels 13, 15, and 17.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "1",
+    "rest": "long"
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "warlock",
+   "lvl": 20,
+   "card": {
+    "name": "Eldritch Master",
+    "tag": "A",
+    "note": "",
+    "desc": "Ask your patron for help: spend a minute and get your pact slots back.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "1",
+    "rest": "long"
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "wizard",
+   "lvl": 18,
+   "card": {
+    "name": "Spell Mastery",
+    "tag": "ON",
+    "note": "",
+    "desc": "Pick a 1st-level and a 2nd-level spell. You can cast them at will, at their lowest level.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
+  },
+  {
+   "owner_kind": "class",
+   "owner_id": "wizard",
+   "lvl": 20,
+   "card": {
+    "name": "Signature Spells",
+    "tag": "A",
+    "note": "",
+    "desc": "Pick two 3rd-level spells. You can cast each once without a slot, and the slots come back on a short rest.",
+    "conc": false
+   },
+   "tracker": {
+    "uses": "",
+    "rest": ""
+   }
   }
  ],
  "choices": [
@@ -5020,6 +7391,19 @@
    "group": "fighting_style",
    "label": "Fighting Style",
    "count": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
     1,
     1,
     1,
@@ -5115,6 +7499,19 @@
     1,
     1,
     1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
     1
    ],
    "options": [
@@ -5180,6 +7577,19 @@
     1,
     1,
     1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
     1
    ],
    "options": [
@@ -5239,6 +7649,19 @@
    "group": "favored_enemy",
    "label": "Favored Enemy",
    "count": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
     1,
     1,
     1,
@@ -5328,6 +7751,19 @@
    "group": "terrain",
    "label": "Favored Terrain",
    "count": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
     1,
     1,
     1,
@@ -5447,6 +7883,19 @@
     1,
     1,
     1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
     1
    ],
    "options": [
@@ -5500,6 +7949,19 @@
     0,
     0,
     0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
     1
    ],
    "options": [
@@ -5549,6 +8011,19 @@
    "count": [
     0,
     0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
     1,
     1,
     1,
@@ -5606,6 +8081,19 @@
     0,
     0,
     1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
     1
    ],
    "options": [
@@ -5659,13 +8147,26 @@
     3,
     3,
     3,
-    5
+    5,
+    5,
+    5,
+    7,
+    7,
+    7,
+    7,
+    7,
+    8,
+    8,
+    8,
+    8,
+    8,
+    8
    ],
    "options": [
     {
      "name": "Trip Attack",
      "tag": "F",
-     "desc": "On a hit, add a d8 to damage; the target makes a Str save or falls down.",
+     "desc": "On a hit, add a {SUPDIE} to damage; the target makes a Str save or falls down.",
      "effect": {
       "ac": 0,
       "ranged_hit": 0,
@@ -5677,7 +8178,7 @@
     {
      "name": "Riposte",
      "tag": "R",
-     "desc": "When an enemy misses you, attack it back and add a d8 to damage.",
+     "desc": "When an enemy misses you, attack it back and add a {SUPDIE} to damage.",
      "effect": {
       "ac": 0,
       "ranged_hit": 0,
@@ -5689,7 +8190,7 @@
     {
      "name": "Menacing Attack",
      "tag": "F",
-     "desc": "On a hit, add a d8 to damage; the target makes a Wis save or is frightened.",
+     "desc": "On a hit, add a {SUPDIE} to damage; the target makes a Wis save or is frightened.",
      "effect": {
       "ac": 0,
       "ranged_hit": 0,
@@ -5701,7 +8202,7 @@
     {
      "name": "Pushing Attack",
      "tag": "F",
-     "desc": "On a hit, add a d8 to damage; the target makes a Str save or flies back 15 ft.",
+     "desc": "On a hit, add a {SUPDIE} to damage; the target makes a Str save or flies back 15 ft.",
      "effect": {
       "ac": 0,
       "ranged_hit": 0,
@@ -5713,7 +8214,7 @@
     {
      "name": "Disarming Attack",
      "tag": "F",
-     "desc": "On a hit, add a d8 to damage; the target makes a Str save or drops what it's holding.",
+     "desc": "On a hit, add a {SUPDIE} to damage; the target makes a Str save or drops what it's holding.",
      "effect": {
       "ac": 0,
       "ranged_hit": 0,
@@ -5725,7 +8226,7 @@
     {
      "name": "Precision Attack",
      "tag": "F",
-     "desc": "Add a d8 to an attack roll.",
+     "desc": "Add a {SUPDIE} to an attack roll.",
      "effect": {
       "ac": 0,
       "ranged_hit": 0,
@@ -5737,7 +8238,7 @@
     {
      "name": "Rally",
      "tag": "B",
-     "desc": "A friend gains d8 + {CHAN} temporary HP.",
+     "desc": "A friend gains {SUPDIE} + {CHAN} temporary HP.",
      "effect": {
       "ac": 0,
       "ranged_hit": 0,
@@ -5749,7 +8250,7 @@
     {
      "name": "Parry",
      "tag": "R",
-     "desc": "When hit, reduce the damage by d8 + {DEXN}.",
+     "desc": "When hit, reduce the damage by {SUPDIE} + {DEXN}.",
      "effect": {
       "ac": 0,
       "ranged_hit": 0,
@@ -5772,7 +8273,20 @@
     2,
     2,
     2,
-    2
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    4,
+    4,
+    4,
+    4
    ],
    "options": [
     {
@@ -5855,6 +8369,19 @@
    "group": "dragon",
    "label": "Dragon Ancestor",
    "count": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
     1,
     1,
     1,
@@ -5946,7 +8473,20 @@
     2,
     3,
     3,
-    4
+    4,
+    4,
+    5,
+    5,
+    5,
+    6,
+    6,
+    6,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7
    ],
    "options": [
     {
@@ -6052,6 +8592,19 @@
     1,
     1,
     1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
     1
    ],
    "options": [
@@ -6099,6 +8652,19 @@
    "group": "ancestry",
    "label": "Dragon Ancestry",
    "count": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
     1,
     1,
     1,
@@ -7913,6 +10479,651 @@
     "conc": false
    },
    "scale": null
+  },
+  {
+   "name": "Cone of Cold",
+   "lvl": 5,
+   "classes": [
+    "sorcerer",
+    "wizard"
+   ],
+   "card": {
+    "name": "Cone of Cold",
+    "tag": "A",
+    "note": "60 ft cone",
+    "desc": "A blast of cold. Con save, 8d8, half if they save.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Wall of Force",
+   "lvl": 5,
+   "classes": [
+    "wizard"
+   ],
+   "card": {
+    "name": "Wall of Force",
+    "tag": "A",
+    "note": "120 ft",
+    "desc": "An invisible wall that almost nothing can pass. It lasts while you concentrate.",
+    "conc": true
+   },
+   "scale": null
+  },
+  {
+   "name": "Flame Strike",
+   "lvl": 5,
+   "classes": [
+    "cleric"
+   ],
+   "card": {
+    "name": "Flame Strike",
+    "tag": "A",
+    "note": "60 ft",
+    "desc": "Holy fire from above. Dex save, 4d6 fire and 4d6 radiant.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Greater Restoration",
+   "lvl": 5,
+   "classes": [
+    "bard",
+    "cleric",
+    "druid"
+   ],
+   "card": {
+    "name": "Greater Restoration",
+    "tag": "A",
+    "note": "touch",
+    "desc": "End a curse, a poison, or one other nasty effect.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Mass Cure Wounds",
+   "lvl": 5,
+   "classes": [
+    "bard",
+    "cleric",
+    "druid"
+   ],
+   "card": {
+    "name": "Mass Cure Wounds",
+    "tag": "A",
+    "note": "60 ft",
+    "desc": "Heal up to six friends. Each regains 3d8 plus your spellcasting bonus.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Hold Monster",
+   "lvl": 5,
+   "classes": [
+    "bard",
+    "sorcerer",
+    "warlock",
+    "wizard"
+   ],
+   "card": {
+    "name": "Hold Monster",
+    "tag": "A",
+    "note": "90 ft",
+    "desc": "One creature freezes. Wis save, and a new save each turn.",
+    "conc": true
+   },
+   "scale": null
+  },
+  {
+   "name": "Insect Plague",
+   "lvl": 5,
+   "classes": [
+    "cleric",
+    "druid",
+    "sorcerer"
+   ],
+   "card": {
+    "name": "Insect Plague",
+    "tag": "A",
+    "note": "300 ft",
+    "desc": "A swarm of biting bugs. Con save, 4d10, and the swarm stays.",
+    "conc": true
+   },
+   "scale": null
+  },
+  {
+   "name": "Cloudkill",
+   "lvl": 5,
+   "classes": [
+    "sorcerer",
+    "wizard"
+   ],
+   "card": {
+    "name": "Cloudkill",
+    "tag": "A",
+    "note": "120 ft",
+    "desc": "Poison fog. Con save, 5d8, and the cloud moves away from you.",
+    "conc": true
+   },
+   "scale": null
+  },
+  {
+   "name": "Heal",
+   "lvl": 6,
+   "classes": [
+    "cleric",
+    "druid"
+   ],
+   "card": {
+    "name": "Heal",
+    "tag": "A",
+    "note": "touch",
+    "desc": "A friend gets 70 HP back, and ends blindness, deafness, and disease.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Chain Lightning",
+   "lvl": 6,
+   "classes": [
+    "sorcerer",
+    "wizard"
+   ],
+   "card": {
+    "name": "Chain Lightning",
+    "tag": "A",
+    "note": "150 ft",
+    "desc": "Lightning jumps to three more targets. Dex save, 10d8.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Disintegrate",
+   "lvl": 6,
+   "classes": [
+    "sorcerer",
+    "wizard"
+   ],
+   "card": {
+    "name": "Disintegrate",
+    "tag": "A",
+    "note": "60 ft",
+    "desc": "A green ray. Dex save or 10d6 + 40 force. A weak creature turns to dust.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Sunbeam",
+   "lvl": 6,
+   "classes": [
+    "druid",
+    "sorcerer",
+    "wizard"
+   ],
+   "card": {
+    "name": "Sunbeam",
+    "tag": "A",
+    "note": "60 ft",
+    "desc": "A beam of sunlight. Con save, 6d8 radiant, and the beam stays.",
+    "conc": true
+   },
+   "scale": null
+  },
+  {
+   "name": "Heroes' Feast",
+   "lvl": 6,
+   "classes": [
+    "cleric",
+    "druid"
+   ],
+   "card": {
+    "name": "Heroes' Feast",
+    "tag": "A",
+    "note": "30 ft",
+    "desc": "A magic meal. Friends who eat can't be frightened and get extra HP.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Circle of Death",
+   "lvl": 6,
+   "classes": [
+    "sorcerer",
+    "warlock",
+    "wizard"
+   ],
+   "card": {
+    "name": "Circle of Death",
+    "tag": "A",
+    "note": "150 ft",
+    "desc": "A sphere of dark energy. Con save, 8d6 necrotic.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Harm",
+   "lvl": 6,
+   "classes": [
+    "cleric"
+   ],
+   "card": {
+    "name": "Harm",
+    "tag": "A",
+    "note": "60 ft",
+    "desc": "A nasty disease. Con save, 14d6 necrotic, and the target's max HP drops.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Fire Storm",
+   "lvl": 7,
+   "classes": [
+    "cleric",
+    "druid",
+    "sorcerer"
+   ],
+   "card": {
+    "name": "Fire Storm",
+    "tag": "A",
+    "note": "150 ft",
+    "desc": "Roaring fire. Dex save, 7d10.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Teleport",
+   "lvl": 7,
+   "classes": [
+    "bard",
+    "sorcerer",
+    "wizard"
+   ],
+   "card": {
+    "name": "Teleport",
+    "tag": "A",
+    "note": "",
+    "desc": "You and your friends instantly travel anywhere you know.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Finger of Death",
+   "lvl": 7,
+   "classes": [
+    "sorcerer",
+    "warlock",
+    "wizard"
+   ],
+   "card": {
+    "name": "Finger of Death",
+    "tag": "A",
+    "note": "60 ft",
+    "desc": "A deadly touch. Con save, 7d8 + 30 necrotic.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Resurrection",
+   "lvl": 7,
+   "classes": [
+    "bard",
+    "cleric"
+   ],
+   "card": {
+    "name": "Resurrection",
+    "tag": "A",
+    "note": "touch",
+    "desc": "Bring back a friend who died within the last century.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Prismatic Spray",
+   "lvl": 7,
+   "classes": [
+    "sorcerer",
+    "wizard"
+   ],
+   "card": {
+    "name": "Prismatic Spray",
+    "tag": "A",
+    "note": "60 ft cone",
+    "desc": "A cone of rainbow rays. Each creature gets a random effect. Dex save.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Plane Shift",
+   "lvl": 7,
+   "classes": [
+    "cleric",
+    "druid",
+    "sorcerer",
+    "warlock",
+    "wizard"
+   ],
+   "card": {
+    "name": "Plane Shift",
+    "tag": "A",
+    "note": "touch",
+    "desc": "Travel to another plane, or send one creature away. Cha save.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Regenerate",
+   "lvl": 7,
+   "classes": [
+    "bard",
+    "cleric",
+    "druid"
+   ],
+   "card": {
+    "name": "Regenerate",
+    "tag": "A",
+    "note": "touch",
+    "desc": "A friend grows back missing parts, heals 4d8 + 15, then 1 HP each turn.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Earthquake",
+   "lvl": 8,
+   "classes": [
+    "cleric",
+    "druid",
+    "sorcerer"
+   ],
+   "card": {
+    "name": "Earthquake",
+    "tag": "A",
+    "note": "500 ft",
+    "desc": "The ground shakes. Dex save or fall, and buildings crack.",
+    "conc": true
+   },
+   "scale": null
+  },
+  {
+   "name": "Sunburst",
+   "lvl": 8,
+   "classes": [
+    "druid",
+    "sorcerer",
+    "wizard"
+   ],
+   "card": {
+    "name": "Sunburst",
+    "tag": "A",
+    "note": "150 ft",
+    "desc": "A burst of sunlight. Con save, 12d6 radiant, and they might be blinded.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Incendiary Cloud",
+   "lvl": 8,
+   "classes": [
+    "sorcerer",
+    "wizard"
+   ],
+   "card": {
+    "name": "Incendiary Cloud",
+    "tag": "A",
+    "note": "150 ft",
+    "desc": "Burning smoke. Dex save, 10d8 fire, and the cloud moves.",
+    "conc": true
+   },
+   "scale": null
+  },
+  {
+   "name": "Power Word Stun",
+   "lvl": 8,
+   "classes": [
+    "bard",
+    "sorcerer",
+    "warlock",
+    "wizard"
+   ],
+   "card": {
+    "name": "Power Word Stun",
+    "tag": "A",
+    "note": "60 ft",
+    "desc": "If the target has 150 HP or less, it is stunned. No save.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Dominate Monster",
+   "lvl": 8,
+   "classes": [
+    "bard",
+    "sorcerer",
+    "warlock",
+    "wizard"
+   ],
+   "card": {
+    "name": "Dominate Monster",
+    "tag": "A",
+    "note": "60 ft",
+    "desc": "You control one creature. Wis save, and a new save when it takes damage.",
+    "conc": true
+   },
+   "scale": null
+  },
+  {
+   "name": "Feeblemind",
+   "lvl": 8,
+   "classes": [
+    "bard",
+    "druid",
+    "warlock",
+    "wizard"
+   ],
+   "card": {
+    "name": "Feeblemind",
+    "tag": "A",
+    "note": "150 ft",
+    "desc": "A creature's mind goes blank. Int save. It can barely speak or cast.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Holy Aura",
+   "lvl": 8,
+   "classes": [
+    "cleric"
+   ],
+   "card": {
+    "name": "Holy Aura",
+    "tag": "A",
+    "note": "self",
+    "desc": "You and friends glow. Attacks against you have disadvantage, and fiends or undead that hit you must save or be blinded.",
+    "conc": true
+   },
+   "scale": null
+  },
+  {
+   "name": "Antimagic Field",
+   "lvl": 8,
+   "classes": [
+    "cleric",
+    "wizard"
+   ],
+   "card": {
+    "name": "Antimagic Field",
+    "tag": "A",
+    "note": "self",
+    "desc": "A bubble where magic stops working, including yours.",
+    "conc": true
+   },
+   "scale": null
+  },
+  {
+   "name": "Wish",
+   "lvl": 9,
+   "classes": [
+    "sorcerer",
+    "wizard"
+   ],
+   "card": {
+    "name": "Wish",
+    "tag": "A",
+    "note": "",
+    "desc": "The strongest spell. Ask for something big. Talk to your DM about what happens.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Meteor Swarm",
+   "lvl": 9,
+   "classes": [
+    "sorcerer",
+    "wizard"
+   ],
+   "card": {
+    "name": "Meteor Swarm",
+    "tag": "A",
+    "note": "1 mile",
+    "desc": "Four meteors. Dex save, 20d6 fire and 20d6 bludgeoning.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Power Word Kill",
+   "lvl": 9,
+   "classes": [
+    "bard",
+    "sorcerer",
+    "warlock",
+    "wizard"
+   ],
+   "card": {
+    "name": "Power Word Kill",
+    "tag": "A",
+    "note": "60 ft",
+    "desc": "If the target has 100 HP or less, it dies. No save.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "True Resurrection",
+   "lvl": 9,
+   "classes": [
+    "cleric",
+    "druid"
+   ],
+   "card": {
+    "name": "True Resurrection",
+    "tag": "A",
+    "note": "touch",
+    "desc": "Bring someone back even if the body is gone, if they died within 200 years.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Foresight",
+   "lvl": 9,
+   "classes": [
+    "bard",
+    "druid",
+    "warlock",
+    "wizard"
+   ],
+   "card": {
+    "name": "Foresight",
+    "tag": "A",
+    "note": "touch",
+    "desc": "For 8 hours a friend can't be surprised, and attacks against them have disadvantage.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Gate",
+   "lvl": 9,
+   "classes": [
+    "cleric",
+    "sorcerer",
+    "wizard"
+   ],
+   "card": {
+    "name": "Gate",
+    "tag": "A",
+    "note": "60 ft",
+    "desc": "Open a door to another plane. You can call a creature through it.",
+    "conc": true
+   },
+   "scale": null
+  },
+  {
+   "name": "Time Stop",
+   "lvl": 9,
+   "classes": [
+    "sorcerer",
+    "wizard"
+   ],
+   "card": {
+    "name": "Time Stop",
+    "tag": "A",
+    "note": "self",
+    "desc": "You take a few extra turns. Time stops for everyone else.",
+    "conc": false
+   },
+   "scale": null
+  },
+  {
+   "name": "Storm of Vengeance",
+   "lvl": 9,
+   "classes": [
+    "druid"
+   ],
+   "card": {
+    "name": "Storm of Vengeance",
+    "tag": "A",
+    "note": "sight",
+    "desc": "A huge storm. Creatures in it take 2d6 bludgeoning, and you can call lightning.",
+    "conc": true
+   },
+   "scale": null
+  },
+  {
+   "name": "Mass Heal",
+   "lvl": 9,
+   "classes": [
+    "cleric"
+   ],
+   "card": {
+    "name": "Mass Heal",
+    "tag": "A",
+    "note": "60 ft",
+    "desc": "Heal up to 700 HP, split among friends you can see. Also ends disease and blindness.",
+    "conc": false
+   },
+   "scale": null
   }
  ],
  "items": [
@@ -8535,6 +11746,611 @@
    "ability": "STR",
    "hands": "two",
    "note": "reach 10 ft"
+  }
+ ],
+ "feats": [
+  {
+   "id": "actor",
+   "name": "Actor",
+   "asi_pick": [
+    "CHA"
+   ],
+   "card": {
+    "name": "Actor",
+    "tag": "ON",
+    "note": "",
+    "desc": "Charisma goes up by 1. You can mimic a voice, and you're better at pretending to be someone else.",
+    "conc": false
+   }
+  },
+  {
+   "id": "alert",
+   "name": "Alert",
+   "init": 5,
+   "card": {
+    "name": "Alert",
+    "tag": "ON",
+    "note": "",
+    "desc": "You react first. Initiative goes up by 5, surprises rarely catch you, and a hidden foe gets no free shot.",
+    "conc": false
+   }
+  },
+  {
+   "id": "athlete",
+   "name": "Athlete",
+   "asi_pick": [
+    "STR",
+    "DEX"
+   ],
+   "card": {
+    "name": "Athlete",
+    "tag": "ON",
+    "note": "",
+    "desc": "Strength or Dexterity goes up by 1. Standing up barely costs movement, climbing is easier, and a running jump needs only a few steps.",
+    "conc": false
+   }
+  },
+  {
+   "id": "charger",
+   "name": "Charger",
+   "card": {
+    "name": "Charger",
+    "tag": "B",
+    "note": "",
+    "desc": "After you Dash, you can make one melee attack or a shove. The attack deals 5 extra damage, or the shove pushes them 10 feet.",
+    "conc": false
+   }
+  },
+  {
+   "id": "crossbow_expert",
+   "name": "Crossbow Expert",
+   "card": {
+    "name": "Crossbow Expert",
+    "tag": "B",
+    "note": "",
+    "desc": "Loading a crossbow doesn't slow you down. You can shoot in melee without trouble, and a hand crossbow can be a quick extra shot.",
+    "conc": false
+   }
+  },
+  {
+   "id": "defensive_duelist",
+   "name": "Defensive Duelist",
+   "need_scores": {
+    "DEX": 13
+   },
+   "card": {
+    "name": "Defensive Duelist",
+    "tag": "R",
+    "note": "",
+    "desc": "While you hold a finesse weapon, you can add your proficiency bonus to Armor against one melee hit.",
+    "conc": false
+   }
+  },
+  {
+   "id": "dual_wielder",
+   "name": "Dual Wielder",
+   "card": {
+    "name": "Dual Wielder",
+    "tag": "ON",
+    "note": "",
+    "desc": "You can fight with two weapons that aren't light, draw both at once, and Armor goes up by 1 while you hold one in each hand.",
+    "conc": false
+   }
+  },
+  {
+   "id": "dungeon_delver",
+   "name": "Dungeon Delver",
+   "card": {
+    "name": "Dungeon Delver",
+    "tag": "ON",
+    "note": "",
+    "desc": "You spot secret doors and traps more often. Traps have a harder time hurting you, and you search well in the dark.",
+    "conc": false
+   }
+  },
+  {
+   "id": "durable",
+   "name": "Durable",
+   "asi_pick": [
+    "CON"
+   ],
+   "card": {
+    "name": "Durable",
+    "tag": "ON",
+    "note": "",
+    "desc": "Constitution goes up by 1. When you spend a Hit Die to heal, you get back at least twice your Constitution bonus.",
+    "conc": false
+   }
+  },
+  {
+   "id": "elemental_adept",
+   "name": "Elemental Adept",
+   "need_caster": true,
+   "choose": [
+    "acid",
+    "cold",
+    "fire",
+    "lightning",
+    "thunder"
+   ],
+   "card": {
+    "name": "Elemental Adept",
+    "tag": "ON",
+    "note": "",
+    "desc": "Pick {PICK}. Your spells of that type ignore resistance, and a damage die that rolls 1 counts as a 2.",
+    "conc": false
+   }
+  },
+  {
+   "id": "grappler",
+   "name": "Grappler",
+   "need_scores": {
+    "STR": 13
+   },
+   "card": {
+    "name": "Grappler",
+    "tag": "A",
+    "note": "",
+    "desc": "You get a better grip. Attacks against a foe you are grappling have advantage, and you can pin them.",
+    "conc": false
+   }
+  },
+  {
+   "id": "great_weapon_master",
+   "name": "Great Weapon Master",
+   "card": {
+    "name": "Great Weapon Master",
+    "tag": "B",
+    "note": "",
+    "desc": "With a heavy weapon, you can take −5 to hit to deal +10 damage. When you crit or drop a foe, you can swing again.",
+    "conc": false
+   }
+  },
+  {
+   "id": "healer",
+   "name": "Healer",
+   "card": {
+    "name": "Healer",
+    "tag": "A",
+    "note": "",
+    "desc": "With a healer's kit, you can bring a dying friend back to 1 HP, or patch someone for 1d6 + 4 + your level, once a rest each.",
+    "conc": false
+   }
+  },
+  {
+   "id": "heavily_armored",
+   "name": "Heavily Armored",
+   "asi_pick": [
+    "STR"
+   ],
+   "armor_prof": [
+    "heavy"
+   ],
+   "need_armor": [
+    "medium"
+   ],
+   "card": {
+    "name": "Heavily Armored",
+    "tag": "ON",
+    "note": "",
+    "desc": "Strength goes up by 1, and you can wear heavy armor.",
+    "conc": false
+   }
+  },
+  {
+   "id": "heavy_armor_master",
+   "name": "Heavy Armor Master",
+   "asi_pick": [
+    "STR"
+   ],
+   "need_armor": [
+    "heavy"
+   ],
+   "card": {
+    "name": "Heavy Armor Master",
+    "tag": "ON",
+    "note": "",
+    "desc": "Strength goes up by 1. In heavy armor, ordinary chops, pokes, and bashes hurt 3 less.",
+    "conc": false
+   }
+  },
+  {
+   "id": "inspiring_leader",
+   "name": "Inspiring Leader",
+   "need_scores": {
+    "CHA": 13
+   },
+   "card": {
+    "name": "Inspiring Leader",
+    "tag": "A",
+    "note": "",
+    "desc": "Give a 10-minute speech. You and up to 6 friends gain temporary HP equal to your level plus your Charisma bonus.",
+    "conc": false
+   }
+  },
+  {
+   "id": "keen_mind",
+   "name": "Keen Mind",
+   "asi_pick": [
+    "INT"
+   ],
+   "card": {
+    "name": "Keen Mind",
+    "tag": "ON",
+    "note": "",
+    "desc": "Intelligence goes up by 1. You know which way is north, about what time it is, and you remember the last month clearly.",
+    "conc": false
+   }
+  },
+  {
+   "id": "lightly_armored",
+   "name": "Lightly Armored",
+   "asi_pick": [
+    "STR",
+    "DEX"
+   ],
+   "armor_prof": [
+    "light"
+   ],
+   "card": {
+    "name": "Lightly Armored",
+    "tag": "ON",
+    "note": "",
+    "desc": "Strength or Dexterity goes up by 1, and you can wear light armor.",
+    "conc": false
+   }
+  },
+  {
+   "id": "linguist",
+   "name": "Linguist",
+   "asi_pick": [
+    "INT"
+   ],
+   "languages": 3,
+   "card": {
+    "name": "Linguist",
+    "tag": "ON",
+    "note": "",
+    "desc": "Intelligence goes up by 1. You learn 3 languages, and you can invent simple codes.",
+    "conc": false
+   }
+  },
+  {
+   "id": "lucky",
+   "name": "Lucky",
+   "uses": "3",
+   "rest": "long",
+   "card": {
+    "name": "Lucky",
+    "tag": "R",
+    "note": "",
+    "desc": "Spend a luck point to reroll one attack, check, or save, or to make a foe reroll an attack against you.",
+    "conc": false
+   }
+  },
+  {
+   "id": "mage_slayer",
+   "name": "Mage Slayer",
+   "card": {
+    "name": "Mage Slayer",
+    "tag": "R",
+    "note": "",
+    "desc": "When a foe next to you casts a spell, you can swing at them. Their concentration is shakier, and you shrug off their spells more easily.",
+    "conc": false
+   }
+  },
+  {
+   "id": "magic_initiate",
+   "name": "Magic Initiate",
+   "choose": [
+    "bard",
+    "cleric",
+    "druid",
+    "sorcerer",
+    "warlock",
+    "wizard"
+   ],
+   "grant": {
+    "cantrips": 2,
+    "spells": 1
+   },
+   "card": {
+    "name": "Magic Initiate",
+    "tag": "ON",
+    "note": "",
+    "desc": "You learn two {PICK} cantrips, and one 1st-level {PICK} spell you can cast once a day.",
+    "conc": false
+   }
+  },
+  {
+   "id": "martial_adept",
+   "name": "Martial Adept",
+   "uses": "1",
+   "rest": "short",
+   "card": {
+    "name": "Martial Adept",
+    "tag": "B",
+    "note": "",
+    "desc": "You learn two battle tricks. Talk to your DM about which ones. You have one d6 to spend on a trick.",
+    "conc": false
+   }
+  },
+  {
+   "id": "medium_armor_master",
+   "name": "Medium Armor Master",
+   "need_armor": [
+    "medium"
+   ],
+   "medium_dex": 3,
+   "card": {
+    "name": "Medium Armor Master",
+    "tag": "ON",
+    "note": "",
+    "desc": "Medium armor doesn't give you away when you sneak, and you can add up to +3 from Dexterity while wearing it.",
+    "conc": false
+   }
+  },
+  {
+   "id": "mobile",
+   "name": "Mobile",
+   "speed": 10,
+   "card": {
+    "name": "Mobile",
+    "tag": "ON",
+    "note": "",
+    "desc": "Speed goes up by 10 feet. Dashing ignores rough ground, and a foe you swing at can't take a free swipe as you leave.",
+    "conc": false
+   }
+  },
+  {
+   "id": "moderately_armored",
+   "name": "Moderately Armored",
+   "asi_pick": [
+    "STR",
+    "DEX"
+   ],
+   "armor_prof": [
+    "medium"
+   ],
+   "shield": true,
+   "need_armor": [
+    "light"
+   ],
+   "card": {
+    "name": "Moderately Armored",
+    "tag": "ON",
+    "note": "",
+    "desc": "Strength or Dexterity goes up by 1. You can wear medium armor and use a shield.",
+    "conc": false
+   }
+  },
+  {
+   "id": "mounted_combatant",
+   "name": "Mounted Combatant",
+   "card": {
+    "name": "Mounted Combatant",
+    "tag": "R",
+    "note": "",
+    "desc": "On a mount, you hit smaller foes more easily. You can take a hit meant for your mount, and your mount can dodge a blast.",
+    "conc": false
+   }
+  },
+  {
+   "id": "observant",
+   "name": "Observant",
+   "asi_pick": [
+    "INT",
+    "WIS"
+   ],
+   "notice": 5,
+   "card": {
+    "name": "Observant",
+    "tag": "ON",
+    "note": "",
+    "desc": "Intelligence or Wisdom goes up by 1. Passive Perception goes up by 5, and you can read lips.",
+    "conc": false
+   }
+  },
+  {
+   "id": "polearm_master",
+   "name": "Polearm Master",
+   "card": {
+    "name": "Polearm Master",
+    "tag": "B",
+    "note": "",
+    "desc": "With a glaive, halberd, quarterstaff, or spear, you can bonk with the other end, and strike a foe who steps into reach.",
+    "conc": false
+   }
+  },
+  {
+   "id": "resilient",
+   "name": "Resilient",
+   "asi_pick": [
+    "STR",
+    "DEX",
+    "CON",
+    "INT",
+    "WIS",
+    "CHA"
+   ],
+   "save_pick": true,
+   "card": {
+    "name": "Resilient",
+    "tag": "ON",
+    "note": "",
+    "desc": "One ability goes up by 1, and you learn the saving throw for that ability.",
+    "conc": false
+   }
+  },
+  {
+   "id": "ritual_caster",
+   "name": "Ritual Caster",
+   "need_any": {
+    "INT": 13,
+    "WIS": 13
+   },
+   "choose": [
+    "bard",
+    "cleric",
+    "druid",
+    "wizard"
+   ],
+   "card": {
+    "name": "Ritual Caster",
+    "tag": "ON",
+    "note": "",
+    "desc": "You keep a {PICK} ritual book. Talk to your DM about which rituals you copy into it.",
+    "conc": false
+   }
+  },
+  {
+   "id": "savage_attacker",
+   "name": "Savage Attacker",
+   "card": {
+    "name": "Savage Attacker",
+    "tag": "ON",
+    "note": "",
+    "desc": "Once on your turn, reroll melee weapon damage and keep the higher roll.",
+    "conc": false
+   }
+  },
+  {
+   "id": "sentinel",
+   "name": "Sentinel",
+   "card": {
+    "name": "Sentinel",
+    "tag": "R",
+    "note": "",
+    "desc": "Your opportunity attacks drop a foe's speed to 0. Slipping away doesn't help them, and you can strike a foe who hits a friend beside you.",
+    "conc": false
+   }
+  },
+  {
+   "id": "sharpshooter",
+   "name": "Sharpshooter",
+   "card": {
+    "name": "Sharpshooter",
+    "tag": "ON",
+    "note": "",
+    "desc": "Long range doesn't spoil your shot, and cover doesn't help them. You can take −5 to hit to deal +10 damage with a ranged attack.",
+    "conc": false
+   }
+  },
+  {
+   "id": "shield_master",
+   "name": "Shield Master",
+   "card": {
+    "name": "Shield Master",
+    "tag": "B",
+    "note": "",
+    "desc": "With a shield, you can shove as a quick extra, add the shield to some Dexterity saves, and duck a blast so it deals nothing on a success.",
+    "conc": false
+   }
+  },
+  {
+   "id": "skilled",
+   "name": "Skilled",
+   "skill_picks": 3,
+   "card": {
+    "name": "Skilled",
+    "tag": "ON",
+    "note": "",
+    "desc": "You pick up 3 skills. Tools work too. Write those in Notes.",
+    "conc": false
+   }
+  },
+  {
+   "id": "skulker",
+   "name": "Skulker",
+   "need_scores": {
+    "DEX": 13
+   },
+   "card": {
+    "name": "Skulker",
+    "tag": "ON",
+    "note": "",
+    "desc": "You can hide in dim light and light cover. A missed ranged shot doesn't give you away.",
+    "conc": false
+   }
+  },
+  {
+   "id": "spell_sniper",
+   "name": "Spell Sniper",
+   "need_caster": true,
+   "choose": [
+    "bard",
+    "cleric",
+    "druid",
+    "sorcerer",
+    "warlock",
+    "wizard"
+   ],
+   "grant": {
+    "cantrips": 1,
+    "spells": 0
+   },
+   "card": {
+    "name": "Spell Sniper",
+    "tag": "ON",
+    "note": "",
+    "desc": "Your ranged spell attacks reach twice as far and ignore cover. You also learn one {PICK} cantrip.",
+    "conc": false
+   }
+  },
+  {
+   "id": "tavern_brawler",
+   "name": "Tavern Brawler",
+   "asi_pick": [
+    "STR",
+    "CON"
+   ],
+   "card": {
+    "name": "Tavern Brawler",
+    "tag": "B",
+    "note": "",
+    "desc": "Strength or Constitution goes up by 1. Improvised weapons hit for 1d4, and you can grab a foe as a quick extra after you hit them.",
+    "conc": false
+   }
+  },
+  {
+   "id": "tough",
+   "name": "Tough",
+   "hp_per_level": 2,
+   "card": {
+    "name": "Tough",
+    "tag": "ON",
+    "note": "",
+    "desc": "You can take a beating. Maximum HP goes up by 2 for every level you have.",
+    "conc": false
+   }
+  },
+  {
+   "id": "war_caster",
+   "name": "War Caster",
+   "need_caster": true,
+   "card": {
+    "name": "War Caster",
+    "tag": "R",
+    "note": "",
+    "desc": "You hold concentration more easily, you can cast with your hands full of weapons or a shield, and you can cast a spell when a foe leaves your reach.",
+    "conc": false
+   }
+  },
+  {
+   "id": "weapon_master",
+   "name": "Weapon Master",
+   "asi_pick": [
+    "STR",
+    "DEX"
+   ],
+   "weapon_picks": 4,
+   "card": {
+    "name": "Weapon Master",
+    "tag": "ON",
+    "note": "",
+    "desc": "Strength or Dexterity goes up by 1, and you learn 4 weapons.",
+    "conc": false
+   }
   }
  ]
 }

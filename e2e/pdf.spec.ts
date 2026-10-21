@@ -53,7 +53,7 @@ test("a downloaded PDF opens that hero and its content pack", async ({ page, bro
   await page.getByRole("button", { name: "Start as Tobin aka Flame Master" }).click();
   await expect(page.locator("#scaler .head .nm")).toHaveText("Tobin aka Flame Master");
   await expect(page.locator("#scaler")).toContainText("Dragon Strike");
-  await page.locator("details.adv:not(.custom) summary").click();
+  await page.locator("#fine-tune summary").click();
   const acrobatics = page.locator("#skill-numbers .numrow", { hasText: "Acrobatics" });
   await acrobatics.getByRole("button", { name: "Raise Acrobatics" }).click();
   await expect(acrobatics).toContainText("off book");
@@ -86,7 +86,7 @@ test("a downloaded PDF opens that hero and its content pack", async ({ page, bro
   await expect(fresh.locator("li", { hasText: "Tobin aka Flame Master" }).getByRole("checkbox")).toBeChecked();
   await expect(fresh.locator("li", { hasText: "Turtles & Pirates" }).getByRole("checkbox")).not.toBeChecked();
   await expect(fresh.locator("#use-builtin")).toBeChecked();
-  await fresh.locator("details.adv:not(.custom) summary").click();
+  await fresh.locator("#fine-tune summary").click();
   await expect(fresh.locator("#skill-numbers .numrow", { hasText: "Acrobatics" })).toContainText(bonus);
   await expect(fresh.locator("#skill-numbers .numrow", { hasText: "Acrobatics" })).toContainText("off book");
   await expect(fresh.locator("#scaler .sk", { hasText: "Acrobatics" })).toContainText(`${bonus}*`);
