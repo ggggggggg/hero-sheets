@@ -50,7 +50,9 @@ test("a downloaded PDF opens that hero and its content pack", async ({ page, bro
   await page.waitForSelector("#scaler .page.back");
   await page.locator("#content-packs summary").click();
   await page.locator("li", { hasText: "Tobin aka Flame Master" }).getByRole("checkbox").check();
-  await page.getByRole("button", { name: "Start as Tobin aka Flame Master" }).click();
+  await page.locator("#pack-heroes").click();
+  await page.locator("#premade-list").getByRole("button", { name: "Tobin aka Flame Master", exact: true }).click();
+  await page.getByRole("button", { name: "Use this hero" }).click();
   await expect(page.locator("#scaler .head .nm")).toHaveText("Tobin aka Flame Master");
   await expect(page.locator("#scaler")).toContainText("Dragon Strike");
   await page.locator("#fine-tune summary").click();
@@ -129,7 +131,9 @@ test("a PDF turns off packs that hero does not use", async ({ page }) => {
   await page.locator("#content-packs summary").click();
   await page.locator("li", { hasText: "Mutants & Meltdowns" }).getByRole("checkbox").check();
   await page.locator("li", { hasText: "Turtles & Pirates" }).getByRole("checkbox").check();
-  await page.getByRole("button", { name: "Start as Spanner" }).click();
+  await page.locator("#pack-heroes").click();
+  await page.locator("#premade-list").getByRole("button", { name: "Spanner", exact: true }).click();
+  await page.getByRole("button", { name: "Use this hero" }).click();
   await expect(page.locator("#scaler .head .sub")).toContainText("Rustbucket");
 
   const [download] = await Promise.all([page.waitForEvent("download"), page.locator("#pdf").click()]);
