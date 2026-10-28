@@ -234,6 +234,29 @@ test.describe("builder", () => {
     await expect(field(page, "Race").getByRole("button", { name: "Tiefling", exact: true })).toHaveCount(1);
   });
 
+  test("shows the pack hero gallery only while a pack with heroes is enabled", async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 900 });
+    await page.goto("/");
+    await page.waitForSelector("#scaler .page.back");
+
+    const gallery = page.locator("#pack-heroes");
+    await expect(gallery).toBeHidden();
+    await page.locator("#content-packs summary").click();
+    const tobin = page.locator("li", { hasText: "Tobin aka Flame Master" }).getByRole("checkbox");
+    await tobin.check();
+    await expect(gallery).toBeVisible();
+
+    await tobin.uncheck();
+    await expect(gallery).toBeHidden();
+    await tobin.check();
+    await expect(gallery).toBeVisible();
+
+    await gallery.click();
+    await expect(page.locator("#controls")).toHaveAttribute("aria-label", "Pack Hero Gallery");
+    await expect(page.locator("#controls .flabel")).toHaveText("Pack Hero Gallery");
+    await expect(page.locator("#premade-note")).toContainText("Tobin aka Flame Master");
+  });
+
   test("armor training shows on the class and on each armor", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 900 });
     await page.goto("/");

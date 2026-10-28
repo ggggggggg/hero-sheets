@@ -17,6 +17,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--body); font-s
 button { font: inherit; cursor: pointer }
 .actions button, .ghost { border: 1.5px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 10px; padding: 6px 12px; font-weight: 700 }
 .actions button { display: inline-flex; align-items: center; box-sizing: border-box; min-height: 38px }
+.actions button[hidden] { display: none !important }
 .actions button#pdf { background: var(--ac); border-color: var(--ac); color: #fff }
 #simple[hidden] { display: none !important }
 .actions button[aria-pressed="true"] { border-color: var(--ac); box-shadow: inset 0 0 0 1.5px var(--ac) }
@@ -211,21 +212,36 @@ li.spell.locked .swaphint { color: var(--muted) }
   color: var(--fg); border-radius: 10px; padding: 8px 10px; cursor: pointer; min-height: 38px;
 }
 .premade-actions button.primary { background: var(--ac); border-color: var(--ac); color: #fff; }
-body[data-view="premades"] { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
-body[data-view="premades"] .layout { flex: 1; min-height: 0; align-items: stretch; grid-template-rows: minmax(0, 1fr); }
-body[data-view="premades"] #controls { position: relative; top: auto; max-height: none; height: 100%; min-height: 0; overflow: hidden; }
-body[data-view="premades"] #premade-note { flex: none; }
-body[data-view="premades"] .premade-list { flex: 1; overflow: auto; }
-body[data-view="premades"] .previewcol { height: 100%; min-height: 0; display: flex; flex-direction: column; }
-body[data-view="premades"] #preview { flex: 1; min-height: 0; height: auto; }
-body[data-view="premades"] #scaler { height: 100%; }
+body:is([data-view="premades"], [data-view="packheroes"]) { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+body:is([data-view="premades"], [data-view="packheroes"]) .layout { flex: 1; min-height: 0; align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+body:is([data-view="premades"], [data-view="packheroes"]) #controls { position: relative; top: auto; max-height: none; height: 100%; min-height: 0; overflow: hidden; }
+body:is([data-view="premades"], [data-view="packheroes"]) #premade-note { flex: none; }
+body:is([data-view="premades"], [data-view="packheroes"]) .premade-list { flex: 1; overflow: auto; }
+body:is([data-view="premades"], [data-view="packheroes"]) .previewcol { height: 100%; min-height: 0; display: flex; flex-direction: column; }
+body:is([data-view="premades"], [data-view="packheroes"]) #preview { flex: 1; min-height: 0; height: auto; }
+body:is([data-view="premades"], [data-view="packheroes"]) #scaler { height: 100%; }
 @media (max-width: 979px) {
-  body[data-view="premades"] .layout {
+  body:is([data-view="premades"], [data-view="packheroes"]) .layout {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(160px, 32vh) minmax(0, 1fr);
+    grid-template-rows: minmax(200px, 1fr) auto;
   }
-  body[data-view="premades"] .previewcol,
-  body[data-view="premades"] #controls { display: flex; }
+  body:is([data-view="premades"], [data-view="packheroes"]) .previewcol { grid-row: 1; }
+  body:is([data-view="premades"], [data-view="packheroes"]) #controls {
+    grid-row: 2;
+    display: flex;
+    box-sizing: border-box;
+    height: auto;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  body:is([data-view="premades"], [data-view="packheroes"]) .premade-list {
+    flex-direction: row;
+    flex: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  body:is([data-view="premades"], [data-view="packheroes"]) .premade-list button { flex: 0 0 auto; }
+  body:is([data-view="premades"], [data-view="packheroes"]) .sitefoot > p:not(.sitelinks) { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important } }
 @media print {

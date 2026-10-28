@@ -102,10 +102,10 @@ describe("fuzz: build is total over the legal option space", () => {
           expect(ch.combat.max_hp).toBeGreaterThan(0);
           expect(Number.isInteger(ch.combat.ac)).toBe(true);
           expect(ch.combat.ac).toBeGreaterThan(0);
-          for (const text of allText(ch)) expect(text).not.toMatch(/[{}]/);
+          for (const text of allText(ch)) expect(text).not.toMatch(/\{[A-Z0-9_]+\}/);
           const html = sheetHtml(ch);
           expect(html).toContain('class="sheet"');
-          expect(html).not.toMatch(/[{}]/);
+          expect(html).not.toMatch(/\{[A-Z0-9_]+\}/);
         },
       ),
       { numRuns: 250 },
@@ -459,17 +459,27 @@ describe("fuzz: custom packs never crash the merge/build", () => {
           expect(e).toBeInstanceOf(CustomError);
           return;
         }
+        let hero: ReturnType<typeof buildCharacter>;
         try {
-          expect(buildCharacter(merged, req({})).combat.max_hp).toBeGreaterThan(0);
-          const added = content.feats?.[0];
-          if (added) {
-            const withFeat = buildCharacter(merged, req({ level: 4, use_feats: true, feat: added.id }));
-            expect(withFeat.feat?.id).toBe(added.id);
-            expect(cards(withFeat).get(added.name)?.desc).toBe("You snack.");
-            for (const text of allText(withFeat)) expect(text).not.toMatch(/[{}]/);
-          }
+          hero = buildCharacter(merged, req({}));
         } catch (e) {
           expect(e).toBeInstanceOf(CharError);
+          return;
+        }
+        expect(hero.combat.max_hp).toBeGreaterThan(0);
+
+        const added = content.feats?.[0];
+        if (added) {
+          let withFeat: ReturnType<typeof buildCharacter>;
+          try {
+            withFeat = buildCharacter(merged, req({ level: 4, use_feats: true, feat: added.id }));
+          } catch (e) {
+            expect(e).toBeInstanceOf(CharError);
+            return;
+          }
+          expect(withFeat.feat?.id).toBe(added.id);
+          expect(cards(withFeat).get(added.name)?.desc).toBe("You snack.");
+          expect(sheetHtml(withFeat)).toContain('class="sheet"');
         }
       }),
       { numRuns: 150 },

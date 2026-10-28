@@ -536,17 +536,36 @@ export function checkCustom(tables: Tables, custom: PackRow): string[] {
   }
   const raceIds = tables.races.map((race) => race.id);
   const spellClasses = new Set<string>();
+  const spellsByClass = new Map<string, PackRow[]>();
   if (Array.isArray(custom.spells)) {
     for (const spell of custom.spells) {
-      if (isObj(spell) && Array.isArray(spell.classes)) for (const id of spell.classes) spellClasses.add(String(id));
+      if (!isObj(spell) || !Array.isArray(spell.classes)) continue;
+      for (const id of new Set(spell.classes.map(String))) {
+        spellClasses.add(id);
+        const list = spellsByClass.get(id) ?? [];
+        list.push(spell);
+        spellsByClass.set(id, list);
+      }
     }
+  }
+  const subclassesByClass = new Map<string, Tables["subclasses"]>();
+  for (const row of tables.subclasses) {
+    const list = subclassesByClass.get(row.class_id) ?? [];
+    list.push(row);
+    subclassesByClass.set(row.class_id, list);
+  }
+  const subracesByRace = new Map<string, Tables["subraces"]>();
+  for (const row of tables.subraces) {
+    const list = subracesByRace.get(row.race_id) ?? [];
+    list.push(row);
+    subracesByRace.set(row.race_id, list);
   }
   const tries: { race: string; cls: string; subclass: string | null; subrace: string | null; level: number }[] = [];
   const gearOnly = Boolean(custom.items || custom.weapons || custom.armor);
   for (const race of tables.races) {
     for (const cls of tables.classes) {
-      const subList = tables.subclasses.filter((row) => row.class_id === cls.id);
-      const srList = tables.subraces.filter((row) => row.race_id === race.id);
+      const subList = subclassesByClass.get(cls.id) ?? [];
+      const srList = subracesByRace.get(race.id) ?? [];
       const hit =
         races.has(race.id) ||
         classes.has(cls.id) ||
@@ -583,9 +602,7 @@ export function checkCustom(tables: Tables, custom: PackRow): string[] {
     const req = blankRequest(query.race, query.cls, query.subclass, query.subrace, query.level);
     try {
       buildCharacter(tables, req);
-      const mine = (Array.isArray(custom.spells) ? custom.spells : []).filter(
-        (spell) => isObj(spell) && Array.isArray(spell.classes) && spell.classes.map(String).includes(query.cls),
-      );
+      const mine = spellsByClass.get(query.cls) ?? [];
       const built = mine.length ? options(tables, req) : null;
       for (const spell of mine) {
         if (!isObj(spell) || !built) continue;

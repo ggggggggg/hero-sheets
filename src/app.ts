@@ -1005,8 +1005,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     } else update();
   }
 
-  function reloadTables(): void {
-    tables = withCustom();
+  function applyLoadedTables(): void {
     if (prefs.noBuiltin && (!tables.races.length || !tables.classes.length)) {
       prefs.noBuiltin = false;
       savePrefs();
@@ -1023,6 +1022,11 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       return;
     }
     update();
+  }
+
+  function reloadTables(): void {
+    tables = withCustom();
+    applyLoadedTables();
   }
 
   function dipOf(hero: HeroState): ClassDip | null {
@@ -4371,10 +4375,13 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
       .filter((problem) => problem.startsWith(`${title}:`))
       .concat(customInfo.error.startsWith(`${title}:`) ? [customInfo.error] : []);
     loadReport = bad;
-    if (bad.length) saveLib(before);
+    if (bad.length) {
+      saveLib(before);
+      tables = withCustom();
+    }
     prefs.custom = true;
     savePrefs();
-    reloadTables();
+    applyLoadedTables();
     return !bad.length;
   }
 
@@ -4472,24 +4479,6 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
           reloadTables();
         },
       },
-      afterList: customInfo.heroes.length
-        ? el(
-            "div",
-            {},
-            el("div", { class: "flabel" }, "Ready-made heroes"),
-            el(
-              "div",
-              { class: "chips" },
-              customInfo.heroes.map((hero) =>
-                el(
-                  "button",
-                  { type: "button", class: "chip-btn", onclick: () => loadHero(hero) },
-                  `Start as ${String(hero.name)}`,
-                ),
-              ),
-            ),
-          )
-        : null,
       foot: [
         customInfo.problems.length || loadReport.length
           ? el(
@@ -4524,7 +4513,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     const sheet = wrap.querySelector(".sheet");
     if (!(sheet instanceof HTMLElement)) return;
     const pages = sheet.querySelectorAll(".page").length;
-    if (document.body.dataset.view === "premades") {
+    if (document.body.dataset.view === "premades" || document.body.dataset.view === "packheroes") {
       const layout = premadeLayout(wrap.clientWidth, wrap.clientHeight, pages);
       sheet.classList.toggle("side", layout.side);
       sheet.style.transform = `scale(${layout.scale})`;
@@ -4703,10 +4692,70 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     if (current instanceof HTMLElement) current.scrollIntoView({ block: "nearest" });
   }
 
+  let packHeroIndex = 0;
+  function renderPackHeroes(): void {
+    const heroes = customInfo.heroes;
+    if (!heroes.length) {
+      setView("build");
+      return;
+    }
+    packHeroIndex = Math.min(packHeroIndex, heroes.length - 1);
+    const hero = heroes[packHeroIndex];
+    if (!hero) return;
+    let built: Character;
+    try {
+      built = buildCharacter(tables, heroRequest(hero));
+      $("#error").hidden = true;
+    } catch (error) {
+      if (!(error instanceof CharError)) throw error;
+      $("#error").hidden = false;
+      $("#error").textContent = `This hero doesn't work: ${error.message}`;
+      return;
+    }
+    const panel = $("#controls");
+    panel.setAttribute("aria-label", "Pack Hero Gallery");
+    const back = el("button", { type: "button", onclick: () => setView("build") }, "Back to builder");
+    const use = el("button", { type: "button", class: "primary", onclick: () => loadHero(hero) }, "Use this hero");
+    panel.replaceChildren(
+      el("div", { class: "flabel" }, "Pack Hero Gallery"),
+      el("div", { class: "premade-actions" }, back, use),
+      el("p", { class: "hint block", id: "premade-note" }, premadeNote(built)),
+      el(
+        "div",
+        { class: "premade-list", id: "premade-list" },
+        heroes.map((row, i) =>
+          el(
+            "button",
+            {
+              type: "button",
+              class: i === packHeroIndex ? "on" : undefined,
+              "aria-pressed": i === packHeroIndex ? "true" : "false",
+              onclick: () => {
+                packHeroIndex = i;
+                renderPackHeroes();
+              },
+            },
+            String(row.name),
+          ),
+        ),
+      ),
+    );
+    const scaler = $("#scaler");
+    scaler.innerHTML = sheetHtml(built);
+    fitBack(scaler);
+    tipSheet(scaler, built);
+    const pages = scaler.querySelectorAll(".page").length;
+    $("#premade-note").textContent = `${premadeNote(built)} ${pages === 1 ? "1 page." : `${pages} pages.`}`;
+    document.documentElement.style.setProperty("--ac", built.identity.accent);
+    scalePreview();
+    requestAnimationFrame(scalePreview);
+  }
+
   function leavePremades(): void {
-    if (document.body.dataset.view !== "premades") return;
+    if (document.body.dataset.view !== "premades" && document.body.dataset.view !== "packheroes") return;
     document.body.dataset.view = "build";
     $("#premades").setAttribute("aria-pressed", "false");
+    $("#pack-heroes").setAttribute("aria-pressed", "false");
     $("#tab-build").setAttribute("aria-pressed", "true");
     $("#tab-sheet").setAttribute("aria-pressed", "false");
   }
@@ -4722,6 +4771,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
   function update(rebuildControls?: boolean): void {
     leavePremades();
     const built = tidy();
+    $("#pack-heroes").hidden = customInfo.heroes.length === 0;
     syncSimple();
     document.documentElement.style.setProperty("--ac", classBy(state.cls).look.accent);
     if (rebuildControls !== false) {
@@ -4910,18 +4960,24 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
     setView("build");
   }
 
-  function setView(view: "build" | "sheet" | "premades"): void {
+  function setView(view: "build" | "sheet" | "premades" | "packheroes"): void {
     const was = document.body.dataset.view;
     document.body.dataset.view = view;
     $("#tab-build").setAttribute("aria-pressed", view === "build" ? "true" : "false");
     $("#tab-sheet").setAttribute("aria-pressed", view === "sheet" ? "true" : "false");
     $("#premades").setAttribute("aria-pressed", view === "premades" ? "true" : "false");
+    $("#pack-heroes").setAttribute("aria-pressed", view === "packheroes" ? "true" : "false");
+    $("#pack-heroes").hidden = customInfo.heroes.length === 0;
     window.scrollTo(0, 0);
     if (view === "premades") {
       renderPremades();
       return;
     }
-    if (was === "premades") update();
+    if (view === "packheroes") {
+      renderPackHeroes();
+      return;
+    }
+    if (was === "premades" || was === "packheroes") update();
     if (view === "sheet") requestAnimationFrame(renderSheet);
   }
 
@@ -5127,6 +5183,9 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
   $("#premades").addEventListener("click", () => {
     setView(document.body.dataset.view === "premades" ? "build" : "premades");
   });
+  $("#pack-heroes").addEventListener("click", () => {
+    setView(document.body.dataset.view === "packheroes" ? "build" : "packheroes");
+  });
   $("#heroes-btn").addEventListener("click", () => {
     prefs.heroesOpen = !prefs.heroesOpen;
     savePrefs();
@@ -5140,6 +5199,7 @@ export function startApp(input: { tables: Tables; sitePacks: SitePack[] }): void
   if (document.fonts)
     void document.fonts.ready.then(() => {
       if (document.body.dataset.view === "premades") renderPremades();
+      else if (document.body.dataset.view === "packheroes") renderPackHeroes();
       else renderSheet();
     });
   ensurePacks(currentHero());
